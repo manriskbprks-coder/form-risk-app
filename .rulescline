@@ -1,0 +1,21 @@
+# General Principles
+- Be concise but precise.
+- NEVER delete existing logic/methods without explicit permission and prior impact analysis.
+- Prioritize code readability and maintainability over clever "hacks".
+
+# Laravel Specifics
+- Follow PSR-12 coding standards.
+- Use Service Classes for business logic. Keep Controllers thin.
+- Always use Eloquent relationships efficiently to avoid N+1 problems.
+
+# Flutter Specifics
+- Maintain widget modularity.
+- Ensure state management is consistent throughout the app.
+
+# Trading & Financial Logic
+- Treat all financial calculations with 100% precision. Use Decimal/Bcmath.
+- Implement robust error handling for all external API calls.
+- Every state-changing transaction must be wrapped in a database transaction.
+
+# Documentation
+- Comment on complex logic "why" it is there, not just "what" it does.
