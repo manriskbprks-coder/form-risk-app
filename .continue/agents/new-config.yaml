@@ -19,3 +19,8 @@ models:
     provider: deepseek
     model: deepseek-reasoner
     apiKey: "sk-a2f4cdd586dc48efb6613183a073a735"
+    
+  - name: DeepSeek V4 Pro
+    provider: deepseek
+    model: deepseek-v4-pro
+    apiKey: "sk-a2f4cdd586dc48efb6613183a073a735"
