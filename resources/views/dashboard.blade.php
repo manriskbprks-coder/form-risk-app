@@ -94,6 +94,49 @@
     </div>
 
     {{-- ============================================================
+         CHART ANALISA RISIKO SECTION (Khusus Kacab/Korwil/Manrisk)
+         ============================================================ --}}
+    @hasanyrole('kacab|korwil|manrisk')
+    {{-- Baris 1: Ranking Risiko + Sumber Risiko --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 mb-8">
+        {{-- Ranking Risiko (Horizontal Bar) --}}
+        <div class="surface-card section-pad">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-1 h-5 bg-rose-500 rounded-full"></div>
+                <h3 class="section-title text-base">🏆 Ranking Risiko (6 Bulan)</h3>
+            </div>
+            <div class="relative" style="height: 300px;">
+                <canvas id="rankingRisikoChart" style="height: 100% !important; width: 100% !important;"></canvas>
+            </div>
+        </div>
+
+        {{-- Sumber Risiko (Doughnut) --}}
+        <div class="surface-card section-pad">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-1 h-5 bg-emerald-500 rounded-full"></div>
+                <h3 class="section-title text-base">🎯 Sumber Risiko</h3>
+            </div>
+            <div class="flex items-center justify-center" style="height: 300px;">
+                <canvas id="sumberRisikoChart" style="height: 100% !important; max-height: 300px; width: auto; max-width: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    {{-- Baris 2: Tren Top-5 Risiko (Full Width) --}}
+    <div class="grid grid-cols-1 gap-4 sm:gap-5 mb-8">
+        <div class="surface-card section-pad">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-1 h-5 bg-indigo-500 rounded-full"></div>
+                <h3 class="section-title text-base">📈 Tren Top-5 Risiko (6 Bulan)</h3>
+            </div>
+            <div class="relative" style="height: 260px;">
+                <canvas id="trenTop5Chart" style="height: 100% !important; width: 100% !important;"></canvas>
+            </div>
+        </div>
+    </div>
+    @endhasanyrole
+
+    {{-- ============================================================
          MAKER SECTION — Form Entry Cards
          ============================================================ --}}
     @hasanyrole('teller|ca|csr|security|kacab')
@@ -293,4 +336,160 @@
         </div>
     </div>
     @endhasrole
+
+    {{-- Chart.js --}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // ================================================================
+            // CHART 1: RANKING RISIKO (Horizontal Bar)
+            // ================================================================
+            const rankingCtx = document.getElementById('rankingRisikoChart');
+            if (rankingCtx) {
+                new Chart(rankingCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: {!! json_encode($rankingRisikoLabels) !!},
+                        datasets: [{
+                            label: 'Jumlah Kejadian',
+                            data: {!! json_encode($rankingRisikoData) !!},
+                            backgroundColor: {!! json_encode($rankingRisikoColors) !!},
+                            borderColor: {!! json_encode($rankingRisikoColors) !!},
+                            borderWidth: 1,
+                            borderRadius: 4,
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(ctx) {
+                                        return ctx.parsed.x + ' kejadian';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1,
+                                    font: { size: 10 }
+                                },
+                                grid: { color: 'rgba(0,0,0,0.05)' }
+                            },
+                            y: {
+                                ticks: {
+                                    font: { size: 10 }
+                                },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // ================================================================
+            // CHART 2: SUMBER RISIKO (Doughnut)
+            // ================================================================
+            const sumberCtx = document.getElementById('sumberRisikoChart');
+            if (sumberCtx) {
+                new Chart(sumberCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: {!! json_encode($sumberRisikoLabels) !!},
+                        datasets: [{
+                            data: {!! json_encode($sumberRisikoData) !!},
+                            backgroundColor: {!! json_encode($sumberRisikoColors) !!},
+                            borderColor: '#ffffff',
+                            borderWidth: 3,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: { size: 11 },
+                                    padding: 14,
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(ctx) {
+                                        var total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                        var pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
+                                        return ctx.label + ': ' + ctx.parsed + ' (' + pct + '%)';
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '60%',
+                    }
+                });
+            }
+
+            // ================================================================
+            // CHART 3: TREN TOP-5 RISIKO (Multi-line)
+            // ================================================================
+            const trenCtx = document.getElementById('trenTop5Chart');
+            if (trenCtx) {
+                new Chart(trenCtx, {
+                    type: 'line',
+                    data: {
+                        labels: {!! json_encode($trenTop5Labels) !!},
+                        datasets: {!! json_encode($trenTop5Datasets) !!}
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: { size: 10 },
+                                    padding: 12,
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(ctx) {
+                                        return ctx.dataset.label + ': ' + ctx.parsed.y + ' kejadian';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1,
+                                    font: { size: 10 }
+                                },
+                                grid: { color: 'rgba(0,0,0,0.05)' }
+                            },
+                            x: {
+                                ticks: { font: { size: 9 } },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
 </x-app-layout>

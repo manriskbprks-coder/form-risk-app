@@ -14,6 +14,7 @@ class RiskReportLog extends Model
         'user_id',
         'note',
         'status_after_note',
+        'old_data',
     ];
 
     public function user()

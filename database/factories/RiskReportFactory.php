@@ -36,6 +36,7 @@ class RiskReportFactory extends Factory
             'dampak_finansial' => fake()->optional(0.7)->numberBetween(100000, 10000000),
             'approval_status' => 'pending_kacab',
             'resolution_status' => 'open',
+            'revision_note' => null,
         ];
     }
 }

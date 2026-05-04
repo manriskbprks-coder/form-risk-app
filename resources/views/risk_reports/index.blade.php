@@ -10,6 +10,30 @@
 
     <div class="py-6 sm:py-12">
         <div class="page-shell page-stack">
+            {{-- Search Bar --}}
+            <div class="surface-card section-pad">
+                <form method="GET" action="{{ route('risk.history') }}" class="mb-4">
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="flex-1 relative">
+                            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            <input type="text" name="search" value="{{ request('search') }}" 
+                                   placeholder="Cari kode laporan, pelapor, risiko, penyebab..."
+                                   class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded text-sm shadow transition">
+                            Cari
+                        </button>
+                        @if(request('search'))
+                        <a href="{{ route('risk.history') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded text-sm shadow transition text-center">
+                            Reset
+                        </a>
+                        @endif
+                    </div>
+                </form>
+            </div>
+
             <div class="surface-card section-pad">
                 <form method="GET" action="{{ route('risk.history') }}" class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end mb-6">
 
@@ -97,6 +121,15 @@
                         <button type="submit" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded text-sm shadow transition">
                             Filter
                         </button>
+                        <a href="{{ route('risk.export', request()->query()) }}" 
+                           class="w-full sm:w-auto text-center bg-green-600 hover:bg-green-800 text-white font-bold py-2 px-6 rounded text-sm shadow transition">
+                            <span class="flex items-center justify-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                Export CSV
+                            </span>
+                        </a>
                     </div>
                 </form>
             </div>
@@ -293,6 +326,19 @@
                     </table>
                 </div>
             </div>
+
+            {{-- Pagination --}}
+            @if($reports->hasPages())
+            <div class="surface-card px-4 py-3 sm:px-6">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <p class="text-xs text-slate-500">
+                        Menampilkan {{ $reports->firstItem() }} - {{ $reports->lastItem() }} dari {{ $reports->total() }} laporan
+                    </p>
+                    {{ $reports->links() }}
+                </div>
+            </div>
+            @endif
+
         </div>
     </div>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />

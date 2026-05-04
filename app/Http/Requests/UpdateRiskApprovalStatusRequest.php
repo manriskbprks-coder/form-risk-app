@@ -15,7 +15,15 @@ class UpdateRiskApprovalStatusRequest extends FormRequest
     {
         return [
             'status' => ['required', 'in:approved,rejected'],
+            'alasan_reject' => ['required_if:status,rejected', 'string', 'min:10'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'alasan_reject.required_if' => 'Wajib mengisi alasan penolakan.',
+            'alasan_reject.min' => 'Alasan penolakan minimal 10 karakter.',
         ];
     }
 }
-

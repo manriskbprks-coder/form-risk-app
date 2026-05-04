@@ -19,7 +19,8 @@ class RiskReport extends Model
         'dampak_non_finansial',
         'skala_dampak',
         'kategori',
-        'approval_status', 'resolution_status'
+        'approval_status', 'resolution_status',
+        'revision_note'
     ];
 
     public function user() {

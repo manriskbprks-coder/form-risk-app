@@ -119,11 +119,9 @@
                                             <input type="hidden" name="status" value="approved">
                                             <button type="submit" class="w-20 bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded text-xs border border-green-600">Approve</button>
                                         </form>
-                                        <form action="{{ route('risk_reports.update_status', $report->id) }}" method="POST">
-                                            @csrf
-                                            <input type="hidden" name="status" value="rejected">
-                                            <button type="submit" class="w-20 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs border border-red-600">Reject</button>
-                                        </form>
+                                        <button type="button" onclick="openRejectModal({{ $report->id }}, '{{ $report->kode_laporan ?? 'N/A' }}')" class="w-20 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs border border-red-600">
+                                            Reject
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -295,8 +293,73 @@
         }
     </style>
 
+    <!-- Modal Reject -->
+    <div id="rejectModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-red-700">✋ Reject Laporan</h3>
+                <button onclick="closeRejectModal()" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+            </div>
+            <form id="rejectForm" method="POST">
+                @csrf
+                <input type="hidden" name="status" value="rejected">
+
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600 mb-2">
+                        Anda akan menolak laporan: <span id="rejectKodeLaporan" class="font-mono font-bold text-indigo-700"></span>
+                    </p>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Alasan Penolakan <span class="text-red-500">*</span></label>
+                    <textarea name="alasan_reject" id="alasanReject" rows="4" required minlength="10"
+                        class="w-full rounded-md border-gray-300 text-sm focus:ring-red-500 focus:border-red-500"
+                        placeholder="Jelaskan alasan kenapa laporan ini ditolak... (min. 10 karakter)"></textarea>
+                    <p id="charCount" class="text-xs text-gray-400 mt-1">0 karakter (min. 10)</p>
+                </div>
+
+                <div class="flex gap-2 justify-end">
+                    <button type="button" onclick="closeRejectModal()" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 text-sm font-bold rounded">
+                        Batal
+                    </button>
+                    <button type="submit" id="submitReject" disabled class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded disabled:opacity-50 disabled:cursor-not-allowed">
+                        Kirim Penolakan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
-        // Client-side table sorting
+        // Modal Reject
+        function openRejectModal(reportId, kodeLaporan) {
+            document.getElementById('rejectKodeLaporan').textContent = kodeLaporan;
+            document.getElementById('rejectForm').action = '/risk-reports/' + reportId + '/status';
+            document.getElementById('rejectModal').classList.remove('hidden');
+            document.getElementById('alasanReject').value = '';
+            document.getElementById('charCount').textContent = '0 karakter (min. 10)';
+            document.getElementById('submitReject').disabled = true;
+        }
+
+        function closeRejectModal() {
+            document.getElementById('rejectModal').classList.add('hidden');
+        }
+
+        // Hitung karakter realtime
+        document.addEventListener('DOMContentLoaded', function() {
+            const alasanInput = document.getElementById('alasanReject');
+            const charCount = document.getElementById('charCount');
+            const submitBtn = document.getElementById('submitReject');
+
+            alasanInput.addEventListener('input', function() {
+                const len = this.value.length;
+                charCount.textContent = len + ' karakter (min. 10)';
+                submitBtn.disabled = len < 10;
+            });
+
+            // Tutup modal kalo klik backdrop
+            document.getElementById('rejectModal').addEventListener('click', function(e) {
+                if (e.target === this) closeRejectModal();
+            });
+
+            // Client-side table sorting
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('table').forEach(function(table) {
                 const headers = table.querySelectorAll('th.sortable');

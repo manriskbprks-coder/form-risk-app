@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,        // 2. Tentukan jabatan
             UserSeeder::class,        // 3. Rekrut orangnya
             RiskMasterSeeder::class,  // 4. Kasih buku panduan risiko
+            DummyRiskReportSeeder::class, // 5. Data dummy laporan risiko
         ]);
     }
 }

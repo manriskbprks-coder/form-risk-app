@@ -498,13 +498,14 @@ class RiskReportControllerTest extends TestCase
         $this->actingAs($this->kacab)
             ->post(route('risk_reports.update_status', $report->id), [
                 'status' => 'rejected',
+                'alasan_reject' => 'Data kronologis tidak lengkap dan perlu diperbaiki.',
             ])
             ->assertRedirect()
             ->assertSessionHas('success');
 
         $this->assertDatabaseHas('risk_reports', [
             'id' => $report->id,
-            'approval_status' => 'rejected',
+            'approval_status' => 'need_revision',
         ]);
     }
 

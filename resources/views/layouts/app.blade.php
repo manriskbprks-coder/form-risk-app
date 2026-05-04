@@ -104,6 +104,18 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>Review & Tindak Lanjut</span>
+                @if(auth()->user()?->hasRole('kacab'))
+                @php
+                    $pendingReviewCount = \App\Models\RiskReport::where('branch_id', auth()->user()->branch_id)
+                        ->whereIn('approval_status', ['pending_kacab', 'need_revision'])
+                        ->count();
+                @endphp
+                @if($pendingReviewCount > 0)
+                <span class="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold text-white bg-red-500 rounded-full shadow-sm">
+                    {{ $pendingReviewCount > 99 ? '99+' : $pendingReviewCount }}
+                </span>
+                @endif
+                @endif
             </a>
             @endhasanyrole
 
@@ -193,8 +205,32 @@
                     </h1>
                 </div>
 
-                {{-- Right: Profile --}}
+                {{-- Right: Notifications + Profile --}}
                 <div class="flex items-center gap-3">
+                    {{-- Bell Icon --}}
+                    <a href="{{ route('notifications.index') }}" 
+                       class="relative p-2 rounded-lg hover:bg-slate-100 transition group"
+                       x-data="{ unread: 0 }"
+                       x-init="
+                           fetch('{{ route('notifications.unread_count') }}')
+                               .then(r => r.json())
+                               .then(d => { unread = d.count; });
+                           setInterval(() => {
+                               fetch('{{ route('notifications.unread_count') }}')
+                                   .then(r => r.json())
+                                   .then(d => { unread = d.count; });
+                           }, 30000);
+                       ">
+                        <svg class="w-5 h-5 text-slate-500 group-hover:text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                        <span x-show="unread > 0" 
+                              x-text="unread > 99 ? '99+' : unread"
+                              class="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full shadow-sm border-2 border-white"
+                              style="display: none;">
+                        </span>
+                    </a>
+
                     <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition group">
                         <div class="hidden sm:block text-right">
                             <p class="text-sm font-semibold text-slate-800 group-hover:text-indigo-700 transition">{{ Auth::user()->name }}</p>
