@@ -12,6 +12,7 @@ class RiskItem extends Model
     protected $fillable = [
         'nama_risiko',
         'kategori',
+        'sumber_risiko',
         'role_target',
     ];
     

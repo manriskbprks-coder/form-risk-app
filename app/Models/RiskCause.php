@@ -12,6 +12,7 @@ class RiskCause extends Model
     protected $fillable = [
         'risk_item_id',
         'penyebab',
+        'sumber_risiko',
     ];
 
     // Relasi balik: Penyebab ini milik 1 Item

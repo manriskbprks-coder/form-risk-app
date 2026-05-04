@@ -10,12 +10,13 @@
 
     <div class="py-6 sm:py-12" x-data="{ 
         filterRole: 'semua',
-        filterKategori: 'semua',  // <--- TAMBAHIN BARIS INI
+        filterKategori: 'semua',
+        filterSumber: 'semua',
         activeModal: null,
         editCauseModal: false,
-        editData: { id: '', penyebab: '', mitigasi: '' },
-        openEdit(id, penyebab, mitigasi) {
-            this.editData = { id, penyebab, mitigasi };
+        editData: { id: '', penyebab: '', sumber_risiko: '', mitigasi: '' },
+        openEdit(id, penyebab, sumber_risiko, mitigasi) {
+            this.editData = { id, penyebab, sumber_risiko, mitigasi };
             this.editCauseModal = true;
         }
     }">
@@ -50,6 +51,15 @@
                             <option value="non-finansial">Non-Finansial (Risk Event)</option>
                         </select>
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Sumber Risiko Operasional</label>
+                        <select name="sumber_risiko" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm uppercase">
+                            <option value="manusia">Manusia</option>
+                            <option value="proses_internal">Proses Internal</option>
+                            <option value="sistem_teknologi">Sistem Teknologi</option>
+                            <option value="faktor_eksternal">Faktor Eksternal</option>
+                        </select>
+                    </div>
                     <div class="md:col-span-3 flex justify-end pt-2">
                         <button type="submit" class="inline-flex w-full sm:w-auto justify-center items-center px-5 py-2.5 bg-blue-600 rounded-xl font-semibold text-xs text-white uppercase tracking-[0.16em] hover:bg-blue-700 transition shadow-sm">
                             Simpan Pertanyaan
@@ -78,6 +88,17 @@
                         </div>
 
                         <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.16em]">Sumber:</label>
+                            <select x-model="filterSumber" class="flex-1 min-w-[160px] text-xs rounded-xl border-slate-300 focus:ring-blue-500 py-2 px-3 font-semibold bg-white">
+                                <option value="semua">Semua</option>
+                                <option value="manusia">Manusia</option>
+                                <option value="proses_internal">Proses Internal</option>
+                                <option value="sistem_teknologi">Sistem Teknologi</option>
+                                <option value="faktor_eksternal">Faktor Eksternal</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
                             <label class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.16em]">Jabatan:</label>
                             <select x-model="filterRole" class="flex-1 min-w-[160px] text-xs rounded-xl border-slate-300 focus:ring-blue-500 py-2 px-3 font-semibold bg-white">
                                 <option value="semua">Semua</option>
@@ -92,7 +113,7 @@
 
                 <div class="divide-y divide-slate-100">
                     @forelse($riskItems as $item)
-                        <div x-show="(filterRole === 'semua' || filterRole === '{{ strtolower($item->role_target) }}') && (filterKategori === 'semua' || filterKategori === '{{ strtolower($item->kategori) }}')" 
+                        <div x-show="(filterRole === 'semua' || filterRole === '{{ strtolower($item->role_target) }}') && (filterKategori === 'semua' || filterKategori === '{{ strtolower($item->kategori) }}') && (filterSumber === 'semua' || filterSumber === '{{ strtolower($item->sumber_risiko) }}')" 
                              x-transition
                              class="p-4 sm:p-5 hover:bg-slate-50 cursor-pointer transition flex items-start justify-between gap-4 group"
                              @click="activeModal = {{ $item->id }}">
@@ -104,6 +125,14 @@
                                     </span>
                                     <span class="px-2.5 py-1 inline-flex text-[10px] leading-none font-bold rounded-full {{ strtolower($item->kategori) === 'finansial' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700' }} uppercase tracking-[0.16em]">
                                         {{ $item->kategori }}
+                                    </span>
+                                    <span class="px-2.5 py-1 inline-flex text-[10px] leading-none font-bold rounded-full 
+                                        {{ $item->sumber_risiko === 'manusia' ? 'bg-purple-100 text-purple-700' : '' }}
+                                        {{ $item->sumber_risiko === 'proses_internal' ? 'bg-cyan-100 text-cyan-700' : '' }}
+                                        {{ $item->sumber_risiko === 'sistem_teknologi' ? 'bg-orange-100 text-orange-700' : '' }}
+                                        {{ $item->sumber_risiko === 'faktor_eksternal' ? 'bg-teal-100 text-teal-700' : '' }}
+                                    uppercase tracking-[0.16em]">
+                                        {{ str_replace('_', ' ', $item->sumber_risiko) }}
                                     </span>
                                 </div>
                                 <h4 class="text-sm sm:text-base font-semibold text-slate-900 group-hover:text-blue-700 transition leading-snug break-words">{{ $item->nama_risiko }}</h4>
@@ -146,13 +175,21 @@
                                                 
                                                 <div class="flex flex-col md:flex-row gap-0 md:gap-4 border border-gray-200 rounded-lg overflow-hidden group hover:border-blue-300 transition relative">
                                                     
-                                                    <button type="button" @click="openEdit({{ $cause->id }}, '{{ addslashes($cause->penyebab) }}', '{{ addslashes($mitigasiTeks) }}')" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 px-2 py-1 rounded text-[10px] font-bold uppercase transition z-10 border border-yellow-300">
+                                                    <button type="button" @click="openEdit({{ $cause->id }}, '{{ addslashes($cause->penyebab) }}', '{{ $cause->sumber_risiko }}', '{{ addslashes($mitigasiTeks) }}')" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 px-2 py-1 rounded text-[10px] font-bold uppercase transition z-10 border border-yellow-300">
                                                         Edit
                                                     </button>
 
                                                     <div class="w-full md:w-1/2 bg-gray-50 p-3 border-b md:border-b-0 md:border-r border-gray-200">
                                                         <p class="text-[10px] font-bold text-red-500 uppercase mb-1">Akar Penyebab</p>
                                                         <p class="text-sm font-semibold text-gray-800 italic pr-8">"{{ $cause->penyebab }}"</p>
+                                                        <span class="mt-2 inline-block px-2 py-0.5 text-[10px] leading-none font-bold rounded-full 
+                                                            {{ $cause->sumber_risiko === 'manusia' ? 'bg-purple-100 text-purple-700' : '' }}
+                                                            {{ $cause->sumber_risiko === 'proses_internal' ? 'bg-cyan-100 text-cyan-700' : '' }}
+                                                            {{ $cause->sumber_risiko === 'sistem_teknologi' ? 'bg-orange-100 text-orange-700' : '' }}
+                                                            {{ $cause->sumber_risiko === 'faktor_eksternal' ? 'bg-teal-100 text-teal-700' : '' }}
+                                                        uppercase tracking-[0.16em]">
+                                                            {{ str_replace('_', ' ', $cause->sumber_risiko) }}
+                                                        </span>
                                                     </div>
                                                     
                                                     <div class="w-full md:w-1/2 p-3 bg-white">
@@ -176,6 +213,12 @@
                                             <form action="{{ route('admin.risk_master.store_cause', $item->id) }}" method="POST" class="flex flex-col md:flex-row gap-2">
                                                 @csrf
                                                 <input type="text" name="penyebab" required placeholder="Teks Penyebab..." class="text-sm flex-1 border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
+                                                <select name="sumber_risiko" required class="text-sm border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 uppercase">
+                                                    <option value="manusia">Manusia</option>
+                                                    <option value="proses_internal">Proses Internal</option>
+                                                    <option value="sistem_teknologi">Sistem Teknologi</option>
+                                                    <option value="faktor_eksternal">Faktor Eksternal</option>
+                                                </select>
                                                 <input type="text" name="mitigasi" placeholder="Teks Mitigasi (Opsional)..." class="text-sm flex-1 border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
                                                 <button type="submit" class="w-full md:w-auto bg-blue-600 hover:bg-blue-800 text-white font-bold px-4 py-2 rounded text-xs transition shadow-sm uppercase">Simpan</button>
                                             </form>
@@ -213,6 +256,16 @@
                             <div>
                                 <label class="block text-sm font-bold text-gray-700 mb-1">Teks Penyebab <span class="text-red-500">*</span></label>
                                 <input type="text" name="penyebab" x-model="editData.penyebab" required class="block w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-yellow-500 focus:border-yellow-500">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">Sumber Risiko <span class="text-red-500">*</span></label>
+                                <select name="sumber_risiko" x-model="editData.sumber_risiko" required class="block w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-yellow-500 focus:border-yellow-500 uppercase">
+                                    <option value="manusia">Manusia</option>
+                                    <option value="proses_internal">Proses Internal</option>
+                                    <option value="sistem_teknologi">Sistem Teknologi</option>
+                                    <option value="faktor_eksternal">Faktor Eksternal</option>
+                                </select>
                             </div>
                             
                             <div>

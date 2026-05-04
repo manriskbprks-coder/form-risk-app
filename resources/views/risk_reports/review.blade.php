@@ -20,72 +20,99 @@
                 </div>
                 @else
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
-                    <table class="min-w-[1050px] w-full bg-white border border-gray-200">
+                    <table class="min-w-[1400px] w-full bg-white border border-gray-200">
                         <thead class="bg-gray-100">
                             <tr>
-                                <th class="py-3 px-4 border-b text-left text-xs font-semibold text-gray-700 uppercase">Tgl (Lapor/Kejadian/Diket)</th>
-                                <th class="py-3 px-4 border-b text-center text-xs font-semibold text-gray-700 uppercase">Pelapor</th>
-                                <th class="py-3 px-4 border-b text-center text-xs font-semibold text-gray-700 uppercase">Kategori</th>
-                                <th class="py-3 px-4 border-b text-left text-xs font-semibold text-gray-700 uppercase w-1/3">Risiko, Penyebab & Mitigasi</th>
-                                <th class="py-3 px-4 border-b text-left text-xs font-semibold text-gray-700 uppercase">Dampak</th>
-                                <th class="py-3 px-4 border-b text-center text-xs font-semibold text-gray-700 uppercase">Aksi</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="kode">ID Laporan</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="tgl">Tgl Lapor & Ketahui</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="pelapor">Pelapor</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="sumber">Sumber Risiko</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="kategori">Kategori</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider">Risiko, Penyebab & Mitigasi</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="dampak">Dampak</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($reports as $report)
+                            @php
+                            $sumberRisiko = $report->cause->sumber_risiko ?? $report->item->sumber_risiko ?? 'manusia';
+                            $sumberLabels = [
+                                'manusia' => ['label' => 'Manusia', 'color' => 'bg-red-100 text-red-800 border-red-200'],
+                                'proses_internal' => ['label' => 'Proses Internal', 'color' => 'bg-yellow-100 text-yellow-800 border-yellow-200'],
+                                'sistem_teknologi' => ['label' => 'Sistem Teknologi', 'color' => 'bg-blue-100 text-blue-800 border-blue-200'],
+                                'faktor_eksternal' => ['label' => 'Faktor Eksternal', 'color' => 'bg-purple-100 text-purple-800 border-purple-200'],
+                            ];
+                            $sumber = $sumberLabels[$sumberRisiko] ?? $sumberLabels['manusia'];
+                            @endphp
                             <tr class="hover:bg-gray-50 align-middle">
-                                <td class="py-3 px-4 border-b whitespace-nowrap">
-                                    <div class="text-xs font-bold text-blue-700">Lapor: {{ $report->created_at->format('d-m-Y') }}</div>
-                                    <div class="text-xs text-gray-600 mt-1">Kejadian: {{ \Carbon\Carbon::parse($report->tanggal_kejadian)->format('d-m-Y') }}</div>
-                                    <div class="text-xs text-gray-600">Diketahui: {{ \Carbon\Carbon::parse($report->tanggal_diketahui)->format('d-m-Y') }}</div>
+                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->kode_laporan ?? '' }}">
+                                    <span class="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded border border-indigo-200">
+                                        {{ $report->kode_laporan ?? '—' }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 border-b whitespace-nowrap text-center align-middle" data-sort-value="{{ $report->created_at->format('YmdHis') }}">
+                                    <div class="text-xs font-bold text-blue-700">Lapor: {{ $report->created_at->format('d/m/Y H:i') }}</div>
+                                    <div class="text-xs text-gray-600 mt-1">Kejadian: {{ \Carbon\Carbon::parse($report->tanggal_kejadian)->format('d/m/Y') }}</div>
+                                    <div class="text-xs text-gray-600">Diketahui: {{ \Carbon\Carbon::parse($report->tanggal_diketahui)->format('d/m/Y') }}</div>
                                 </td>
 
-                                <td class="py-3 px-4 border-b text-sm align-middle text-center">{{ $report->user->name }}</td>
+                                <td class="px-4 py-3 border-b text-sm font-bold text-gray-800 text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->user->name }}">{{ $report->user->name }}</td>
 
-                                <td class="py-3 px-4 border-b align-middle text-center">
+                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
+                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $sumber['color'] }}">
+                                        {{ $sumber['label'] }}
+                                    </span>
+                                </td>
+
+                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
                                     @if($report->kategori === 'finansial')
-                                    <span class="px-2 py-1 bg-red-100 text-red-800 rounded font-bold text-[10px] uppercase border border-red-200">Finansial</span>
+                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border bg-green-100 text-green-800 border-green-200">Finansial</span>
                                     @else
-                                    <span class="px-2 py-1 bg-orange-100 text-orange-800 rounded font-bold text-[10px] uppercase border border-orange-200">Non-Finansial</span>
+                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border bg-orange-100 text-orange-800 border-orange-200">Non-Finansial</span>
                                     @endif
                                 </td>
 
-                                <td class="py-3 px-4 border-b">
-                                    <span class="block text-sm font-bold text-gray-900">{{ $report->item->nama_risiko ?? $report->other_item_description }}</span>
-                                    <span class="block text-xs text-red-600 font-semibold mt-1">Sebab: {{ $report->cause->penyebab ?? $report->other_cause_description }}</span>
-
-                                    <div class="mt-2 p-2 bg-green-50 rounded border border-green-200">
-                                        <span class="block text-[10px] font-extrabold text-green-800 uppercase tracking-wider mb-1">Tindakan Mitigasi:</span>
-                                        <div class="text-xs text-green-700 space-y-1">
-                                            @if($report->cause && $report->cause->mitigations->isNotEmpty())
-                                            <ul class="list-disc list-inside">
-                                                @foreach($report->cause->mitigations as $mitigasi)
-                                                <li>{{ $mitigasi->mitigasi }}</li>
-                                                @endforeach
-                                            </ul>
-                                            @endif
-                                            @if($report->mitigasi_tambahan)
-                                            <div class="flex gap-1 mt-1 pt-1 border-t border-green-200">
-                                                <span class="font-bold">Tambahan:</span>
-                                                <span class="italic text-gray-800">{{ $report->mitigasi_tambahan }}</span>
-                                            </div>
-                                            @endif
-                                            @if((!$report->cause || $report->cause->mitigations->isEmpty()) && empty($report->mitigasi_tambahan))
-                                            <span class="text-gray-500 italic">- Tidak ada mitigasi terdata -</span>
-                                            @endif
-                                        </div>
+                                <td class="px-4 py-3 border-b align-middle">
+                                    <div class="text-sm font-bold text-gray-900 truncate max-w-[280px]" title="{{ $report->item->nama_risiko ?? $report->other_item_description }}">
+                                        {{ $report->item->nama_risiko ?? $report->other_item_description }}
+                                    </div>
+                                    <div class="mt-1 flex flex-wrap gap-1">
+                                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200 truncate max-w-[260px]" title="{{ $report->cause->penyebab ?? $report->other_cause_description }}">
+                                            <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+                                            {{ $report->cause->penyebab ?? $report->other_cause_description }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-1 flex flex-wrap gap-1">
+                                        @if($report->cause && $report->cause->mitigations->isNotEmpty())
+                                        @foreach($report->cause->mitigations as $mitigasi)
+                                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 truncate max-w-[240px]" title="{{ $mitigasi->mitigasi }}">
+                                            <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                            {{ $mitigasi->mitigasi }}
+                                        </span>
+                                        @endforeach
+                                        @endif
+                                        @if($report->mitigasi_tambahan)
+                                        <span class="inline-flex items-center gap-1 text-[11px] font-medium text-gray-600 bg-gray-50 px-2 py-0.5 rounded border border-gray-200 truncate max-w-[240px]" title="{{ $report->mitigasi_tambahan }}">
+                                            <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            {{ $report->mitigasi_tambahan }}
+                                        </span>
+                                        @endif
+                                        @if((!$report->cause || $report->cause->mitigations->isEmpty()) && empty($report->mitigasi_tambahan))
+                                        <span class="text-[11px] text-gray-400 italic">- Tidak ada mitigasi -</span>
+                                        @endif
                                     </div>
                                 </td>
 
-                                <td class="py-3 px-4 border-b text-sm text-gray-800 align-middle">
+                                <td class="px-4 py-3 border-b text-sm text-gray-800 text-center align-middle">
                                     @if($report->kategori === 'finansial')
-                                    <span class="font-bold">Rp {{ number_format($report->dampak_finansial, 0, ',', '.') }}</span>
+                                    <span class="font-bold whitespace-nowrap">Rp {{ number_format($report->dampak_finansial, 0, ',', '.') }}</span>
                                     @else
-                                    <span class="text-xs italic">{{ $report->dampak_non_finansial }}</span>
+                                    <span class="text-xs italic line-clamp-2 max-w-[160px]" title="{{ $report->dampak_non_finansial }}">{{ $report->dampak_non_finansial }}</span>
                                     @endif
                                 </td>
 
-                                <td class="py-3 px-4 border-b align-middle">
+                                <td class="px-4 py-3 border-b align-middle">
                                     <div class="flex flex-col gap-2 items-center">
                                         <form action="{{ route('risk_reports.update_status', $report->id) }}" method="POST">
                                             @csrf
@@ -116,60 +143,85 @@
                 </div>
                 @else
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
-                    <table class="min-w-[1050px] w-full bg-white border border-gray-200">
+                    <table class="min-w-[1400px] w-full bg-white border border-gray-200">
                         <thead class="bg-gray-100">
                             <tr>
-                                <th class="py-3 px-4 border-b text-left text-xs font-semibold text-gray-700 uppercase">Tgl (Lapor/Kejadian)</th>
-                                <th class="py-3 px-4 border-b text-left text-xs font-semibold text-gray-700 uppercase">Pelapor</th>
-                                <th class="py-3 px-4 border-b text-center text-xs font-semibold text-gray-700 uppercase">Kategori</th>
-                                <th class="py-3 px-4 border-b text-left text-xs font-semibold text-gray-700 uppercase w-1/3">Risiko, Penyebab & Mitigasi</th>
-                                <th class="py-3 px-4 border-b text-center text-xs font-semibold text-gray-700 uppercase">Status Tindak Lanjut</th>
-                                <th class="py-3 px-4 border-b text-center text-xs font-semibold text-gray-700 uppercase">Update Status</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Tgl Lapor & Ketahui</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Pelapor</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Sumber Risiko</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Kategori</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider">Risiko, Penyebab & Mitigasi</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Status Tindak Lanjut</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Update Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($tindakLanjut as $tl)
+                            @php
+                            $sumberRisiko = $tl->cause->sumber_risiko ?? $tl->item->sumber_risiko ?? 'manusia';
+                            $sumberLabels = [
+                                'manusia' => ['label' => 'Manusia', 'color' => 'bg-red-100 text-red-800 border-red-200'],
+                                'proses_internal' => ['label' => 'Proses Internal', 'color' => 'bg-yellow-100 text-yellow-800 border-yellow-200'],
+                                'sistem_teknologi' => ['label' => 'Sistem Teknologi', 'color' => 'bg-blue-100 text-blue-800 border-blue-200'],
+                                'faktor_eksternal' => ['label' => 'Faktor Eksternal', 'color' => 'bg-purple-100 text-purple-800 border-purple-200'],
+                            ];
+                            $sumber = $sumberLabels[$sumberRisiko] ?? $sumberLabels['manusia'];
+                            @endphp
                             <tr class="hover:bg-gray-50 align-middle">
-                                <td class="py-3 px-4 border-b whitespace-nowrap">
-                                    <div class="text-xs font-bold text-blue-700">Lapor: {{ $tl->created_at->format('d-m-Y') }}</div>
-                                    <div class="text-xs text-gray-600 mt-1">Kejadian: {{ \Carbon\Carbon::parse($tl->tanggal_kejadian)->format('d-m-Y') }}</div>
-                                    <div class="text-xs text-gray-600">Diketahui: {{ \Carbon\Carbon::parse($tl->tanggal_diketahui)->format('d-m-Y') }}</div>
+                                <td class="px-4 py-3 border-b whitespace-nowrap text-center align-middle">
+                                    <div class="text-xs font-bold text-blue-700">Lapor: {{ $tl->created_at->format('d/m/Y') }}</div>
+                                    <div class="text-xs text-gray-600 mt-1">Kejadian: {{ \Carbon\Carbon::parse($tl->tanggal_kejadian)->format('d/m/Y') }}</div>
+                                    <div class="text-xs text-gray-600">Diketahui: {{ \Carbon\Carbon::parse($tl->tanggal_diketahui)->format('d/m/Y') }}</div>
                                 </td>
 
-                                <td class="py-3 px-4 border-b text-sm align-middle text-center">{{ $tl->user->name }}</td>
+                                <td class="px-4 py-3 border-b text-sm font-bold text-gray-800 text-center align-middle whitespace-nowrap">{{ $tl->user->name }}</td>
 
-                                <td class="py-3 px-4 border-b align-middle text-center">
+                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
+                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $sumber['color'] }}">
+                                        {{ $sumber['label'] }}
+                                    </span>
+                                </td>
+
+                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
                                     @if($tl->kategori === 'finansial')
-                                    <span class="px-2 py-1 bg-red-100 text-red-800 rounded font-bold text-[10px] uppercase border border-red-200">Finansial</span>
+                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border bg-green-100 text-green-800 border-green-200">Finansial</span>
                                     @else
-                                    <span class="px-2 py-1 bg-orange-100 text-orange-800 rounded font-bold text-[10px] uppercase border border-orange-200">Non-Finansial</span>
+                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border bg-orange-100 text-orange-800 border-orange-200">Non-Finansial</span>
                                     @endif
                                 </td>
 
-                                <td class="py-3 px-4 border-b">
-                                    <span class="block text-sm font-bold text-gray-900">{{ $tl->item->nama_risiko ?? $tl->other_item_description }}</span>
-                                    <span class="block text-xs text-red-600 font-semibold mt-1">Sebab: {{ $tl->cause->penyebab ?? $tl->other_cause_description }}</span>
-                                    <div class="mt-2 p-2 bg-green-50 rounded border border-green-200">
-                                        <span class="block text-[10px] font-extrabold text-green-800 uppercase tracking-wider mb-1">Tindakan Mitigasi:</span>
-                                        <div class="text-xs text-green-700 space-y-1">
-                                            @if($tl->cause && $tl->cause->mitigations->isNotEmpty())
-                                            <ul class="list-disc list-inside">
-                                                @foreach($tl->cause->mitigations as $mitigasi)
-                                                <li>{{ $mitigasi->mitigasi }}</li>
-                                                @endforeach
-                                            </ul>
-                                            @endif
-                                            @if($tl->mitigasi_tambahan)
-                                            <div class="flex gap-1 mt-1 pt-1 border-t border-green-200">
-                                                <span class="font-bold">Tambahan:</span>
-                                                <span class="italic text-gray-800">{{ $tl->mitigasi_tambahan }}</span>
-                                            </div>
-                                            @endif
-                                        </div>
+                                <td class="px-4 py-3 border-b align-middle">
+                                    <div class="text-sm font-bold text-gray-900 truncate max-w-[280px]" title="{{ $tl->item->nama_risiko ?? $tl->other_item_description }}">
+                                        {{ $tl->item->nama_risiko ?? $tl->other_item_description }}
+                                    </div>
+                                    <div class="mt-1 flex flex-wrap gap-1">
+                                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200 truncate max-w-[260px]" title="{{ $tl->cause->penyebab ?? $tl->other_cause_description }}">
+                                            <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+                                            {{ $tl->cause->penyebab ?? $tl->other_cause_description }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-1 flex flex-wrap gap-1">
+                                        @if($tl->cause && $tl->cause->mitigations->isNotEmpty())
+                                        @foreach($tl->cause->mitigations as $mitigasi)
+                                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 truncate max-w-[240px]" title="{{ $mitigasi->mitigasi }}">
+                                            <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                            {{ $mitigasi->mitigasi }}
+                                        </span>
+                                        @endforeach
+                                        @endif
+                                        @if($tl->mitigasi_tambahan)
+                                        <span class="inline-flex items-center gap-1 text-[11px] font-medium text-gray-600 bg-gray-50 px-2 py-0.5 rounded border border-gray-200 truncate max-w-[240px]" title="{{ $tl->mitigasi_tambahan }}">
+                                            <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            {{ $tl->mitigasi_tambahan }}
+                                        </span>
+                                        @endif
+                                        @if((!$tl->cause || $tl->cause->mitigations->isEmpty()) && empty($tl->mitigasi_tambahan))
+                                        <span class="text-[11px] text-gray-400 italic">- Tidak ada mitigasi -</span>
+                                        @endif
                                     </div>
                                 </td>
 
-                                <td class="py-3 px-4 border-b text-sm align-middle text-center">
+                                <td class="px-4 py-3 border-b text-sm text-center align-middle whitespace-nowrap">
                                     @php
                                         $resolutionColors = [
                                             'open' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -183,7 +235,7 @@
                                     </span>
                                 </td>
 
-                                <td class="px-4 py-4 align-middle">
+                                <td class="px-4 py-3 border-b align-middle">
                                     <div class="flex flex-col items-center justify-center gap-2">
                                         <form action="{{ route('risk_reports.add_progress', $tl->id) }}" method="POST" class="w-full flex flex-col items-center gap-2">
                                             @csrf
@@ -219,4 +271,69 @@
 
         </div>
     </div>
+    <style>
+        /* Sorting cursor */
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+        th.sortable:hover {
+            background-color: #e5e7eb;
+        }
+        th.sortable::after {
+            content: ' ↕';
+            font-size: 10px;
+            opacity: 0.4;
+        }
+        th.sortable.asc::after {
+            content: ' ↑';
+            opacity: 1;
+        }
+        th.sortable.desc::after {
+            content: ' ↓';
+            opacity: 1;
+        }
+    </style>
+
+    <script>
+        // Client-side table sorting
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('table').forEach(function(table) {
+                const headers = table.querySelectorAll('th.sortable');
+                const tbody = table.querySelector('tbody');
+
+                headers.forEach(function(header) {
+                    header.addEventListener('click', function() {
+                        const isAsc = this.classList.contains('asc');
+
+                        // Reset all headers
+                        headers.forEach(h => h.classList.remove('asc', 'desc'));
+
+                        // Toggle
+                        this.classList.add(isAsc ? 'desc' : 'asc');
+
+                        const rows = Array.from(tbody.querySelectorAll('tr'));
+                        const dataRows = rows.filter(row => row.querySelector('td[data-sort-value]'));
+
+                        dataRows.sort(function(a, b) {
+                            const tdIndex = Array.from(header.parentElement.children).indexOf(header);
+                            const aTd = a.children[tdIndex];
+                            const bTd = b.children[tdIndex];
+                            let aVal = aTd?.dataset.sortValue || '';
+                            let bVal = bTd?.dataset.sortValue || '';
+
+                            if (!isNaN(aVal) && !isNaN(bVal)) {
+                                return isAsc ? bVal - aVal : aVal - bVal;
+                            }
+                            return isAsc
+                                ? bVal.localeCompare(aVal)
+                                : aVal.localeCompare(bVal);
+                        });
+
+                        dataRows.forEach(row => tbody.appendChild(row));
+                    });
+                });
+            });
+        });
+    </script>
 </x-app-layout>

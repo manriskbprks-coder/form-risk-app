@@ -26,7 +26,6 @@
         id="sidebar"
         class="fixed top-0 left-0 z-30 h-full w-64 lg:w-60 bg-white border-r border-slate-200 shadow-sm transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out flex flex-col overflow-y-auto"
         :class="{ 'translate-x-0': sidebarOpen }"
-        @click.away="sidebarOpen = false"
     >
         {{-- Brand / Logo --}}
         <div class="flex items-center gap-3 px-5 h-16 border-b border-slate-100 shrink-0">
@@ -77,6 +76,24 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
                 <span>Riwayat Saya</span>
+            </a>
+
+            <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-[0.14em] mb-2 mt-6">Form</p>
+
+            <a href="{{ route('form.risiko', 'finansial') }}"
+               class="{{ request()->routeIs('form.risiko') && request()->route('kategori') == 'finansial' ? 'sidebar-link-active' : 'sidebar-link' }}">
+                <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Risiko Finansial</span>
+            </a>
+
+            <a href="{{ route('form.risiko', 'non-finansial') }}"
+               class="{{ request()->routeIs('form.risiko') && request()->route('kategori') == 'non-finansial' ? 'sidebar-link-active' : 'sidebar-link' }}">
+                <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Risiko Non-Finansial</span>
             </a>
             @endhasanyrole
 

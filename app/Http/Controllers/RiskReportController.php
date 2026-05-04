@@ -112,12 +112,42 @@ class RiskReportController extends Controller
         return view('risk_reports.create', compact('riskItems', 'kategori'));
     }
 
+    private function generateKodeLaporan($user): string
+    {
+        // Ambil kode cabang, fallback ke 'HQ'
+        $kodeCabang = $user->branch->kode_cabang ?? 'HQ';
+        
+        // Mapping role ke kode singkat
+        $roleMap = [
+            'teller' => 'TL',
+            'ca' => 'CA',
+            'csr' => 'CS',
+            'security' => 'SC',
+            'kacab' => 'KC',
+        ];
+        $role = $user->primaryRoleName();
+        $kodeRole = $roleMap[$role] ?? 'XX';
+        
+        // TahunBulan
+        $tahunBulan = now()->format('Ym');
+        
+        // Hitung nomor urut di bulan ini
+        $count = RiskReport::whereYear('created_at', now()->year)
+            ->whereMonth('created_at', now()->month)
+            ->count();
+        
+        $nomorUrut = str_pad($count + 1, 4, '0', STR_PAD_LEFT);
+        
+        return "RISK-{$kodeCabang}{$kodeRole}-{$tahunBulan}-{$nomorUrut}";
+    }
+
     public function store(StoreRiskReportRequest $request)
     {
         $user = Auth::user();
         $targetApproval = $user->hasRole('kacab') ? 'approved' : 'pending_kacab';
 
         $report = RiskReport::create([
+            'kode_laporan' => $this->generateKodeLaporan($user),
             'user_id' => $user->id,
             'branch_id' => $user->branch_id,
             'kategori' => $request->kategori,
@@ -127,7 +157,10 @@ class RiskReportController extends Controller
             'other_item_description' => $request->other_item_description,
             'risk_cause_id' => $request->risk_cause_id,
             'other_cause_description' => $request->other_cause_description,
+            'kronologis_kejadian' => $request->kronologis_kejadian,
             'mitigasi_tambahan' => $request->mitigasi_tambahan,
+            'durasi_penyelesaian' => $request->durasi_penyelesaian,
+            'durasi_satuan' => $request->durasi_satuan,
             'dampak_finansial' => $request->dampak_finansial ?? 0,
             'dampak_non_finansial' => $request->dampak_non_finansial,
             'skala_dampak' => $request->skala_dampak,
@@ -237,7 +270,7 @@ class RiskReportController extends Controller
         $totalKejadian = (clone $query)->count();
         $totalRejected = (clone $query)->where('approval_status', 'rejected')->count();
 
-        $reports = $query->orderBy('tanggal_kejadian', 'desc')->get();
+        $reports = $query->orderBy('created_at', 'desc')->get();
 
         return view('risk_reports.index', compact('reports', 'totalLoss', 'totalKejadian', 'totalRejected', 'branches', 'role'));
     }

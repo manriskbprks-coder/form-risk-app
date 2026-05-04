@@ -32,6 +32,7 @@ class StoreRiskReportRequest extends FormRequest
 
             'risk_cause_id' => ['nullable', 'integer', 'exists:risk_causes,id', 'required_without:other_cause_description'],
             'other_cause_description' => ['nullable', 'string', 'max:255', 'required_without:risk_cause_id'],
+            'kronologis_kejadian' => ['required', 'string', 'min_words:20'],
 
             'mitigasi_tambahan' => ['nullable', 'string'],
 

@@ -33,8 +33,95 @@ class RiskMasterSeeder extends Seeder
             'Lemahnya pengawasan dan kontrol karyawan' => 'Meningkatkan pengawasan dan kontrol karyawan',
             'Tidak patuh terhadap prosedur / kebijakan' => 'Teguran / Punishment',
         ];
+
+        // 2. KAMUS SUMBER RISIKO (Mapping penyebab -> sumber risiko)
+        $sumberRisikoKamus = [
+            'Tidak ada / lemahnya double check' => 'proses_internal',
+            'Lalai: Karena tidak paham' => 'manusia',
+            'Lalai: Karena volume banyak / beban kerja banyak' => 'manusia',
+            'Lalai: Karena lupa / tidak sengaja' => 'manusia',
+            'Software belum ada / masih manual' => 'sistem_teknologi',
+            'Itikad buruk karyawan' => 'manusia',
+            'Kurangnya komunikasi, koordinasi dan kerja sama di unit kerja' => 'proses_internal',
+            'Banyaknya volume / beban kerja' => 'proses_internal',
+            'Tidak terampil dan cekatan' => 'manusia',
+            'Peralatan pendukung operasional rusak / tidak memadai' => 'sistem_teknologi',
+            'Software sudah usang' => 'sistem_teknologi',
+            'Bugs (Salah Pemrograman)' => 'sistem_teknologi',
+            'Kabel jaringan rusak / tidak memadai' => 'sistem_teknologi',
+            'Kurang pemahaman / penguasaan akan produk / prosedur / kebijakan bank' => 'manusia',
+            'Tidak ada motivasi, tidak bersemangat kerja' => 'manusia',
+            'Lemahnya pengawasan dan kontrol atasan' => 'proses_internal',
+            'Aktivitas kriminal eksternal' => 'faktor_eksternal',
+            'Lemahnya pengawasan dan kontrol karyawan' => 'proses_internal',
+            'Tidak patuh terhadap prosedur / kebijakan' => 'manusia',
+        ];
+
+        // 3. KAMUS SUMBER RISIKO UNTUK ITEM (Berdasarkan nama risiko)
+        $itemSumberRisikoKamus = [
+            // TELLER - Finansial
+            'Selisih kurang pada perhitungan uang kas besar teller' => 'manusia',
+            'Salah input data transaksi' => 'manusia',
+            'Saldo ATM / CRM melebihi saldo yang dapat diasuransikan' => 'proses_internal',
+            'Selisih kurang pada perhitungan uang kas kecil teller' => 'manusia',
+            'Potensi Risiko Finansial Lainnya' => 'manusia',
+            // TELLER - Non-Finansial
+            'Meningkatnya keluhan nasabah mengenai sikap kurang ramah' => 'manusia',
+            'Adanya tanda tangan nasabah pada formulir yang masih kosong' => 'proses_internal',
+            'Aplikasi Smart Branch System (SBS) gangguan' => 'sistem_teknologi',
+            'Adanya keluhan nasabah mengenai layanan' => 'manusia',
+            'Potensi Risiko Non-Finansial Lainnya' => 'manusia',
+            // CA - Finansial
+            'Salah perhitungan insentif pencairan kredit' => 'manusia',
+            'Selisih kurang pada perhitungan jumlah materai' => 'manusia',
+            'Salah menentukan biaya provisi' => 'manusia',
+            'Salah menentukan bunga pencairan kredit' => 'manusia',
+            'Potensi risiko kerugian finansial lainnya' => 'manusia',
+            // CA - Non-Finansial
+            'Adanya keluhan nasabah mengenai pelayanan' => 'manusia',
+            'Aplikasi Web Internal KS gangguan' => 'sistem_teknologi',
+            'Adanya tanda tangan nasabah pada formulir yang masih kosong' => 'proses_internal',
+            'Aplikasi T24 gangguan' => 'sistem_teknologi',
+            'Potensi risiko kerugian non finansial lainnya' => 'manusia',
+            // KACAB - Finansial
+            'Salah perhitungan insentif pencairan kredit' => 'manusia',
+            'Selisih kurang pada perhitungan jumlah materai' => 'manusia',
+            'Selisih kurang pada perhitungan uang kas besar teller' => 'manusia',
+            'Saldo ATM / CRM melebihi saldo yang dapat diasuransikan' => 'proses_internal',
+            'Potensi Risiko Finansial Lainnya' => 'manusia',
+            // KACAB - Non-Finansial
+            'Adanya tanda tangan nasabah pada formulir yang masih kosong' => 'proses_internal',
+            'Aplikasi Web Internal KS gangguan' => 'sistem_teknologi',
+            'Adanya keluhan nasabah mengenai pelayanan' => 'manusia',
+            'Aplikasi T24 gangguan' => 'sistem_teknologi',
+            'Potensi risiko kerugian non finansial lainnya' => 'manusia',
+            // CSR - Finansial
+            'Salah menentukan biaya provisi' => 'manusia',
+            'Salah menentukan bunga pencairan kredit' => 'manusia',
+            'Salah menentukan bunga deposito' => 'manusia',
+            'Salah menentukan biaya fidusia' => 'manusia',
+            'Potensi risiko kerugian finansial lainnya' => 'manusia',
+            // CSR - Non-Finansial
+            'Adanya keluhan nasabah mengenai pelayanan' => 'manusia',
+            'Meningkatnya keluhan nasabah mengenai sikap kurang ramah' => 'manusia',
+            'Aplikasi T24 gangguan' => 'sistem_teknologi',
+            'Meningkatnya keluhan nasabah mengenai ketidakpahaman produk' => 'manusia',
+            'Potensi risiko kerugian non finansial lainnya' => 'manusia',
+            // SECURITY - Finansial
+            'Tidak melakukan pengawalan ketika melakukan replenish ATM/CRM' => 'manusia',
+            'Adanya pencurian / perampokan uang tunai' => 'faktor_eksternal',
+            'Adanya skimming di ATM / CRM' => 'faktor_eksternal',
+            'Tidak melakukan pengamanan sesuai dengan ketentuan' => 'manusia',
+            'Potensi risiko kerugian finansial lainnya' => 'manusia',
+            // SECURITY - Non-Finansial
+            'Adanya keluhan nasabah mengenai pelayanan' => 'manusia',
+            'Sering meninggalkan tempat kerja pada saat jam kantor' => 'manusia',
+            'Meningkatnya keluhan nasabah mengenai sikap kurang ramah' => 'manusia',
+            'Meningkatnya keluhan nasabah mengenai ketidakpahaman produk' => 'manusia',
+            'Potensi risiko kerugian non finansial lainnya' => 'manusia',
+        ];
             
-        // 2. DATA ITEM & PENYEBAB (Digabung: TELLER & KACAB)
+        // 4. DATA ITEM & PENYEBAB (Digabung: TELLER & KACAB)
         $masterData = [
             // ==========================================
             // SOAL UNTUK TELLER
@@ -537,26 +624,28 @@ class RiskMasterSeeder extends Seeder
             ]
         ];
 
-        // 3. EKSEKUSI PENYUNTIKAN
+        // 5. EKSEKUSI PENYUNTIKAN
         foreach ($masterData as $data) {
             // 1. Insert Item dan pastikan kategori ikut dimasukkan
-            $item = \App\Models\RiskItem::create([
+            $item = RiskItem::create([
                 'nama_risiko' => $data['nama_risiko'],
                 'role_target' => $data['role_target'],
-                'kategori'    => $data['kategori'] ?? 'finansial', // <-- INI YANG BIKIN DATA LU TADI GAGAL MASUK
+                'kategori'    => $data['kategori'] ?? 'finansial',
+                'sumber_risiko' => $itemSumberRisikoKamus[$data['nama_risiko']] ?? 'manusia',
             ]);
 
             // 2. Insert Causes & Mitigations
             if (isset($data['causes'])) {
                 foreach ($data['causes'] as $penyebab) {
-                    $cause = \App\Models\RiskCause::create([
+                    $cause = RiskCause::create([
                         'risk_item_id' => $item->id,
                         'penyebab' => $penyebab,
+                        'sumber_risiko' => $sumberRisikoKamus[$penyebab] ?? 'manusia',
                     ]);
 
                     // Cek di kamus, ada nggak mitigasi otomatisnya?
                     if (array_key_exists($penyebab, $mitigasiKamus)) {
-                        \App\Models\RiskMitigation::create([
+                        RiskMitigation::create([
                             'risk_cause_id' => $cause->id,
                             'mitigasi' => $mitigasiKamus[$penyebab],
                         ]);
@@ -565,6 +654,6 @@ class RiskMasterSeeder extends Seeder
             }
         }
         
-        $this->command->info('Kamus Risiko & Mitigasi Cerdas berhasil diisi!');
+        $this->command->info('Kamus Risiko & Mitigasi Cerdas berhasil diisi dengan sumber risiko!');
     }
 }

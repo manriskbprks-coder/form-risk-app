@@ -23,10 +23,11 @@ class RiskMasterController extends Controller
         $request->validate([
             'nama_risiko' => 'required|string|max:255',
             'kategori' => 'required|in:finansial,non-finansial',
+            'sumber_risiko' => 'required|in:manusia,proses_internal,sistem_teknologi,faktor_eksternal',
             'role_target' => 'required|in:teller,ca,csr,security,kacab,korwil',
         ]);
 
-        RiskItem::create($request->only(['nama_risiko', 'kategori', 'role_target']));
+        RiskItem::create($request->only(['nama_risiko', 'kategori', 'sumber_risiko', 'role_target']));
         return back()->with('success', 'Pertanyaan risiko baru berhasil ditambahkan!');
     }
 
@@ -35,12 +36,14 @@ class RiskMasterController extends Controller
     {
         $request->validate([
             'penyebab' => 'required|string|max:255',
+            'sumber_risiko' => 'required|in:manusia,proses_internal,sistem_teknologi,faktor_eksternal',
             'mitigasi' => 'nullable|string|max:255',
         ]);
 
         $cause = RiskCause::create([
             'risk_item_id' => $itemId,
-            'penyebab' => $request->penyebab
+            'penyebab' => $request->penyebab,
+            'sumber_risiko' => $request->sumber_risiko,
         ]);
 
         if ($request->mitigasi) {
@@ -80,11 +83,15 @@ class RiskMasterController extends Controller
     {
         $request->validate([
             'penyebab' => 'required|string|max:255',
+            'sumber_risiko' => 'required|in:manusia,proses_internal,sistem_teknologi,faktor_eksternal',
             'mitigasi' => 'nullable|string|max:255'
         ]);
 
         $cause = RiskCause::findOrFail($id);
-        $cause->update(['penyebab' => $request->penyebab]);
+        $cause->update([
+            'penyebab' => $request->penyebab,
+            'sumber_risiko' => $request->sumber_risiko,
+        ]);
 
         if ($request->filled('mitigasi')) {
             $mitigation = $cause->mitigations()->first();

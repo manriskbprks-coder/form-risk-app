@@ -10,13 +10,15 @@ class RiskReport extends Model
     use HasFactory;
 
     protected $fillable = [
+        'kode_laporan',
         'user_id', 'branch_id', 'tanggal_kejadian', 'tanggal_diketahui',
         'risk_item_id', 'other_item_description', 'risk_cause_id',
-        'other_cause_description', 'mitigasi_tambahan', 
+        'other_cause_description', 'kronologis_kejadian', 'mitigasi_tambahan',
+        'durasi_penyelesaian', 'durasi_satuan',
         'dampak_finansial', 
-        'dampak_non_finansial', // TAMBAHIN INI
-        'skala_dampak', // <-- TAMBAHIN INI
-        'kategori',             // TAMBAHIN INI JUGA
+        'dampak_non_finansial',
+        'skala_dampak',
+        'kategori',
         'approval_status', 'resolution_status'
     ];
 
