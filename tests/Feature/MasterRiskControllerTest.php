@@ -117,6 +117,7 @@ class MasterRiskControllerTest extends TestCase
             ->from(route('admin.risk_master.index'))
             ->post(route('admin.risk_master.store_cause', $item->id), [
                 'penyebab' => str_repeat('a', 256),
+                'sumber_risiko' => 'manusia',
             ])
             ->assertRedirect(route('admin.risk_master.index'))
             ->assertSessionHasErrors('penyebab');
@@ -157,6 +158,7 @@ class MasterRiskControllerTest extends TestCase
         $this->actingAs($this->manriskUser)
             ->post(route('admin.risk_master.store_cause', $item->id), [
                 'penyebab' => 'Kelalaian Operasional',
+                'sumber_risiko' => 'manusia',
             ])
             ->assertRedirect()
             ->assertSessionHas('success');
@@ -193,10 +195,12 @@ class MasterRiskControllerTest extends TestCase
         $this->actingAs($this->manriskUser)
             ->post(route('admin.risk_master.store_cause', $item->id), [
                 'penyebab' => 'Penyebab Pertama',
+                'sumber_risiko' => 'manusia',
             ]);
         $this->actingAs($this->manriskUser)
             ->post(route('admin.risk_master.store_cause', $item->id), [
                 'penyebab' => 'Penyebab Kedua',
+                'sumber_risiko' => 'proses_internal',
             ]);
 
         $this->assertDatabaseHas('risk_causes', [
@@ -240,6 +244,7 @@ class MasterRiskControllerTest extends TestCase
         $this->actingAs($this->manriskUser)
             ->post(route('admin.risk_master.store_cause', 99999), [
                 'penyebab' => 'Akan gagal karena FK constraint',
+                'sumber_risiko' => 'manusia',
             ])
             ->assertStatus(500);
     }
@@ -269,5 +274,258 @@ class MasterRiskControllerTest extends TestCase
         $this->assertCount(1, $items);
         $this->assertTrue($items->first()->relationLoaded('causes'));
         $this->assertTrue($items->first()->causes->first()->relationLoaded('mitigations'));
+    }
+
+    // -----------------------------------------------------------------------
+    //  STORE ITEM — HAPPY & SAD PATHS
+    // -----------------------------------------------------------------------
+
+    #[Test]
+    public function manrisk_user_can_store_a_new_risk_item()
+    {
+        $this->actingAs($this->manriskUser)
+            ->post(route('admin.risk_master.store_item'), [
+                'nama_risiko' => 'Kehilangan Uang Tunai',
+                'kategori' => 'finansial',
+                'sumber_risiko' => 'manusia',
+                'role_target' => 'teller',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('risk_items', [
+            'nama_risiko' => 'Kehilangan Uang Tunai',
+            'kategori' => 'finansial',
+            'sumber_risiko' => 'manusia',
+            'role_target' => 'teller',
+        ]);
+    }
+
+    #[Test]
+    public function store_item_validates_required_fields()
+    {
+        $this->actingAs($this->manriskUser)
+            ->from(route('admin.risk_master.index'))
+            ->post(route('admin.risk_master.store_item'), [
+                'nama_risiko' => '',
+                'kategori' => '',
+                'sumber_risiko' => '',
+                'role_target' => '',
+            ])
+            ->assertRedirect(route('admin.risk_master.index'))
+            ->assertSessionHasErrors(['nama_risiko', 'kategori', 'sumber_risiko', 'role_target']);
+    }
+
+    #[Test]
+    public function store_item_validates_invalid_kategori()
+    {
+        $this->actingAs($this->manriskUser)
+            ->from(route('admin.risk_master.index'))
+            ->post(route('admin.risk_master.store_item'), [
+                'nama_risiko' => 'Risiko Test',
+                'kategori' => 'invalid',
+                'sumber_risiko' => 'manusia',
+                'role_target' => 'teller',
+            ])
+            ->assertRedirect(route('admin.risk_master.index'))
+            ->assertSessionHasErrors('kategori');
+    }
+
+    #[Test]
+    public function store_item_validates_invalid_sumber_risiko()
+    {
+        $this->actingAs($this->manriskUser)
+            ->from(route('admin.risk_master.index'))
+            ->post(route('admin.risk_master.store_item'), [
+                'nama_risiko' => 'Risiko Test',
+                'kategori' => 'finansial',
+                'sumber_risiko' => 'invalid',
+                'role_target' => 'teller',
+            ])
+            ->assertRedirect(route('admin.risk_master.index'))
+            ->assertSessionHasErrors('sumber_risiko');
+    }
+
+    #[Test]
+    public function store_item_validates_invalid_role_target()
+    {
+        $this->actingAs($this->manriskUser)
+            ->from(route('admin.risk_master.index'))
+            ->post(route('admin.risk_master.store_item'), [
+                'nama_risiko' => 'Risiko Test',
+                'kategori' => 'finansial',
+                'sumber_risiko' => 'manusia',
+                'role_target' => 'invalid',
+            ])
+            ->assertRedirect(route('admin.risk_master.index'))
+            ->assertSessionHasErrors('role_target');
+    }
+
+    // -----------------------------------------------------------------------
+    //  UPDATE CAUSE — HAPPY & SAD PATHS
+    // -----------------------------------------------------------------------
+
+    #[Test]
+    public function manrisk_user_can_update_cause()
+    {
+        $cause = RiskCause::factory()->create([
+            'penyebab' => 'Penyebab Lama',
+            'sumber_risiko' => 'manusia',
+        ]);
+
+        $this->actingAs($this->manriskUser)
+            ->patch(route('admin.risk_master.update_cause', $cause->id), [
+                'penyebab' => 'Penyebab Baru',
+                'sumber_risiko' => 'proses_internal',
+                'mitigasi' => 'Mitigasi baru',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('risk_causes', [
+            'id' => $cause->id,
+            'penyebab' => 'Penyebab Baru',
+            'sumber_risiko' => 'proses_internal',
+        ]);
+
+        $this->assertDatabaseHas('risk_mitigations', [
+            'risk_cause_id' => $cause->id,
+            'mitigasi' => 'Mitigasi baru',
+        ]);
+    }
+
+    #[Test]
+    public function update_cause_validates_required_fields()
+    {
+        $cause = RiskCause::factory()->create();
+
+        $this->actingAs($this->manriskUser)
+            ->from(route('admin.risk_master.index'))
+            ->patch(route('admin.risk_master.update_cause', $cause->id), [
+                'penyebab' => '',
+                'sumber_risiko' => '',
+            ])
+            ->assertRedirect(route('admin.risk_master.index'))
+            ->assertSessionHasErrors(['penyebab', 'sumber_risiko']);
+    }
+
+    #[Test]
+    public function update_cause_fails_when_cause_does_not_exist()
+    {
+        $this->actingAs($this->manriskUser)
+            ->patch(route('admin.risk_master.update_cause', 99999), [
+                'penyebab' => 'Penyebab Baru',
+                'sumber_risiko' => 'manusia',
+            ])
+            ->assertNotFound();
+    }
+
+    // -----------------------------------------------------------------------
+    //  DESTROY ITEM — HAPPY & SAD PATHS
+    // -----------------------------------------------------------------------
+
+    #[Test]
+    public function manrisk_user_can_destroy_risk_item()
+    {
+        $item = RiskItem::factory()->create();
+
+        $this->actingAs($this->manriskUser)
+            ->delete(route('admin.risk_master.destroy_item', $item->id))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('risk_items', ['id' => $item->id]);
+    }
+
+    #[Test]
+    public function destroy_item_fails_when_item_does_not_exist()
+    {
+        $this->actingAs($this->manriskUser)
+            ->delete(route('admin.risk_master.destroy_item', 99999))
+            ->assertNotFound();
+    }
+
+    #[Test]
+    public function user_without_manrisk_role_cannot_destroy_item()
+    {
+        $item = RiskItem::factory()->create();
+
+        $this->actingAs($this->nonManriskUser)
+            ->delete(route('admin.risk_master.destroy_item', $item->id))
+            ->assertForbidden();
+    }
+
+    // -----------------------------------------------------------------------
+    //  STORE CAUSE WITH MITIGASI — BUNDLING
+    // -----------------------------------------------------------------------
+
+    #[Test]
+    public function manrisk_user_can_store_cause_with_mitigasi()
+    {
+        $item = RiskItem::factory()->create();
+
+        $this->actingAs($this->manriskUser)
+            ->post(route('admin.risk_master.store_cause', $item->id), [
+                'penyebab' => 'Penyebab dengan mitigasi',
+                'sumber_risiko' => 'sistem_teknologi',
+                'mitigasi' => 'Mitigasi langsung',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('risk_causes', [
+            'risk_item_id' => $item->id,
+            'penyebab' => 'Penyebab dengan mitigasi',
+            'sumber_risiko' => 'sistem_teknologi',
+        ]);
+
+        $this->assertDatabaseHas('risk_mitigations', [
+            'mitigasi' => 'Mitigasi langsung',
+        ]);
+    }
+
+    #[Test]
+    public function store_cause_validates_sumber_risiko()
+    {
+        $item = RiskItem::factory()->create();
+
+        $this->actingAs($this->manriskUser)
+            ->from(route('admin.risk_master.index'))
+            ->post(route('admin.risk_master.store_cause', $item->id), [
+                'penyebab' => 'Penyebab',
+                'sumber_risiko' => 'invalid',
+            ])
+            ->assertRedirect(route('admin.risk_master.index'))
+            ->assertSessionHasErrors('sumber_risiko');
+    }
+
+    // -----------------------------------------------------------------------
+    //  STORE ITEM — AUTHORIZATION
+    // -----------------------------------------------------------------------
+
+    #[Test]
+    public function user_without_manrisk_role_cannot_store_item()
+    {
+        $this->actingAs($this->nonManriskUser)
+            ->post(route('admin.risk_master.store_item'), [
+                'nama_risiko' => 'Risiko Baru',
+                'kategori' => 'finansial',
+                'sumber_risiko' => 'manusia',
+                'role_target' => 'teller',
+            ])
+            ->assertForbidden();
+    }
+
+    #[Test]
+    public function user_without_manrisk_role_cannot_update_cause()
+    {
+        $cause = RiskCause::factory()->create();
+
+        $this->actingAs($this->nonManriskUser)
+            ->patch(route('admin.risk_master.update_cause', $cause->id), [
+                'penyebab' => 'Update',
+                'sumber_risiko' => 'manusia',
+            ])
+            ->assertForbidden();
     }
 }

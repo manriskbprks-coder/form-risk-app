@@ -44,4 +44,78 @@
             </x-primary-button>
         </div>
     </form>
+
+    {{-- =============================================================
+         LOGIN ERROR POP-UP MODAL — Vanilla JS (biar pasti jalan)
+         ============================================================= --}}
+    @if($errors->has('username') || $errors->has('password') || $errors->has('email'))
+    <div id="loginErrorModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        {{-- Overlay --}}
+        <div id="loginErrorOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+
+        {{-- Modal Panel --}}
+        <div class="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+            {{-- Header --}}
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-rose-50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-rose-800">Login Gagal</h3>
+                        <p class="text-sm text-rose-600">Terjadi kesalahan saat masuk</p>
+                    </div>
+                </div>
+                <button onclick="closeLoginModal()" class="text-rose-400 hover:text-rose-600 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            {{-- Body --}}
+            <div class="px-6 py-5">
+                <div class="flex items-start gap-3 p-4 bg-rose-50 rounded-lg border border-rose-200">
+                    <svg class="w-5 h-5 shrink-0 text-rose-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <div>
+                        <p class="text-sm font-semibold text-rose-800">
+                            @if($errors->has('username') && $errors->has('password'))
+                                Username dan Password tidak sesuai dengan data kami.
+                            @elseif($errors->has('username'))
+                                Username tidak ditemukan atau tidak sesuai.
+                            @else
+                                Password yang Anda masukkan salah.
+                            @endif
+                        </p>
+                        <p class="text-xs text-rose-600 mt-1">Silakan periksa kembali dan coba lagi.</p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Footer --}}
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                <button onclick="closeLoginModal()" class="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-sm px-5 py-2.5 rounded-lg shadow-sm transition duration-150">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function closeLoginModal() {
+            var modal = document.getElementById('loginErrorModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        document.getElementById('loginErrorOverlay').addEventListener('click', function() {
+            closeLoginModal();
+        });
+    </script>
+    @endif
 </x-guest-layout>

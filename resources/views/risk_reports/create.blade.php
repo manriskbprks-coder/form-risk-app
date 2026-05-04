@@ -9,6 +9,35 @@
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 sm:p-6">
 
+                {{-- =============================================================
+                     ERROR SUMMARY — Muncul kalau ada error validasi
+                     ============================================================= --}}
+                @if($errors->any())
+                <div
+                    x-data="{ show: true }"
+                    x-show="show"
+                    class="mb-6 p-4 bg-rose-50 border-l-4 border-rose-500 rounded-r-lg"
+                    role="alert"
+                >
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-sm font-bold text-rose-800">Terdapat {{ $errors->count() }} kesalahan dalam pengisian form</h4>
+                            <p class="text-xs text-rose-600 mt-0.5">Silakan perbaiki data yang ditandai dengan warna merah di bawah ini.</p>
+                        </div>
+                        <button @click="show = false" class="text-rose-400 hover:text-rose-600 transition shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                @endif
+
                 <form action="{{ route('form.risiko.store') }}" method="POST" id="riskForm">
                     @csrf
 
@@ -18,11 +47,17 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Tanggal Kejadian <span class="text-red-500">*</span></label>
-                            <input type="date" name="tanggal_kejadian" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                            <input type="date" name="tanggal_kejadian" value="{{ old('tanggal_kejadian') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm @error('tanggal_kejadian') border-red-500 bg-red-50 @enderror" required>
+                            @error('tanggal_kejadian')
+                            <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Tanggal Diketahui <span class="text-red-500">*</span></label>
-                            <input type="date" name="tanggal_diketahui" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                            <input type="date" name="tanggal_diketahui" value="{{ old('tanggal_diketahui') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm @error('tanggal_diketahui') border-red-500 bg-red-50 @enderror" required>
+                            @error('tanggal_diketahui')
+                            <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
 
@@ -30,26 +65,38 @@
 
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700">Pilih Potensi Risiko <span class="text-red-500">*</span></label>
-                        <select id="riskItemSelect" name="risk_item_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                        <select id="riskItemSelect" name="risk_item_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm @error('risk_item_id') border-red-500 bg-red-50 @enderror" required>
                             <option value="">-- Pilih Potensi Risiko --</option>
                             @foreach($riskItems as $item)
-                            <option value="{{ $item->id }}" data-sumber-risiko="{{ $item->sumber_risiko }}">{{ $item->nama_risiko }}</option>
+                            <option value="{{ $item->id }}" data-sumber-risiko="{{ $item->sumber_risiko }}" {{ old('risk_item_id') == $item->id ? 'selected' : '' }}>{{ $item->nama_risiko }}</option>
                             @endforeach
                         </select>
+                        @error('risk_item_id')
+                        <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
                     <div id="otherItemContainer" class="mt-3 hidden p-3 bg-red-50 border border-red-200 rounded">
                         <label class="block text-sm font-medium text-red-700">Sebutkan Potensi Risiko Tersebut <span class="text-red-500">*</span></label>
-                        <input type="text" name="other_item_description" id="otherItemInput" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Ketik jenis risiko di sini...">
+                        <input type="text" name="other_item_description" id="otherItemInput" value="{{ old('other_item_description') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm @error('other_item_description') border-red-500 bg-red-50 @enderror" placeholder="Ketik jenis risiko di sini...">
+                        @error('other_item_description')
+                        <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
                     <div id="otherCauseContainer" class="mt-3 hidden p-3 bg-yellow-50 border border-yellow-200 rounded">
                         <label class="block text-sm font-medium text-yellow-700">Sebutkan Penyebab Risiko Tersebut <span class="text-red-500">*</span></label>
-                        <input type="text" name="other_cause_description" id="otherCauseInput" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Ketik penyebab detail di sini...">
+                        <input type="text" name="other_cause_description" id="otherCauseInput" value="{{ old('other_cause_description') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm @error('other_cause_description') border-red-500 bg-red-50 @enderror" placeholder="Ketik penyebab detail di sini...">
+                        @error('other_cause_description')
+                        <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
                     <div id="causeContainer" class="mb-4 hidden">
                         <label class="block text-sm font-medium text-gray-700">Apa penyebabnya? <span class="text-red-500">*</span></label>
-                        <select id="riskCauseSelect" name="risk_cause_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        <select id="riskCauseSelect" name="risk_cause_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm @error('risk_cause_id') border-red-500 bg-red-50 @enderror">
                             <option value="">-- Pilih Penyebab --</option>
                         </select>
+                        @error('risk_cause_id')
+                        <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     <!-- KRONOLOGIS KEJADIAN -->
@@ -58,7 +105,7 @@
                             📝 Kronologis Kejadian <span class="text-red-500">*</span>
                         </label>
                         <p class="text-xs text-gray-500 mb-2">Jelaskan secara detail bagaimana kejadian tersebut bisa terjadi (minimal 20 kata).</p>
-                        <textarea name="kronologis_kejadian" rows="4" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Contoh: Nasabah datang ke teller untuk melakukan setoran tunai sebesar Rp 5.000.000, namun teller salah input nominal sehingga terjadi selisih kas..."></textarea>
+                        <textarea name="kronologis_kejadian" rows="4" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('kronologis_kejadian') border-red-500 bg-red-50 @enderror" placeholder="Contoh: Nasabah datang ke teller untuk melakukan setoran tunai sebesar Rp 5.000.000, namun teller salah input nominal sehingga terjadi selisih kas...">{{ old('kronologis_kejadian') }}</textarea>
                         @error('kronologis_kejadian')
                         <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
                         @enderror
@@ -76,20 +123,26 @@
                         </label>
                         <p class="text-xs text-orange-600 mb-2">Berapa lama waktu yang dibutuhkan untuk menyelesaikan masalah ini?</p>
                         <div class="flex gap-2 items-center">
-                            <input type="number" name="durasi_penyelesaian" id="durasiInput" min="1" class="mt-1 block w-full rounded-md border-orange-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm" placeholder="Contoh: 2">
+                            <input type="number" name="durasi_penyelesaian" id="durasiInput" value="{{ old('durasi_penyelesaian') }}" min="1" class="mt-1 block w-full rounded-md border-orange-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm @error('durasi_penyelesaian') border-red-500 bg-red-50 @enderror" placeholder="Contoh: 2">
                             <select name="durasi_satuan" id="durasiSatuan" class="mt-1 rounded-md border-orange-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
-                                <option value="menit">Menit</option>
-                                <option value="jam">Jam</option>
-                                <option value="hari">Hari</option>
-                                <option value="minggu">Minggu</option>
-                                <option value="bulan">Bulan</option>
+                                <option value="menit" {{ old('durasi_satuan') == 'menit' ? 'selected' : '' }}>Menit</option>
+                                <option value="jam" {{ old('durasi_satuan') == 'jam' ? 'selected' : '' }}>Jam</option>
+                                <option value="hari" {{ old('durasi_satuan') == 'hari' ? 'selected' : '' }}>Hari</option>
+                                <option value="minggu" {{ old('durasi_satuan') == 'minggu' ? 'selected' : '' }}>Minggu</option>
+                                <option value="bulan" {{ old('durasi_satuan') == 'bulan' ? 'selected' : '' }}>Bulan</option>
                             </select>
                         </div>
+                        @error('durasi_penyelesaian')
+                        <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700">Apakah ada mitigasi tambahan yang lain?</label>
-                        <textarea name="mitigasi_tambahan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" rows="2" placeholder="Ketik mitigasi tambahan di sini..."></textarea>
+                        <textarea name="mitigasi_tambahan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm @error('mitigasi_tambahan') border-red-500 bg-red-50 @enderror" rows="2" placeholder="Ketik mitigasi tambahan di sini...">{{ old('mitigasi_tambahan') }}</textarea>
+                        @error('mitigasi_tambahan')
+                        <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     @if($kategori === 'finansial')
@@ -98,7 +151,10 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Seberapa besar kerugian (Rp) <span class="text-red-500">*</span></label>
-                        <input type="number" name="dampak_finansial" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Contoh: 150000">
+                        <input type="number" name="dampak_finansial" value="{{ old('dampak_finansial') }}" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('dampak_finansial') border-red-500 bg-red-50 @enderror" placeholder="Contoh: 150000">
+                        @error('dampak_finansial')
+                        <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
                     @else
                     <div class="mt-8 border-b pb-2 mb-4">
@@ -108,33 +164,39 @@
                     <div class="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
                         <label class="block text-sm font-bold text-gray-800 mb-2">Seberapa besar dampak kerugian yang timbul? <span class="text-red-500">*</span></label>
                         <div class="space-y-3">
-                            <label class="flex items-center p-3 border border-gray-300 rounded hover:bg-white cursor-pointer transition">
-                                <input type="radio" name="skala_dampak" value="Sangat Tinggi" required class="h-4 w-4 text-orange-600 focus:ring-orange-500">
+                            <label class="flex items-center p-3 border border-gray-300 rounded hover:bg-white cursor-pointer transition @error('skala_dampak') border-red-500 bg-red-50 @enderror">
+                                <input type="radio" name="skala_dampak" value="Sangat Tinggi" required class="h-4 w-4 text-orange-600 focus:ring-orange-500" {{ old('skala_dampak') == 'Sangat Tinggi' ? 'checked' : '' }}>
                                 <span class="ml-3 text-sm font-bold text-gray-700">Sangat Tinggi</span>
                             </label>
                             <label class="flex items-center p-3 border border-gray-300 rounded hover:bg-white cursor-pointer transition">
-                                <input type="radio" name="skala_dampak" value="Tinggi" class="h-4 w-4 text-orange-600 focus:ring-orange-500">
+                                <input type="radio" name="skala_dampak" value="Tinggi" class="h-4 w-4 text-orange-600 focus:ring-orange-500" {{ old('skala_dampak') == 'Tinggi' ? 'checked' : '' }}>
                                 <span class="ml-3 text-sm font-bold text-gray-700">Tinggi</span>
                             </label>
                             <label class="flex items-center p-3 border border-gray-300 rounded hover:bg-white cursor-pointer transition">
-                                <input type="radio" name="skala_dampak" value="Sedang" class="h-4 w-4 text-orange-600 focus:ring-orange-500">
+                                <input type="radio" name="skala_dampak" value="Sedang" class="h-4 w-4 text-orange-600 focus:ring-orange-500" {{ old('skala_dampak') == 'Sedang' ? 'checked' : '' }}>
                                 <span class="ml-3 text-sm font-bold text-gray-700">Sedang</span>
                             </label>
                             <label class="flex items-center p-3 border border-gray-300 rounded hover:bg-white cursor-pointer transition">
-                                <input type="radio" name="skala_dampak" value="Rendah" class="h-4 w-4 text-orange-600 focus:ring-orange-500">
+                                <input type="radio" name="skala_dampak" value="Rendah" class="h-4 w-4 text-orange-600 focus:ring-orange-500" {{ old('skala_dampak') == 'Rendah' ? 'checked' : '' }}>
                                 <span class="ml-3 text-sm font-bold text-gray-700">Rendah</span>
                             </label>
                             <label class="flex items-center p-3 border border-gray-300 rounded hover:bg-white cursor-pointer transition">
-                                <input type="radio" name="skala_dampak" value="Sangat Rendah" class="h-4 w-4 text-orange-600 focus:ring-orange-500">
+                                <input type="radio" name="skala_dampak" value="Sangat Rendah" class="h-4 w-4 text-orange-600 focus:ring-orange-500" {{ old('skala_dampak') == 'Sangat Rendah' ? 'checked' : '' }}>
                                 <span class="ml-3 text-sm font-bold text-gray-700">Sangat Rendah</span>
                             </label>
                         </div>
+                        @error('skala_dampak')
+                        <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     <div>
                         <label class="block text-sm font-bold text-gray-800">Penjelasan Dampaknya: <span class="text-red-500">*</span></label>
                         <p class="text-xs text-gray-500 mb-2">Berikan penjelasan mengenai dampak riil dari potensi risiko tersebut.</p>
-                        <textarea name="dampak_non_finansial" rows="4" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm" placeholder="Ketik kronologi atau rincian dampak di sini..."></textarea>
+                        <textarea name="dampak_non_finansial" rows="4" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm @error('dampak_non_finansial') border-red-500 bg-red-50 @enderror" placeholder="Ketik kronologi atau rincian dampak di sini...">{{ old('dampak_non_finansial') }}</textarea>
+                        @error('dampak_non_finansial')
+                        <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
                     @endif
 
@@ -146,15 +208,21 @@
                         <div class="md:col-span-2">
                             <label class="block text-sm font-bold text-gray-700">Tindakan Penanganan Awal (Opsional)</label>
                             <p class="text-xs text-gray-500 mb-1">Jika masalah sudah langsung ditangani saat kejadian, ceritakan di sini.</p>
-                            <textarea name="tindakan_awal" rows="2" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Contoh: Selisih kas sudah langsung diganti sore itu juga / Nasabah sudah ditelepon untuk TT ulang..."></textarea>
+                            <textarea name="tindakan_awal" rows="2" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('tindakan_awal') border-red-500 bg-red-50 @enderror" placeholder="Contoh: Selisih kas sudah langsung diganti sore itu juga / Nasabah sudah ditelepon untuk TT ulang...">{{ old('tindakan_awal') }}</textarea>
+                            @error('tindakan_awal')
+                            <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div>
                             <label class="block text-sm font-bold text-gray-700">Status Penyelesaian Saat Ini <span class="text-red-500">*</span></label>
-                            <select name="status_awal" required class="mt-1 w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                <option value="open">Open (Belum ada tindakan sama sekali)</option>
-                                <option value="in_progress">In Progress (Sedang dalam proses penyelesaian)</option>
+                            <select name="status_awal" required class="mt-1 w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('status_awal') border-red-500 bg-red-50 @enderror">
+                                <option value="open" {{ old('status_awal') == 'open' ? 'selected' : '' }}>Open (Belum ada tindakan sama sekali)</option>
+                                <option value="in_progress" {{ old('status_awal') == 'in_progress' ? 'selected' : '' }}>In Progress (Sedang dalam proses penyelesaian)</option>
                             </select>
+                            @error('status_awal')
+                            <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
 
@@ -264,6 +332,14 @@
                     }
                 }
             }
+
+            // Restore old value for cause select if exists
+            const oldCause = '{{ old('risk_cause_id') }}';
+            if (oldCause) {
+                causeSelect.value = oldCause;
+                // Trigger change event to show mitigation
+                causeSelect.dispatchEvent(new Event('change'));
+            }
         });
 
         // Trigger saat milih dropdown penyebab
@@ -310,6 +386,30 @@
                 if (!cekSumberTeknologi(selectedItemId)) {
                     toggleDurasi(false);
                 }
+            }
+        });
+
+        // =============================================================
+        // AUTO-SCROLL KE ERROR PERTAMA SAAT PAGE LOAD
+        // =============================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cari elemen error pertama
+            const firstError = document.querySelector('.border-red-500');
+            if (firstError) {
+                // Scroll smooth ke elemen error
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Kasih highlight effect
+                firstError.classList.add('ring-2', 'ring-red-300');
+                setTimeout(() => {
+                    firstError.classList.remove('ring-2', 'ring-red-300');
+                }, 3000);
+            }
+
+            // Restore old values for dynamic fields
+            const oldItem = '{{ old('risk_item_id') }}';
+            if (oldItem) {
+                itemSelect.value = oldItem;
+                itemSelect.dispatchEvent(new Event('change'));
             }
         });
 
