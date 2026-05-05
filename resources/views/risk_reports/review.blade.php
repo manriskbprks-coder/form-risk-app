@@ -342,25 +342,29 @@
             document.getElementById('rejectModal').classList.add('hidden');
         }
 
-        // Hitung karakter realtime
+        // Hitung karakter realtime + table sorting (gabung dalam 1 DOMContentLoaded)
         document.addEventListener('DOMContentLoaded', function() {
             const alasanInput = document.getElementById('alasanReject');
             const charCount = document.getElementById('charCount');
             const submitBtn = document.getElementById('submitReject');
 
-            alasanInput.addEventListener('input', function() {
-                const len = this.value.length;
-                charCount.textContent = len + ' karakter (min. 10)';
-                submitBtn.disabled = len < 10;
-            });
+            if (alasanInput) {
+                alasanInput.addEventListener('input', function() {
+                    const len = this.value.length;
+                    charCount.textContent = len + ' karakter (min. 10)';
+                    submitBtn.disabled = len < 10;
+                });
+            }
 
             // Tutup modal kalo klik backdrop
-            document.getElementById('rejectModal').addEventListener('click', function(e) {
-                if (e.target === this) closeRejectModal();
-            });
+            const rejectModal = document.getElementById('rejectModal');
+            if (rejectModal) {
+                rejectModal.addEventListener('click', function(e) {
+                    if (e.target === this) closeRejectModal();
+                });
+            }
 
             // Client-side table sorting
-        document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('table').forEach(function(table) {
                 const headers = table.querySelectorAll('th.sortable');
                 const tbody = table.querySelector('tbody');

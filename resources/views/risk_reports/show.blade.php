@@ -175,6 +175,8 @@
                             $isOwner = (int) $report->user_id === (int) auth()->id();
                             $isKacabOwner = $userRole === 'kacab' && (int) $report->branch_id === (int) auth()->user()->branch_id;
                             $canRevise = $isOwner || $isKacabOwner;
+                            $sumberRisiko = $report->cause->sumber_risiko ?? $report->item->sumber_risiko ?? '';
+                            $isSistemTeknologi = $sumberRisiko === 'sistem_teknologi';
                         @endphp
 
                         @if($canRevise)
@@ -216,7 +218,8 @@
                                         class="w-full rounded-md border-gray-300 text-sm focus:ring-orange-500 focus:border-orange-500">{{ old('mitigasi_tambahan', $report->mitigasi_tambahan) }}</textarea>
                                 </div>
 
-                                <div class="grid grid-cols-2 gap-3 mb-3">
+                                {{-- Durasi Penyelesaian — hanya tampil kalo sumber risiko = sistem_teknologi --}}
+                                <div id="durasiRevisiContainer" class="grid grid-cols-2 gap-3 mb-3 {{ $isSistemTeknologi ? '' : 'hidden' }}">
                                     <div>
                                         <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Durasi Penyelesaian</label>
                                         <input type="number" name="durasi_penyelesaian" min="1"
