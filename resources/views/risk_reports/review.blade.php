@@ -144,12 +144,13 @@
                     <table class="min-w-[1400px] w-full bg-white border border-gray-200">
                         <thead class="bg-gray-100">
                             <tr>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Tgl Lapor & Ketahui</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Pelapor</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Sumber Risiko</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Kategori</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="kode">ID Laporan</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="tgl">Tgl Lapor & Ketahui</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="pelapor">Pelapor</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="sumber">Sumber Risiko</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="kategori">Kategori</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider">Risiko, Penyebab & Mitigasi</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Status Tindak Lanjut</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="status">Status Tindak Lanjut</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Update Status</th>
                             </tr>
                         </thead>
@@ -166,13 +167,18 @@
                             $sumber = $sumberLabels[$sumberRisiko] ?? $sumberLabels['manusia'];
                             @endphp
                             <tr class="hover:bg-gray-50 align-middle">
-                                <td class="px-4 py-3 border-b whitespace-nowrap text-center align-middle">
+                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap" data-sort-value="{{ $tl->kode_laporan ?? '' }}">
+                                    <span class="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded border border-indigo-200">
+                                        {{ $tl->kode_laporan ?? '—' }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 border-b whitespace-nowrap text-center align-middle" data-sort-value="{{ $tl->created_at->format('YmdHis') }}">
                                     <div class="text-xs font-bold text-blue-700">Lapor: {{ $tl->created_at->format('d/m/Y') }}</div>
                                     <div class="text-xs text-gray-600 mt-1">Kejadian: {{ \Carbon\Carbon::parse($tl->tanggal_kejadian)->format('d/m/Y') }}</div>
                                     <div class="text-xs text-gray-600">Diketahui: {{ \Carbon\Carbon::parse($tl->tanggal_diketahui)->format('d/m/Y') }}</div>
                                 </td>
 
-                                <td class="px-4 py-3 border-b text-sm font-bold text-gray-800 text-center align-middle whitespace-nowrap">{{ $tl->user->name }}</td>
+                                <td class="px-4 py-3 border-b text-sm font-bold text-gray-800 text-center align-middle whitespace-nowrap" data-sort-value="{{ $tl->user->name }}">{{ $tl->user->name }}</td>
 
                                 <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
                                     <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $sumber['color'] }}">
@@ -364,10 +370,33 @@
                 });
             }
 
-            // Client-side table sorting
+            // Client-side table sorting — default descending (terbaru di atas)
             document.querySelectorAll('table').forEach(function(table) {
                 const headers = table.querySelectorAll('th.sortable');
                 const tbody = table.querySelector('tbody');
+
+                // Auto-sort by first column (Tgl Lapor) descending on load
+                const defaultSortHeader = table.querySelector('th.sortable[data-sort="tgl"]');
+                if (defaultSortHeader) {
+                    setTimeout(function() {
+                        defaultSortHeader.classList.add('desc');
+                        const rows = Array.from(tbody.querySelectorAll('tr'));
+                        const dataRows = rows.filter(row => row.querySelector('td[data-sort-value]'));
+
+                        dataRows.sort(function(a, b) {
+                            const tdIndex = Array.from(defaultSortHeader.parentElement.children).indexOf(defaultSortHeader);
+                            const aTd = a.children[tdIndex];
+                            const bTd = b.children[tdIndex];
+                            let aVal = aTd?.dataset.sortValue || '';
+                            let bVal = bTd?.dataset.sortValue || '';
+
+                            // Descending: terbaru di atas
+                            return bVal.localeCompare(aVal);
+                        });
+
+                        dataRows.forEach(row => tbody.appendChild(row));
+                    }, 50);
+                }
 
                 headers.forEach(function(header) {
                     header.addEventListener('click', function() {

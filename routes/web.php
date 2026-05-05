@@ -18,6 +18,12 @@ Route::get('/dashboard', function () {
     $userBranchId = $user->branch_id;
     $role = $user?->primaryRoleName();
 
+    // ================================================================
+    // FILTER: Periode & Cabang (khusus ManRisk, opsional untuk role lain)
+    // ================================================================
+    $periode = (int) request('periode', 6); // default 6 bulan, 0 = semua waktu
+    $cabangFilter = request('cabang_id', 'all');
+
     // Tentukan branch IDs yang bisa dilihat user
     if ($role === 'korwil') {
         $branchIds = \App\Models\Branch::where('korwil_id', $user->id)
@@ -26,11 +32,18 @@ Route::get('/dashboard', function () {
     } elseif ($role === 'kacab') {
         $branchIds = collect([$userBranchId]);
     } elseif ($role === 'manrisk') {
-        $branchIds = \App\Models\Branch::where('is_active', true)->pluck('id');
+        if ($cabangFilter === 'all') {
+            $branchIds = \App\Models\Branch::where('is_active', true)->pluck('id');
+        } else {
+            $branchIds = collect([(int) $cabangFilter]);
+        }
     } else {
         // Maker (teller/ca/csr/security) — lihat laporan sendiri
         $branchIds = collect();
     }
+
+    // Semua cabang aktif (buat dropdown filter ManRisk)
+    $allBranches = \App\Models\Branch::where('is_active', true)->get();
 
     // Laporan terbaru (untuk tabel)
     if (in_array($role, ['korwil', 'kacab', 'manrisk'])) {
@@ -81,6 +94,11 @@ Route::get('/dashboard', function () {
         ->where('kategori', 'finansial')
         ->sum('dampak_finansial');
 
+    // Total laporan in_progress milik user (khusus staff)
+    $totalInProgress = (clone $reportQuery)
+        ->where('resolution_status', 'in_progress')
+        ->count();
+
     // === DATA UNTUK CHART ANALISA RISIKO (hanya untuk kacab/korwil/manrisk) ===
     $chartMonths = [];
     $chartCounts = [];
@@ -90,8 +108,9 @@ Route::get('/dashboard', function () {
     $chartInProgress = 0;
     $chartClosed = 0;
 
-    // Data untuk 3 chart baru
+    // Data untuk 3 chart
     $rankingRisikoLabels = [];
+    $rankingRisikoFullLabels = [];
     $rankingRisikoData = [];
     $rankingRisikoColors = [];
     $sumberRisikoLabels = [];
@@ -101,8 +120,11 @@ Route::get('/dashboard', function () {
     $trenTop5Datasets = [];
 
     if (in_array($role, ['kacab', 'korwil', 'manrisk'])) {
-        // 1. Tren laporan per bulan (6 bulan terakhir) — existing
-        for ($i = 5; $i >= 0; $i--) {
+        // Tentukan jumlah bulan untuk chart tren
+        $bulanTren = $periode > 0 ? $periode : 12; // max 12 bulan kalau "semua waktu"
+
+        // 1. Tren laporan per bulan
+        for ($i = $bulanTren - 1; $i >= 0; $i--) {
             $month = now()->subMonths($i);
             $chartMonths[] = $month->format('M Y');
             $chartCounts[] = RiskReport::query()
@@ -112,7 +134,7 @@ Route::get('/dashboard', function () {
                 ->count();
         }
 
-        // 2. Distribusi kategori — existing
+        // 2. Distribusi kategori
         $chartFinansial = RiskReport::query()
             ->whereIn('branch_id', $branchIds)
             ->where('kategori', 'finansial')
@@ -122,7 +144,7 @@ Route::get('/dashboard', function () {
             ->where('kategori', 'non-finansial')
             ->count();
 
-        // 3. Status tindak lanjut — existing
+        // 3. Status tindak lanjut
         $chartOpen = RiskReport::query()
             ->whereIn('branch_id', $branchIds)
             ->where('resolution_status', 'open')
@@ -136,28 +158,34 @@ Route::get('/dashboard', function () {
             ->where('resolution_status', 'closed')
             ->count();
 
+        // Helper: date filter untuk query chart
+        $dateFilter = $periode > 0 ? now()->subMonths($periode) : now()->subYears(10);
+
         // ================================================================
         // CHART 1: RANKING RISIKO (Horizontal Bar — Top 10)
         // ================================================================
         $rankingRisiko = RiskReport::selectRaw('risk_item_id, COUNT(*) as total')
             ->whereIn('branch_id', $branchIds)
             ->whereNotNull('risk_item_id')
-            ->where('created_at', '>=', now()->subMonths(6))
+            ->where('created_at', '>=', $dateFilter)
             ->groupBy('risk_item_id')
             ->orderByDesc('total')
             ->take(10)
             ->get();
 
         $rankingRisikoLabels = [];
+        $rankingRisikoFullLabels = [];
         $rankingRisikoData = [];
-        $maxRank = $rankingRisiko->max('total') ?: 1;
         foreach ($rankingRisiko as $item) {
             $riskItem = \App\Models\RiskItem::find($item->risk_item_id);
-            $rankingRisikoLabels[] = $riskItem?->nama_risiko ?? 'Risiko #' . $item->risk_item_id;
+            $namaAsli = $riskItem?->nama_risiko ?? 'Risiko #' . $item->risk_item_id;
+            $rankingRisikoLabels[] = \Illuminate\Support\Str::limit($namaAsli, 35);
+            $rankingRisikoFullLabels[] = $namaAsli;
             $rankingRisikoData[] = (int) $item->total;
         }
         // Balik biar yang terbesar di atas (horizontal bar)
         $rankingRisikoLabels = array_reverse($rankingRisikoLabels);
+        $rankingRisikoFullLabels = array_reverse($rankingRisikoFullLabels);
         $rankingRisikoData = array_reverse($rankingRisikoData);
         // Generate warna gradasi merah-hijau
         $count = count($rankingRisikoData);
@@ -183,11 +211,10 @@ Route::get('/dashboard', function () {
         $sumberRisikoData = [];
         $sumberRisikoColors = [];
 
-        // Query sumber_risiko dari risk_items yang muncul di laporan 6 bulan terakhir
         $sumberQuery = RiskReport::selectRaw('risk_items.sumber_risiko, COUNT(*) as total')
             ->join('risk_items', 'risk_reports.risk_item_id', '=', 'risk_items.id')
             ->whereIn('risk_reports.branch_id', $branchIds)
-            ->where('risk_reports.created_at', '>=', now()->subMonths(6))
+            ->where('risk_reports.created_at', '>=', $dateFilter)
             ->groupBy('risk_items.sumber_risiko')
             ->orderByDesc('total')
             ->get();
@@ -202,13 +229,12 @@ Route::get('/dashboard', function () {
         }
 
         // ================================================================
-        // CHART 3: TREN TOP-5 RISIKO (Multi-line Chart — 6 Bulan)
+        // CHART 3: TREN TOP-5 RISIKO (Multi-line Chart)
         // ================================================================
-        // Ambil top 5 risk_item_id berdasarkan total kejadian 6 bulan
         $top5Ids = RiskReport::selectRaw('risk_item_id, COUNT(*) as total')
             ->whereIn('branch_id', $branchIds)
             ->whereNotNull('risk_item_id')
-            ->where('created_at', '>=', now()->subMonths(6))
+            ->where('created_at', '>=', $dateFilter)
             ->groupBy('risk_item_id')
             ->orderByDesc('total')
             ->take(5)
@@ -216,7 +242,7 @@ Route::get('/dashboard', function () {
 
         // Siapkan label bulan
         $trenTop5Labels = [];
-        for ($i = 5; $i >= 0; $i--) {
+        for ($i = $bulanTren - 1; $i >= 0; $i--) {
             $trenTop5Labels[] = now()->subMonths($i)->format('M Y');
         }
 
@@ -227,7 +253,7 @@ Route::get('/dashboard', function () {
             $riskItem = \App\Models\RiskItem::find($rid);
             $nama = $riskItem?->nama_risiko ?? 'Risiko #' . $rid;
             $data = [];
-            for ($i = 5; $i >= 0; $i--) {
+            for ($i = $bulanTren - 1; $i >= 0; $i--) {
                 $month = now()->subMonths($i);
                 $data[] = RiskReport::where('risk_item_id', $rid)
                     ->whereIn('branch_id', $branchIds)
@@ -244,6 +270,48 @@ Route::get('/dashboard', function () {
                 'fill' => false,
             ];
             $idx++;
+        }
+    }
+
+    // === DATA RINGKASAN WILAYAH (Khusus ManRisk) ===
+    $branchSummaries = [];
+    $branchChartLabels = [];
+    $branchChartData = [];
+    $branchChartColors = [];
+
+    if ($role === 'manrisk') {
+        $dateFilter = $periode > 0 ? now()->subMonths($periode) : now()->subYears(10);
+        $maxTotal = 0;
+        foreach ($allBranches as $branch) {
+            $query = RiskReport::where('branch_id', $branch->id)
+                ->where('created_at', '>=', $dateFilter);
+            $total = (clone $query)->count();
+            $pending = (clone $query)->whereIn('approval_status', ['pending', 'pending_kacab', 'pending_korwil'])->count();
+            $approved = (clone $query)->where('approval_status', 'approved')->count();
+            $kerugian = (clone $query)->where('approval_status', 'approved')->where('kategori', 'finansial')->sum('dampak_finansial');
+            $inProgress = (clone $query)->where('resolution_status', 'in_progress')->count();
+
+            if ($total > $maxTotal) $maxTotal = $total;
+
+            $branchSummaries[] = [
+                'nama' => $branch->nama_cabang,
+                'total' => $total,
+                'pending' => $pending,
+                'approved' => $approved,
+                'kerugian' => $kerugian,
+                'in_progress' => $inProgress,
+            ];
+
+            $branchChartLabels[] = $branch->nickname_cabang ?? $branch->nama_cabang;
+            $branchChartData[] = $total;
+        }
+
+        // Generate warna gradasi biru
+        $count = count($branchChartData);
+        for ($i = 0; $i < $count; $i++) {
+            $ratio = $count > 1 ? $i / ($count - 1) : 0.5;
+            $alpha = 0.4 + (0.6 * (1 - $ratio));
+            $branchChartColors[] = "rgba(99, 102, 241, {$alpha})";
         }
     }
 
@@ -265,6 +333,7 @@ Route::get('/dashboard', function () {
         'totalPending',
         'totalApproved',
         'totalLossApproved',
+        'totalInProgress',
         'pendingCount',
         'role',
         'chartMonths',
@@ -275,13 +344,21 @@ Route::get('/dashboard', function () {
         'chartInProgress',
         'chartClosed',
         'rankingRisikoLabels',
+        'rankingRisikoFullLabels',
         'rankingRisikoData',
         'rankingRisikoColors',
         'sumberRisikoLabels',
         'sumberRisikoData',
         'sumberRisikoColors',
         'trenTop5Labels',
-        'trenTop5Datasets'
+        'trenTop5Datasets',
+        'branchSummaries',
+        'branchChartLabels',
+        'branchChartData',
+        'branchChartColors',
+        'periode',
+        'cabangFilter',
+        'allBranches'
     ));
 })->middleware(['auth', 'verified'])->name('dashboard');
 

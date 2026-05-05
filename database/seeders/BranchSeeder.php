@@ -10,10 +10,10 @@ class BranchSeeder extends Seeder
     public function run(): void
     {
         $branches = [
-            ['id' => 1, 'nama_cabang' => 'Cabang Pusat'],
-            ['id' => 2, 'nama_cabang' => 'Cabang Sudirman'],
-            ['id' => 3, 'nama_cabang' => 'Cabang Cianjur'],
-            ['id' => 4, 'nama_cabang' => 'Cabang Tasikmalaya'],
+            ['id' => 1, 'nama_cabang' => 'Cabang Pusat', 'kode_cabang' => 'PST'],
+            ['id' => 2, 'nama_cabang' => 'Cabang Sudirman', 'kode_cabang' => 'SDM'],
+            ['id' => 3, 'nama_cabang' => 'Cabang Cianjur', 'kode_cabang' => 'CJR'],
+            ['id' => 4, 'nama_cabang' => 'Cabang Tasikmalaya', 'kode_cabang' => 'TSK'],
         ];
 
         foreach ($branches as $branch) {

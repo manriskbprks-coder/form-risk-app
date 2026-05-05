@@ -200,10 +200,30 @@
                                 </div>
                                 @else
                                 <div class="mb-3">
-                                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Skala Dampak (1-5)</label>
-                                    <input type="number" name="skala_dampak" min="1" max="5"
-                                        class="w-full rounded-md border-gray-300 text-sm focus:ring-orange-500 focus:border-orange-500"
-                                        value="{{ old('skala_dampak', $report->skala_dampak) }}">
+                                    <label class="block text-xs font-bold text-gray-700 uppercase mb-2">Skala Dampak <span class="text-red-500">*</span></label>
+                                    <div class="space-y-2">
+                                        @php $oldSkala = old('skala_dampak', $report->skala_dampak); @endphp
+                                        <label class="flex items-center p-2 border border-gray-300 rounded hover:bg-white cursor-pointer transition">
+                                            <input type="radio" name="skala_dampak" value="Sangat Tinggi" class="h-4 w-4 text-orange-600 focus:ring-orange-500" {{ $oldSkala == 'Sangat Tinggi' ? 'checked' : '' }}>
+                                            <span class="ml-3 text-sm font-bold text-gray-700">Sangat Tinggi</span>
+                                        </label>
+                                        <label class="flex items-center p-2 border border-gray-300 rounded hover:bg-white cursor-pointer transition">
+                                            <input type="radio" name="skala_dampak" value="Tinggi" class="h-4 w-4 text-orange-600 focus:ring-orange-500" {{ $oldSkala == 'Tinggi' ? 'checked' : '' }}>
+                                            <span class="ml-3 text-sm font-bold text-gray-700">Tinggi</span>
+                                        </label>
+                                        <label class="flex items-center p-2 border border-gray-300 rounded hover:bg-white cursor-pointer transition">
+                                            <input type="radio" name="skala_dampak" value="Sedang" class="h-4 w-4 text-orange-600 focus:ring-orange-500" {{ $oldSkala == 'Sedang' ? 'checked' : '' }}>
+                                            <span class="ml-3 text-sm font-bold text-gray-700">Sedang</span>
+                                        </label>
+                                        <label class="flex items-center p-2 border border-gray-300 rounded hover:bg-white cursor-pointer transition">
+                                            <input type="radio" name="skala_dampak" value="Rendah" class="h-4 w-4 text-orange-600 focus:ring-orange-500" {{ $oldSkala == 'Rendah' ? 'checked' : '' }}>
+                                            <span class="ml-3 text-sm font-bold text-gray-700">Rendah</span>
+                                        </label>
+                                        <label class="flex items-center p-2 border border-gray-300 rounded hover:bg-white cursor-pointer transition">
+                                            <input type="radio" name="skala_dampak" value="Sangat Rendah" class="h-4 w-4 text-orange-600 focus:ring-orange-500" {{ $oldSkala == 'Sangat Rendah' ? 'checked' : '' }}>
+                                            <span class="ml-3 text-sm font-bold text-gray-700">Sangat Rendah</span>
+                                        </label>
+                                    </div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Penjelasan Dampak</label>

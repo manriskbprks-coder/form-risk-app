@@ -850,7 +850,7 @@ class RiskReportControllerTest extends TestCase
             ->get(route('risk.history'));
 
         $response->assertOk();
-        $this->assertCount(1, $response->viewData('reports'));
+        $this->assertCount(1, $response->viewData('activeReports'));
     }
 
     #[Test]
@@ -863,7 +863,7 @@ class RiskReportControllerTest extends TestCase
             ->get(route('risk.history'));
 
         $response->assertOk();
-        $this->assertCount(1, $response->viewData('reports'));
+        $this->assertCount(1, $response->viewData('activeReports'));
     }
 
     #[Test]
@@ -876,7 +876,7 @@ class RiskReportControllerTest extends TestCase
             ->get(route('risk.history'));
 
         $response->assertOk();
-        $this->assertCount(2, $response->viewData('reports'));
+        $this->assertCount(2, $response->viewData('activeReports'));
     }
 
     #[Test]
@@ -889,7 +889,7 @@ class RiskReportControllerTest extends TestCase
             ->get(route('risk.history'));
 
         $response->assertOk();
-        $this->assertCount(2, $response->viewData('reports'));
+        $this->assertCount(2, $response->viewData('activeReports'));
     }
 
     #[Test]
@@ -902,7 +902,7 @@ class RiskReportControllerTest extends TestCase
             ->get(route('risk.history', ['kategori' => 'finansial']));
 
         $response->assertOk();
-        $this->assertCount(1, $response->viewData('reports'));
+        $this->assertCount(1, $response->viewData('activeReports'));
     }
 
     #[Test]
@@ -915,7 +915,7 @@ class RiskReportControllerTest extends TestCase
             ->get(route('risk.history', ['resolution_status' => 'open']));
 
         $response->assertOk();
-        $this->assertCount(1, $response->viewData('reports'));
+        $this->assertCount(1, $response->viewData('activeReports'));
     }
 
     #[Test]
@@ -939,7 +939,7 @@ class RiskReportControllerTest extends TestCase
             ]));
 
         $response->assertOk();
-        $this->assertCount(1, $response->viewData('reports'));
+        $this->assertCount(1, $response->viewData('activeReports'));
     }
 
     #[Test]

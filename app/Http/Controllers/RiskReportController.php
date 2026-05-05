@@ -232,6 +232,7 @@ class RiskReportController extends Controller
             $reports = RiskReport::with(['user', 'item', 'cause.mitigations'])
                 ->where('branch_id', $user->branch_id)
                 ->whereIn('approval_status', ['pending_kacab', 'need_revision'])
+                ->orderBy('created_at', 'desc')
                 ->get();
 
             $tindakLanjut = RiskReport::with(['user', 'item', 'cause.mitigations'])
@@ -367,11 +368,18 @@ class RiskReportController extends Controller
         $totalKejadian = (clone $query)->count();
         $totalRejected = (clone $query)->where('approval_status', 'rejected')->count();
 
-        $reports = $query->orderBy('created_at', 'desc')
-            ->paginate(15)
+        // Split into 2 queries: Active (not closed) and Closed
+        $activeReports = (clone $query)->where('resolution_status', '!=', 'closed')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15, ['*'], 'active_page')
             ->appends($request->query());
 
-        return view('risk_reports.index', compact('reports', 'totalLoss', 'totalKejadian', 'totalRejected', 'branches', 'role'));
+        $closedReports = (clone $query)->where('resolution_status', 'closed')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15, ['*'], 'closed_page')
+            ->appends($request->query());
+
+        return view('risk_reports.index', compact('activeReports', 'closedReports', 'totalLoss', 'totalKejadian', 'totalRejected', 'branches', 'role'));
     }
 
     // UPDATE TINDAK LANJUT (RESOLUTION)
@@ -499,7 +507,7 @@ class RiskReportController extends Controller
         $request->validate([
             'kronologis_kejadian' => 'required|string|min:20',
             'dampak_finansial' => 'nullable|numeric|min:0',
-            'skala_dampak' => 'nullable|integer|min:1|max:5',
+            'skala_dampak' => 'nullable|string|max:50',
             'dampak_non_finansial' => 'nullable|string',
             'mitigasi_tambahan' => 'nullable|string',
             'durasi_penyelesaian' => 'nullable|integer|min:1',

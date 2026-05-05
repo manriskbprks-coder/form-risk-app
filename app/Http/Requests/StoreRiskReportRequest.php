@@ -24,8 +24,8 @@ class StoreRiskReportRequest extends FormRequest
 
         $rules = [
             'kategori' => ['required', 'in:finansial,non-finansial'],
-            'tanggal_kejadian' => ['required', 'date'],
-            'tanggal_diketahui' => ['required', 'date'],
+            'tanggal_kejadian' => ['required', 'date', 'before_or_equal:today'],
+            'tanggal_diketahui' => ['required', 'date', 'before_or_equal:today', 'after_or_equal:tanggal_kejadian'],
 
             'risk_item_id' => ['required', 'integer', 'exists:risk_items,id'],
             'other_item_description' => ['nullable', 'string', 'max:255'],

@@ -47,14 +47,14 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Tanggal Kejadian <span class="text-red-500">*</span></label>
-                            <input type="date" name="tanggal_kejadian" value="{{ old('tanggal_kejadian') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm @error('tanggal_kejadian') border-red-500 bg-red-50 @enderror" required>
+                            <input type="date" name="tanggal_kejadian" id="tanggalKejadian" value="{{ old('tanggal_kejadian') }}" max="{{ date('Y-m-d') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm @error('tanggal_kejadian') border-red-500 bg-red-50 @enderror" required>
                             @error('tanggal_kejadian')
                             <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Tanggal Diketahui <span class="text-red-500">*</span></label>
-                            <input type="date" name="tanggal_diketahui" value="{{ old('tanggal_diketahui') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm @error('tanggal_diketahui') border-red-500 bg-red-50 @enderror" required>
+                            <input type="date" name="tanggal_diketahui" id="tanggalDiketahui" value="{{ old('tanggal_diketahui') }}" max="{{ date('Y-m-d') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm @error('tanggal_diketahui') border-red-500 bg-red-50 @enderror" required>
                             @error('tanggal_diketahui')
                             <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
                             @enderror
@@ -237,6 +237,21 @@
         </div>
     </div>
 
+    <style>
+        /* Cursor not-allowed untuk input date yang disabled / readonly */
+        input[type="date"]:disabled,
+        input[type="date"][readonly],
+        input[type="date"]:disabled::-webkit-calendar-picker-indicator,
+        input[type="date"][readonly]::-webkit-calendar-picker-indicator {
+            cursor: not-allowed !important;
+        }
+        /* Sembunyikan icon kalender bawaan browser agar user ga bisa klik tanggal masa depan */
+        input[type="date"]:disabled::-webkit-calendar-picker-indicator {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+    </style>
+
     <script>
         // 1. Ambil data master dari backend, ubah jadi format JSON biar bisa dibaca Javascript
         const riskData = @json($riskItems); 
@@ -390,6 +405,27 @@
         });
 
         // =============================================================
+        // VALIDASI TANGGAL: tanggal_diketahui >= tanggal_kejadian
+        // =============================================================
+        const tanggalKejadian = document.getElementById('tanggalKejadian');
+        const tanggalDiketahui = document.getElementById('tanggalDiketahui');
+
+        function updateMinTanggalDiketahui() {
+            if (tanggalKejadian.value) {
+                tanggalDiketahui.setAttribute('min', tanggalKejadian.value);
+                // Kalau tanggal_diketahui lebih kecil dari tanggal_kejadian, reset
+                if (tanggalDiketahui.value && tanggalDiketahui.value < tanggalKejadian.value) {
+                    tanggalDiketahui.value = tanggalKejadian.value;
+                }
+            } else {
+                tanggalDiketahui.removeAttribute('min');
+            }
+        }
+
+        tanggalKejadian.addEventListener('change', updateMinTanggalDiketahui);
+        tanggalKejadian.addEventListener('input', updateMinTanggalDiketahui);
+
+        // =============================================================
         // AUTO-SCROLL KE ERROR PERTAMA SAAT PAGE LOAD
         // =============================================================
         document.addEventListener('DOMContentLoaded', function() {
@@ -411,6 +447,9 @@
                 itemSelect.value = oldItem;
                 itemSelect.dispatchEvent(new Event('change'));
             }
+
+            // Trigger validasi tanggal saat load (untuk old values)
+            updateMinTanggalDiketahui();
         });
 
         // Logika Format Uang (Masking Ribuan)

@@ -53,7 +53,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-8">
         <div class="stat-card border-l-4 border-l-indigo-500">
             <div class="flex items-start justify-between mb-2">
-                <p class="stat-card-label">Total Laporan</p>
+                <p class="stat-card-label">Laporan Saya</p>
                 <span class="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 </span>
@@ -73,7 +73,7 @@
         </div>
         <div class="stat-card border-l-4 border-l-emerald-500">
             <div class="flex items-start justify-between mb-2">
-                <p class="stat-card-label">Disetujui</p>
+                <p class="stat-card-label">Tervalidasi</p>
                 <span class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </span>
@@ -81,17 +81,70 @@
             <p class="stat-card-value text-emerald-600">{{ $totalApproved }}</p>
             <p class="text-xs text-slate-400 mt-1.5">Laporan valid</p>
         </div>
+        @hasanyrole('kacab|korwil|manrisk')
         <div class="stat-card border-l-4 border-l-rose-500">
             <div class="flex items-start justify-between mb-2">
-                <p class="stat-card-label">Total Kerugian</p>
+                <p class="stat-card-label">Nilai Dampak</p>
                 <span class="w-9 h-9 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </span>
             </div>
             <p class="stat-card-value text-rose-600">Rp {{ number_format($totalLossApproved, 0, ',', '.') }}</p>
-            <p class="text-xs text-slate-400 mt-1.5">Approved loss</p>
+            <p class="text-xs text-slate-400 mt-1.5">Total Dampak</p>
         </div>
+        @else
+        <a href="{{ route('risk.history', ['resolution_status' => 'in_progress']) }}" class="stat-card border-l-4 border-l-sky-500 block hover:shadow-md transition-shadow">
+            <div class="flex items-start justify-between mb-2">
+                <p class="stat-card-label">Dalam Progres</p>
+                <span class="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                </span>
+            </div>
+            <p class="stat-card-value text-sky-600">{{ $totalInProgress }}</p>
+            <p class="text-xs text-slate-400 mt-1.5">Perlu ditindaklanjuti</p>
+        </a>
+        @endhasanyrole
     </div>
+
+    {{-- ============================================================
+         FILTER DROPDOWN (Khusus ManRisk)
+         ============================================================ --}}
+    @hasrole('manrisk')
+    <div class="surface-card section-pad mb-6">
+        <form method="GET" action="{{ route('dashboard') }}" class="flex flex-col sm:flex-row sm:items-end gap-4">
+            <div class="flex-1">
+                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">📅 Periode Waktu</label>
+                <select name="periode" onchange="this.form.submit()" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50">
+                    <option value="1" {{ $periode == 1 ? 'selected' : '' }}>1 Bulan Terakhir</option>
+                    <option value="3" {{ $periode == 3 ? 'selected' : '' }}>3 Bulan Terakhir</option>
+                    <option value="6" {{ $periode == 6 ? 'selected' : '' }}>6 Bulan Terakhir</option>
+                    <option value="12" {{ $periode == 12 ? 'selected' : '' }}>1 Tahun Terakhir</option>
+                    <option value="0" {{ $periode == 0 ? 'selected' : '' }}>Semua Waktu</option>
+                </select>
+            </div>
+            <div class="flex-1">
+                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">🏢 Cabang</label>
+                <select name="cabang_id" onchange="this.form.submit()" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50">
+                    <option value="all" {{ $cabangFilter == 'all' ? 'selected' : '' }}>🏦 Bank Wide (Semua Cabang)</option>
+                    @foreach($allBranches as $branch)
+                    <option value="{{ $branch->id }}" {{ $cabangFilter == $branch->id ? 'selected' : '' }}>
+                        {{ $branch->nama_cabang }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="flex-shrink-0">
+                <button type="submit" class="btn-primary btn-sm w-full sm:w-auto">
+                    <svg class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                    Terapkan Filter
+                </button>
+                @if(request('periode') || request('cabang_id'))
+                <a href="{{ route('dashboard') }}" class="btn-ghost btn-sm text-slate-500 ml-2">Reset</a>
+                @endif
+            </div>
+        </form>
+    </div>
+    @endhasrole
 
     {{-- ============================================================
          CHART ANALISA RISIKO SECTION (Khusus Kacab/Korwil/Manrisk)
@@ -103,7 +156,7 @@
         <div class="surface-card section-pad">
             <div class="flex items-center gap-3 mb-4">
                 <div class="w-1 h-5 bg-rose-500 rounded-full"></div>
-                <h3 class="section-title text-base">🏆 Ranking Risiko (6 Bulan)</h3>
+                <h3 class="section-title text-base">🏆 Ranking Risiko</h3>
             </div>
             <div class="relative" style="height: 300px;">
                 <canvas id="rankingRisikoChart" style="height: 100% !important; width: 100% !important;"></canvas>
@@ -303,7 +356,112 @@
     </div>
 
     {{-- ============================================================
-         MANRISK SECTION
+         RINGKASAN WILAYAH (Khusus ManRisk)
+         ============================================================ --}}
+    @hasrole('manrisk')
+    @if(count($branchSummaries) > 0)
+    <div class="mb-8">
+        <div class="flex items-center gap-3 mb-5">
+            <div class="w-1 h-6 bg-emerald-500 rounded-full"></div>
+            <h3 class="section-title">🏢 Ringkasan Wilayah</h3>
+        </div>
+
+        {{-- Tabel Ringkasan Per Cabang --}}
+        <div class="surface-card overflow-hidden mb-5">
+            <div class="table-wrap">
+                <table class="table-min">
+                    <thead>
+                        <tr>
+                            <th class="table-th">Cabang</th>
+                            <th class="table-th text-center">Total Laporan</th>
+                            <th class="table-th text-center">Pending</th>
+                            <th class="table-th text-center">Approved</th>
+                            <th class="table-th text-center">Dalam Progres</th>
+                            <th class="table-th text-right">Total Kerugian</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        @php
+                            $maxTotal = max(array_column($branchSummaries, 'total'));
+                            $maxKerugian = max(array_column($branchSummaries, 'kerugian'));
+                        @endphp
+                        @foreach($branchSummaries as $branch)
+                        @php
+                            $isTopLaporan = $branch['total'] > 0 && $branch['total'] === $maxTotal;
+                            $isTopKerugian = $branch['kerugian'] > 0 && $branch['kerugian'] === $maxKerugian;
+                        @endphp
+                        <tr class="table-tr {{ $isTopLaporan || $isTopKerugian ? 'bg-amber-50/50' : '' }}">
+                            <td class="table-td font-semibold text-slate-800">
+                                <div class="flex items-center gap-2">
+                                    <span>🏦</span>
+                                    <span>{{ $branch['nama'] }}</span>
+                                    @if($isTopLaporan)
+                                    <span class="badge bg-amber-100 text-amber-700 border-amber-200 text-[9px]">Terbanyak</span>
+                                    @endif
+                                    @if($isTopKerugian)
+                                    <span class="badge bg-rose-100 text-rose-700 border-rose-200 text-[9px]">Kerugian Tertinggi</span>
+                                    @endif
+                                </div>
+                            </td>
+                            <td class="table-td text-center font-bold text-slate-700">{{ $branch['total'] }}</td>
+                            <td class="table-td text-center">
+                                @if($branch['pending'] > 0)
+                                <span class="badge-pending text-xs">{{ $branch['pending'] }}</span>
+                                @else
+                                <span class="text-slate-400 text-sm">0</span>
+                                @endif
+                            </td>
+                            <td class="table-td text-center text-emerald-600 font-semibold">{{ $branch['approved'] }}</td>
+                            <td class="table-td text-center">
+                                @if($branch['in_progress'] > 0)
+                                <span class="badge-in-progress text-xs">{{ $branch['in_progress'] }}</span>
+                                @else
+                                <span class="text-slate-400 text-sm">0</span>
+                                @endif
+                            </td>
+                            <td class="table-td text-right font-semibold text-rose-600">Rp {{ number_format($branch['kerugian'], 0, ',', '.') }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                    @php
+                        $totalAll = array_sum(array_column($branchSummaries, 'total'));
+                        $totalPendingAll = array_sum(array_column($branchSummaries, 'pending'));
+                        $totalApprovedAll = array_sum(array_column($branchSummaries, 'approved'));
+                        $totalInProgressAll = array_sum(array_column($branchSummaries, 'in_progress'));
+                        $totalKerugianAll = array_sum(array_column($branchSummaries, 'kerugian'));
+                    @endphp
+                    <tfoot class="bg-slate-50 border-t-2 border-slate-200">
+                        <tr>
+                            <td class="px-4 py-3 text-sm font-bold text-slate-800">Total Semua Cabang</td>
+                            <td class="px-4 py-3 text-center font-bold text-slate-800">{{ $totalAll }}</td>
+                            <td class="px-4 py-3 text-center font-bold text-amber-600">{{ $totalPendingAll }}</td>
+                            <td class="px-4 py-3 text-center font-bold text-emerald-600">{{ $totalApprovedAll }}</td>
+                            <td class="px-4 py-3 text-center font-bold text-sky-600">{{ $totalInProgressAll }}</td>
+                            <td class="px-4 py-3 text-right font-bold text-rose-600">Rp {{ number_format($totalKerugianAll, 0, ',', '.') }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        {{-- Bar Chart Perbandingan Laporan Per Cabang --}}
+        @if(count($branchChartLabels) > 1)
+        <div class="surface-card section-pad">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-1 h-5 bg-indigo-500 rounded-full"></div>
+                <h3 class="section-title text-base">📊 Laporan per Cabang</h3>
+            </div>
+            <div class="relative" style="height: 250px;">
+                <canvas id="branchChart" style="height: 100% !important; width: 100% !important;"></canvas>
+            </div>
+        </div>
+        @endif
+    </div>
+    @endif
+    @endhasrole
+
+    {{-- ============================================================
+         MANRISK SECTION — Panel Administrasi
          ============================================================ --}}
     @hasrole('manrisk')
     <div>
@@ -346,6 +504,7 @@
             // ================================================================
             const rankingCtx = document.getElementById('rankingRisikoChart');
             if (rankingCtx) {
+                const rankingFullLabels = {!! json_encode($rankingRisikoFullLabels) !!};
                 new Chart(rankingCtx, {
                     type: 'bar',
                     data: {
@@ -367,6 +526,10 @@
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
+                                    title: function(ctx) {
+                                        // Tampilkan nama risiko lengkap di title tooltip
+                                        return rankingFullLabels[ctx[0].dataIndex] || ctx[0].label;
+                                    },
                                     label: function(ctx) {
                                         return ctx.parsed.x + ' kejadian';
                                     }
@@ -484,6 +647,55 @@
                             },
                             x: {
                                 ticks: { font: { size: 9 } },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // ================================================================
+            // CHART 4: LAPORAN PER CABANG (Bar Chart — Khusus ManRisk)
+            // ================================================================
+            const branchCtx = document.getElementById('branchChart');
+            if (branchCtx) {
+                new Chart(branchCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: {!! json_encode($branchChartLabels) !!},
+                        datasets: [{
+                            label: 'Total Laporan',
+                            data: {!! json_encode($branchChartData) !!},
+                            backgroundColor: {!! json_encode($branchChartColors) !!},
+                            borderColor: '#6366f1',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(ctx) {
+                                        return ctx.parsed.y + ' laporan';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1,
+                                    font: { size: 10 }
+                                },
+                                grid: { color: 'rgba(0,0,0,0.05)' }
+                            },
+                            x: {
+                                ticks: { font: { size: 10 } },
                                 grid: { display: false }
                             }
                         }
