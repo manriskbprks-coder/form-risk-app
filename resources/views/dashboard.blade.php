@@ -48,8 +48,44 @@
     </div>
 
     {{-- ============================================================
-         STAT CARDS — 4 columns
+         STAT CARDS — Staff: 3 kolom, Kacab/Korwil/ManRisk: 4 kolom
          ============================================================ --}}
+    @hasanyrole('teller|ca|csr|security')
+    {{-- Staff: 3 card --}}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-8">
+        <div class="stat-card border-l-4 border-l-amber-400">
+            <div class="flex items-start justify-between mb-2">
+                <p class="stat-card-label">Menunggu Review</p>
+                <span class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </span>
+            </div>
+            <p class="stat-card-value text-amber-600">{{ $totalPending }}</p>
+            <p class="text-xs text-slate-400 mt-1.5">Perlu approval</p>
+        </div>
+        <div class="stat-card border-l-4 border-l-sky-500">
+            <div class="flex items-start justify-between mb-2">
+                <p class="stat-card-label">Perlu Ditindak Lanjut</p>
+                <span class="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                </span>
+            </div>
+            <p class="stat-card-value text-sky-600">{{ $totalInProgress }}</p>
+            <p class="text-xs text-slate-400 mt-1.5">Belum closed</p>
+        </div>
+        <div class="stat-card border-l-4 border-l-indigo-500">
+            <div class="flex items-start justify-between mb-2">
+                <p class="stat-card-label">{{ $labelTotalLaporan }}</p>
+                <span class="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </span>
+            </div>
+            <p class="stat-card-value">{{ $totalLaporanBulanIni }}</p>
+            <p class="text-xs text-slate-400 mt-1.5">Bulan ini</p>
+        </div>
+    </div>
+    @else
+    {{-- Kacab/Korwil/ManRisk: 4 card --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-8">
         <div class="stat-card border-l-4 border-l-amber-400">
             <div class="flex items-start justify-between mb-2">
@@ -59,31 +95,21 @@
                 </span>
             </div>
             <p class="stat-card-value text-amber-600">{{ $totalPending }}</p>
-            <p class="text-xs text-slate-400 mt-1.5">Perlu ditindaklanjuti</p>
-        </div>
-        <div class="stat-card border-l-4 border-l-emerald-500">
-            <div class="flex items-start justify-between mb-2">
-                <p class="stat-card-label">Tervalidasi</p>
-                <span class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </span>
-            </div>
-            <p class="stat-card-value text-emerald-600">{{ $totalApproved }}</p>
-            <p class="text-xs text-slate-400 mt-1.5">Laporan valid</p>
+            <p class="text-xs text-slate-400 mt-1.5">Perlu approval</p>
         </div>
         <div class="stat-card border-l-4 border-l-sky-500">
             <div class="flex items-start justify-between mb-2">
-                <p class="stat-card-label">Dalam Progres</p>
+                <p class="stat-card-label">Perlu Ditindak Lanjut</p>
                 <span class="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                 </span>
             </div>
             <p class="stat-card-value text-sky-600">{{ $totalInProgress }}</p>
-            <p class="text-xs text-slate-400 mt-1.5">Perlu ditindaklanjuti</p>
+            <p class="text-xs text-slate-400 mt-1.5">Belum closed</p>
         </div>
         <div class="stat-card border-l-4 border-l-indigo-500">
             <div class="flex items-start justify-between mb-2">
-                <p class="stat-card-label">Laporan Saya</p>
+                <p class="stat-card-label">{{ $labelTotalLaporan }}</p>
                 <span class="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 </span>
@@ -91,7 +117,6 @@
             <p class="stat-card-value">{{ $totalLaporanBulanIni }}</p>
             <p class="text-xs text-slate-400 mt-1.5">Bulan ini</p>
         </div>
-        @hasanyrole('kacab|korwil|manrisk')
         <div class="stat-card border-l-4 border-l-rose-500">
             <div class="flex items-start justify-between mb-2">
                 <p class="stat-card-label">Nilai Dampak</p>
@@ -102,8 +127,8 @@
             <p class="stat-card-value text-rose-600">Rp {{ number_format($totalLossApproved, 0, ',', '.') }}</p>
             <p class="text-xs text-slate-400 mt-1.5">Total Dampak</p>
         </div>
-        @endhasanyrole
     </div>
+    @endhasanyrole
 
     {{-- ============================================================
          FILTER DROPDOWN (Khusus ManRisk)

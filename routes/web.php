@@ -86,10 +86,6 @@ Route::get('/dashboard', function () {
         })
         ->count();
 
-    $totalApproved = (clone $reportQuery)
-        ->where('approval_status', 'approved')
-        ->count();
-
     $totalLossApproved = (clone $reportQuery)
         ->where('approval_status', 'approved')
         ->where('kategori', 'finansial')
@@ -372,15 +368,24 @@ Route::get('/dashboard', function () {
             ->count();
     }
 
+    // Label dinamis untuk card Total Laporan berdasarkan role
+    $labelTotalLaporan = match($role) {
+        'teller', 'ca', 'csr', 'security' => 'Laporan Saya',
+        'kacab' => 'Laporan Cabang',
+        'korwil' => 'Laporan Wilayah',
+        'manrisk' => 'Total Laporan',
+        default => 'Total Laporan',
+    };
+
     return view('dashboard', compact(
         'recentReports',
         'totalLaporanBulanIni',
         'totalPending',
-        'totalApproved',
         'totalLossApproved',
         'totalInProgress',
         'pendingCount',
         'role',
+        'labelTotalLaporan',
         'chartMonths',
         'chartCounts',
         'chartFinansial',
