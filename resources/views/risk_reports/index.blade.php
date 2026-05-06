@@ -209,7 +209,23 @@
                                     @if($report->kategori === 'finansial')
                                     <span class="font-bold whitespace-nowrap">Rp {{ number_format($report->dampak_finansial, 0, ',', '.') }}</span>
                                     @else
-                                    <span class="text-xs italic line-clamp-2 max-w-[140px]" title="{{ $report->dampak_non_finansial }}">{{ $report->dampak_non_finansial ?? '—' }}</span>
+                                    <div class="flex flex-col items-center gap-1">
+                                        @php
+                                            $skalaDampak = $report->skala_dampak ?? '';
+                                            $skalaColors = [
+                                                'Sangat Tinggi' => 'bg-red-700 text-white',
+                                                'Tinggi' => 'bg-orange-500 text-white',
+                                                'Sedang' => 'bg-yellow-500 text-white',
+                                                'Rendah' => 'bg-blue-500 text-white',
+                                                'Sangat Rendah' => 'bg-green-600 text-white',
+                                            ];
+                                            $skalaColor = $skalaColors[$skalaDampak] ?? 'bg-gray-500 text-white';
+                                        @endphp
+                                        <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded {{ $skalaColor }}">
+                                            {{ $skalaDampak ?: '—' }}
+                                        </span>
+                                        <span class="text-xs italic line-clamp-2 max-w-[140px]" title="{{ $report->dampak_non_finansial }}">{{ $report->dampak_non_finansial ?? '—' }}</span>
+                                    </div>
                                     @endif
                                 </td>
                                 <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
@@ -338,7 +354,23 @@
                                     @if($report->kategori === 'finansial')
                                     <span class="font-bold whitespace-nowrap">Rp {{ number_format($report->dampak_finansial, 0, ',', '.') }}</span>
                                     @else
-                                    <span class="text-xs italic line-clamp-2 max-w-[140px]" title="{{ $report->dampak_non_finansial }}">{{ $report->dampak_non_finansial ?? '—' }}</span>
+                                    <div class="flex flex-col items-center gap-1">
+                                        @php
+                                            $skalaDampak = $report->skala_dampak ?? '';
+                                            $skalaColors = [
+                                                'Sangat Tinggi' => 'bg-red-700 text-white',
+                                                'Tinggi' => 'bg-orange-500 text-white',
+                                                'Sedang' => 'bg-yellow-500 text-white',
+                                                'Rendah' => 'bg-blue-500 text-white',
+                                                'Sangat Rendah' => 'bg-green-600 text-white',
+                                            ];
+                                            $skalaColor = $skalaColors[$skalaDampak] ?? 'bg-gray-500 text-white';
+                                        @endphp
+                                        <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded {{ $skalaColor }}">
+                                            {{ $skalaDampak ?: '—' }}
+                                        </span>
+                                        <span class="text-xs italic line-clamp-2 max-w-[140px]" title="{{ $report->dampak_non_finansial }}">{{ $report->dampak_non_finansial ?? '—' }}</span>
+                                    </div>
                                     @endif
                                 </td>
                                 <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
