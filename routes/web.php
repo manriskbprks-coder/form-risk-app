@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RiskReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ExportRiskReportController;
+use App\Http\Controllers\RiskFreeDeclarationController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\Admin\RiskMasterController;
 use App\Models\RiskReport;
@@ -315,6 +316,50 @@ Route::get('/dashboard', function () {
         }
     }
 
+    // === DATA DEKLARASI NIHIL RISIKO (Khusus ManRisk) ===
+    $deklarasiSummaries = [];
+
+    if ($role === 'manrisk') {
+        $bulanIni = now()->month;
+        $tahunIni = now()->year;
+
+        foreach ($allBranches as $branch) {
+            $periode1 = \App\Models\RiskFreeDeclaration::where('branch_id', $branch->id)
+                ->where('periode', 1)
+                ->where('bulan', $bulanIni)
+                ->where('tahun', $tahunIni)
+                ->exists();
+
+            $periode2 = \App\Models\RiskFreeDeclaration::where('branch_id', $branch->id)
+                ->where('periode', 2)
+                ->where('bulan', $bulanIni)
+                ->where('tahun', $tahunIni)
+                ->exists();
+
+            $total = \App\Models\RiskFreeDeclaration::where('branch_id', $branch->id)
+                ->where('bulan', $bulanIni)
+                ->where('tahun', $tahunIni)
+                ->count();
+
+            // Violate = ada laporan risiko approved di cabang ini bulan ini, tapi kacab deklarasi nihil
+            $adaLaporanApproved = RiskReport::where('branch_id', $branch->id)
+                ->where('approval_status', 'approved')
+                ->whereMonth('created_at', $bulanIni)
+                ->whereYear('created_at', $tahunIni)
+                ->exists();
+
+            $violate = $adaLaporanApproved && $total > 0;
+
+            $deklarasiSummaries[] = [
+                'nama' => $branch->nama_cabang,
+                'periode1' => $periode1,
+                'periode2' => $periode2,
+                'total' => $total,
+                'violate' => $violate,
+            ];
+        }
+    }
+
     // Hitung badge pending untuk checker
     $pendingCount = 0;
     if ($role === 'kacab') {
@@ -358,7 +403,8 @@ Route::get('/dashboard', function () {
         'branchChartColors',
         'periode',
         'cabangFilter',
-        'allBranches'
+        'allBranches',
+        'deklarasiSummaries'
     ));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -409,6 +455,11 @@ Route::middleware('auth')->group(function () {
 
     // --- EXPORT CSV ---
     Route::get('/export-risiko', [ExportRiskReportController::class, 'export'])->name('risk.export');
+
+    // --- DEKLARASI NIHIL RISIKO (Kacab) ---
+    Route::get('/deklarasi-nihil', [RiskFreeDeclarationController::class, 'create'])->name('risk_free_declarations.create');
+    Route::post('/deklarasi-nihil', [RiskFreeDeclarationController::class, 'store'])->name('risk_free_declarations.store');
+    Route::get('/deklarasi-nihil/riwayat', [RiskFreeDeclarationController::class, 'history'])->name('risk_free_declarations.history');
 });
 
 
@@ -442,6 +493,8 @@ Route::middleware(['auth', 'role:manrisk'])->group(function () {
     Route::put('/branches-management/{id}', [App\Http\Controllers\BranchManagementController::class, 'update'])->name('branches.update');
     Route::post('/branches-management', [App\Http\Controllers\BranchManagementController::class, 'store'])->name('branches.store');
 
+    // --- DEKLARASI NIHIL RISIKO (ManRisk) ---
+    Route::post('/deklarasi-nihil/{id}/violate', [RiskFreeDeclarationController::class, 'violate'])->name('risk_free_declarations.violate');
 });
 
 require __DIR__ . '/auth.php';

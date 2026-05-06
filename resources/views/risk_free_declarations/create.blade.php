@@ -1,0 +1,127 @@
+@php
+    $periodeLabel = $periode === '1' ? '1 - 14' : '15 - ' . now()->daysInMonth;
+    $bulanNama = now()->setMonth($bulan)->translatedFormat('F');
+@endphp
+
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Deklarasi Nihil Risiko') }}
+        </h2>
+    </x-slot>
+
+    <div class="py-6">
+        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 text-gray-900">
+
+                    {{-- Info Periode --}}
+                    <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h3 class="font-semibold text-blue-800 text-lg">Periode {{ $periode }}: Tanggal {{ $periodeLabel }} {{ $bulanNama }} {{ $tahun }}</h3>
+                        <p class="text-sm text-blue-600 mt-1">
+                            Dengan ini menyatakan bahwa pada periode tersebut, tidak terdapat kejadian risiko operasional (risk event / loss event) pada jabatan-jabatan di bawah ini.
+                        </p>
+                    </div>
+
+                    {{-- Peringatan jika ada laporan --}}
+                    @if ($adaLaporan)
+                        <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-medium text-yellow-800">Perhatian!</p>
+                                    <p class="text-sm text-yellow-700 mt-1">
+                                        Terdapat laporan risiko yang sudah dibuat di periode ini. Jika Anda tetap melakukan deklarasi nihil, 
+                                        maka deklarasi ini berpotensi ditandai sebagai <strong>violated</strong> oleh ManRisk jika laporan tersebut terbukti valid.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <form method="POST" action="{{ route('risk_free_declarations.store') }}" x-data="{ 
+                        allClean: true,
+                        toggleAll() {
+                            this.allClean = !this.allClean;
+                            document.querySelectorAll('.jabatan-checkbox').forEach(cb => cb.checked = this.allClean);
+                        }
+                    }">
+                        @csrf
+
+                        {{-- Tabel Checklist Per Jabatan --}}
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="font-medium text-gray-700">Checklist Jabatan</h4>
+                                <button type="button" @click="toggleAll()" class="text-sm text-blue-600 hover:text-blue-800 underline">
+                                    Toggle Semua
+                                </button>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200 border rounded-lg">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jabatan</th>
+                                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Nihil Risiko</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        @foreach ($jabatanList as $jabatan)
+                                        <tr>
+                                            <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $jabatan }}</td>
+                                            <td class="px-4 py-3 text-center">
+                                                <input type="hidden" name="jabatan[{{ $jabatan }}][is_clean]" value="0">
+                                                <input type="checkbox" 
+                                                    name="jabatan[{{ $jabatan }}][is_clean]" 
+                                                    value="1"
+                                                    checked
+                                                    class="jabatan-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-5 w-5">
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <input type="text" 
+                                                    name="jabatan[{{ $jabatan }}][keterangan]" 
+                                                    placeholder="Opsional"
+                                                    class="w-full text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            @error('jabatan')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Statement Tanggung Jawab --}}
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Pernyataan Tanggung Jawab <span class="text-red-500">*</span>
+                            </label>
+                            <textarea name="statement_text" rows="4" 
+                                class="w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                placeholder="Saya yang bertanda tangan di bawah ini, menyatakan dengan sesungguhnya bahwa pada periode ini tidak terdapat kejadian risiko operasional (risk event / loss event) pada seluruh jabatan di cabang saya. Jika terbukti ada risk event / loss event yang tidak dilaporkan, saya bersedia bertanggung jawab penuh sesuai ketentuan yang berlaku.">{{ old('statement_text') }}</textarea>
+                            @error('statement_text')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Tombol Submit --}}
+                        <div class="flex items-center justify-between">
+                            <a href="{{ route('dashboard') }}" class="text-sm text-gray-600 hover:text-gray-800">
+                                ← Kembali ke Dashboard
+                            </a>
+                            <button type="submit" 
+                                class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                                Simpan Deklarasi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
