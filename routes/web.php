@@ -28,13 +28,13 @@ Route::get('/dashboard', function () {
     // Tentukan branch IDs yang bisa dilihat user
     if ($role === 'korwil') {
         $branchIds = \App\Models\Branch::where('korwil_id', $user->id)
-            ->where('is_active', true)
+            ->whereRaw('is_active = true')
             ->pluck('id');
     } elseif ($role === 'kacab') {
         $branchIds = collect([$userBranchId]);
     } elseif ($role === 'manrisk') {
         if ($cabangFilter === 'all') {
-            $branchIds = \App\Models\Branch::where('is_active', true)->pluck('id');
+            $branchIds = \App\Models\Branch::whereRaw('is_active = true')->pluck('id');
         } else {
             $branchIds = collect([(int) $cabangFilter]);
         }
@@ -44,7 +44,7 @@ Route::get('/dashboard', function () {
     }
 
     // Semua cabang aktif (buat dropdown filter ManRisk)
-    $allBranches = \App\Models\Branch::where('is_active', true)->get();
+    $allBranches = \App\Models\Branch::whereRaw('is_active = true')->get();
 
     // Laporan terbaru (untuk tabel)
     if (in_array($role, ['korwil', 'kacab', 'manrisk'])) {

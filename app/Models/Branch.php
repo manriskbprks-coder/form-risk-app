@@ -34,6 +34,6 @@ class Branch extends Model
     // Scope buat Maker: Hanya nampilin cabang yang aktif
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
+        return $query->whereRaw('is_active = true');
     }
 }

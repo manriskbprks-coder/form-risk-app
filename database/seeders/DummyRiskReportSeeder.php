@@ -27,7 +27,7 @@ class DummyRiskReportSeeder extends Seeder
         RiskReport::truncate();
 
         $users = User::all();
-        $branches = Branch::where('is_active', true)->get();
+        $branches = Branch::whereRaw('is_active = true')->get();
         $riskItems = RiskItem::all();
         $riskCauses = RiskCause::all();
 
