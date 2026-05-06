@@ -119,6 +119,33 @@
             </a>
             @endhasanyrole
 
+            @hasrole('kacab')
+            @php
+                $now = now();
+                $day = $now->day;
+                $bulan = $now->month;
+                $tahun = $now->year;
+                $periode = $day <= 14 ? '1' : '2';
+                $sudahDeklarasi = \App\Models\RiskFreeDeclaration::where('branch_id', auth()->user()->branch_id)
+                    ->where('periode', $periode)
+                    ->where('bulan', $bulan)
+                    ->where('tahun', $tahun)
+                    ->exists();
+            @endphp
+            <a href="{{ $sudahDeklarasi ? route('risk_free_declarations.history') : route('risk_free_declarations.create') }}"
+               class="{{ request()->routeIs('risk_free_declarations.*') ? 'sidebar-link-active' : 'sidebar-link' }}">
+                <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Deklarasi Nihil Risiko</span>
+                @if ($sudahDeklarasi)
+                    <span class="ml-auto inline-flex items-center px-2 py-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-100 rounded-full">Sudah</span>
+                @else
+                    <span class="ml-auto inline-flex items-center px-2 py-0.5 text-[10px] font-bold text-blue-700 bg-blue-100 rounded-full">Periode {{ $periode }}</span>
+                @endif
+            </a>
+            @endhasrole
+
             @hasanyrole('korwil|manrisk')
             <a href="{{ route('risk.history') }}"
                class="{{ request()->routeIs('risk.history') ? 'sidebar-link-active' : 'sidebar-link' }}">
