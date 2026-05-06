@@ -229,13 +229,13 @@ class RiskReportController extends Controller
         $tindakLanjut = collect();
 
         if ($role === 'kacab') {
-            $reports = RiskReport::with(['user', 'item', 'cause.mitigations', 'branch'])
+            $reports = RiskReport::with(['user.roles', 'item', 'cause.mitigations', 'branch'])
                 ->where('branch_id', $user->branch_id)
                 ->whereIn('approval_status', ['pending_kacab', 'need_revision'])
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            $tindakLanjut = RiskReport::with(['user', 'item', 'cause.mitigations', 'branch'])
+            $tindakLanjut = RiskReport::with(['user.roles', 'item', 'cause.mitigations', 'branch'])
                 ->where('branch_id', $user->branch_id)
                 ->where('approval_status', 'approved')
                 ->whereIn('resolution_status', ['open', 'in_progress'])
