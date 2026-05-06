@@ -17,6 +17,14 @@ class Branch extends Model
         'is_active',   // <--- TAMBAHIN INI
         'korwil_id',   // <--- TAMBAHIN INI
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
+
     // Cabang ini di bawah pengawasan siapa?
     public function korwil()
     {
