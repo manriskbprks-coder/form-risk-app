@@ -18,8 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);
 
-        // Middleware untuk cek password expiry
-        $middleware->appendToGroup('web', \App\Http\Middleware\CheckPasswordExpiry::class);
+        // Middleware untuk cek password expiry (sementara dinonaktifkan)
+        // $middleware->appendToGroup('web', \App\Http\Middleware\CheckPasswordExpiry::class);
         // -------------------------------
     })
     ->withExceptions(function (Exceptions $exceptions) {

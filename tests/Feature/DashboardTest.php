@@ -75,11 +75,22 @@ class DashboardTest extends TestCase
     #[Test]
     public function staff_sees_correct_stat_cards()
     {
-        // Buat laporan bulan ini
+        // Buat laporan: 1 closed (non-finansial), 1 pending, 1 approved finansial
+        RiskReport::factory()->create([
+            'user_id' => $this->teller->id,
+            'branch_id' => $this->branch->id,
+            'approval_status' => 'approved',
+            'kategori' => 'non-finansial',
+            'dampak_finansial' => null,
+            'resolution_status' => 'closed',
+            'created_at' => now(),
+        ]);
+
         RiskReport::factory()->create([
             'user_id' => $this->teller->id,
             'branch_id' => $this->branch->id,
             'approval_status' => 'pending_kacab',
+            'resolution_status' => 'open',
             'created_at' => now(),
         ]);
 
@@ -89,15 +100,15 @@ class DashboardTest extends TestCase
             'approval_status' => 'approved',
             'kategori' => 'finansial',
             'dampak_finansial' => 2000000,
+            'resolution_status' => 'open',
             'created_at' => now(),
         ]);
 
         $response = $this->actingAs($this->teller)->get(route('dashboard'));
         $response->assertOk();
 
-        $this->assertEquals(2, $response->viewData('totalLaporanBulanIni'));
+        $this->assertEquals(1, $response->viewData('totalClosed'));
         $this->assertEquals(1, $response->viewData('totalPending'));
-        $this->assertEquals(1, $response->viewData('totalApproved'));
         $this->assertEquals(2000000, $response->viewData('totalLossApproved'));
     }
 
