@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
@@ -13,14 +14,14 @@ return new class extends Migration
     public function up(): void
     {
         // Ubah di tabel branches
-        Schema::table('branches', function (Blueprint $table) {
-            $table->smallInteger('is_active')->default(1)->change();
-        });
+        DB::statement('ALTER TABLE branches ALTER COLUMN is_active TYPE smallint USING is_active::smallint');
+        DB::statement('ALTER TABLE branches ALTER COLUMN is_active SET DEFAULT 1');
+        DB::statement('ALTER TABLE branches ALTER COLUMN is_active SET NOT NULL');
 
         // Ubah di tabel users
-        Schema::table('users', function (Blueprint $table) {
-            $table->smallInteger('is_active')->default(1)->change();
-        });
+        DB::statement('ALTER TABLE users ALTER COLUMN is_active TYPE smallint USING is_active::smallint');
+        DB::statement('ALTER TABLE users ALTER COLUMN is_active SET DEFAULT 1');
+        DB::statement('ALTER TABLE users ALTER COLUMN is_active SET NOT NULL');
     }
 
     /**
@@ -28,12 +29,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('branches', function (Blueprint $table) {
-            $table->boolean('is_active')->default(true)->change();
-        });
-
-        Schema::table('users', function (Blueprint $table) {
-            $table->boolean('is_active')->default(true)->change();
-        });
+        DB::statement('ALTER TABLE branches ALTER COLUMN is_active TYPE boolean USING is_active::boolean');
+        DB::statement('ALTER TABLE users ALTER COLUMN is_active TYPE boolean USING is_active::boolean');
     }
 };
