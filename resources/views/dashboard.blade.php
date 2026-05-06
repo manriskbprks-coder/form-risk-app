@@ -148,7 +148,9 @@
 
     {{-- ============================================================
          CHART ANALISA RISIKO SECTION (Khusus Kacab/Korwil/Manrisk)
+         HIDE: Diatur lewat env SHOW_CHARTS=true — default false
          ============================================================ --}}
+    @if(env('SHOW_CHARTS', false))
     @hasanyrole('kacab|korwil|manrisk')
     {{-- Baris 1: Ranking Risiko + Sumber Risiko --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 mb-8">
@@ -188,6 +190,7 @@
         </div>
     </div>
     @endhasanyrole
+    @endif
 
     {{-- ============================================================
          MAKER SECTION — Form Entry Cards
