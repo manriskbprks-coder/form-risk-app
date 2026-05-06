@@ -24,11 +24,11 @@
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
-        <!-- Remember Me -->
+        <!-- Remember Username -->
         <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
+            <label for="remember_username" class="inline-flex items-center">
+                <input id="remember_username" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                <span class="ms-2 text-sm text-gray-600">{{ __('Ingat Username') }}</span>
             </label>
         </div>
 
@@ -44,6 +44,30 @@
             </x-primary-button>
         </div>
     </form>
+
+    {{-- Remember Username: simpan/muat username via localStorage --}}
+    <script>
+    (function() {
+        var usernameInput = document.getElementById('username');
+        var rememberCheck = document.getElementById('remember_username');
+
+        // Muat username tersimpan
+        var saved = localStorage.getItem('remembered_username');
+        if (saved) {
+            usernameInput.value = saved;
+            rememberCheck.checked = true;
+        }
+
+        // Simpan username saat form disubmit
+        document.querySelector('form').addEventListener('submit', function() {
+            if (rememberCheck.checked) {
+                localStorage.setItem('remembered_username', usernameInput.value.trim());
+            } else {
+                localStorage.removeItem('remembered_username');
+            }
+        });
+    })();
+    </script>
 
     {{-- =============================================================
          LOGIN ERROR POP-UP MODAL — Vanilla JS (biar pasti jalan)
