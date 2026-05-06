@@ -73,9 +73,8 @@ Route::get('/dashboard', function () {
     }
     // ManRisk ga perlu filter
 
-    $totalLaporanBulanIni = (clone $reportQuery)
-        ->whereMonth('created_at', now()->month)
-        ->whereYear('created_at', now()->year)
+    $totalClosed = (clone $reportQuery)
+        ->where('resolution_status', 'closed')
         ->count();
 
     $totalPending = (clone $reportQuery)
@@ -370,16 +369,16 @@ Route::get('/dashboard', function () {
 
     // Label dinamis untuk card Total Laporan berdasarkan role
     $labelTotalLaporan = match($role) {
-        'teller', 'ca', 'csr', 'security' => 'Laporan Saya',
-        'kacab' => 'Laporan Cabang',
-        'korwil' => 'Laporan Wilayah',
-        'manrisk' => 'Total Laporan',
-        default => 'Total Laporan',
+        'teller', 'ca', 'csr', 'security' => 'Laporan Saya (Closed)',
+        'kacab' => 'Laporan Cabang (Closed)',
+        'korwil' => 'Laporan Wilayah (Closed)',
+        'manrisk' => 'Total Laporan (Closed)',
+        default => 'Total Laporan (Closed)',
     };
 
     return view('dashboard', compact(
         'recentReports',
-        'totalLaporanBulanIni',
+        'totalClosed',
         'totalPending',
         'totalLossApproved',
         'totalInProgress',

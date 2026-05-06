@@ -100,14 +100,13 @@
             </a>
             @endhasanyrole
 
-            @hasanyrole('kacab|korwil')
+            @hasrole('kacab')
             <a href="{{ route('review.laporan') }}"
                class="{{ request()->routeIs('review.laporan') ? 'sidebar-link-active' : 'sidebar-link' }}">
                 <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>Review & Tindak Lanjut</span>
-                @if(auth()->user()?->hasRole('kacab'))
                 @php
                     $pendingReviewCount = \App\Models\RiskReport::where('branch_id', auth()->user()->branch_id)
                         ->whereIn('approval_status', ['pending_kacab', 'need_revision'])
@@ -118,9 +117,8 @@
                     {{ $pendingReviewCount > 99 ? '99+' : $pendingReviewCount }}
                 </span>
                 @endif
-                @endif
             </a>
-            @endhasanyrole
+            @endhasrole
 
             @hasrole('kacab')
             @php
