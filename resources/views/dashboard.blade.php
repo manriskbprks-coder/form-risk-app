@@ -312,113 +312,6 @@
     @endhasrole
 
     {{-- ============================================================
-         DATA TABLE — Recent Reports
-         ============================================================ --}}
-    <div class="mb-8">
-        <div class="flex items-center gap-3 mb-5">
-            <div class="w-1 h-6 bg-slate-400 rounded-full"></div>
-            <h3 class="section-title">Laporan Terbaru</h3>
-            <span class="badge bg-slate-100 text-slate-500 border border-slate-200 text-[10px]">Preview</span>
-        </div>
-        <div class="surface-card overflow-hidden">
-            <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <p class="text-sm font-medium text-slate-500">Menampilkan <span class="font-semibold text-slate-700">{{ $recentReports->count() }}</span> laporan terbaru</p>
-                <div class="flex items-center gap-2">
-                    <div class="relative">
-                        <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input type="text" placeholder="Cari laporan..." class="pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50 w-full sm:w-56">
-                    </div>
-                    <button class="btn-secondary btn-sm">Filter</button>
-                </div>
-            </div>
-            <div class="table-wrap">
-                <table class="table-min">
-                    <thead>
-                        <tr>
-                            <th class="table-th">Tgl Lapor</th>
-                            <th class="table-th">Cabang</th>
-                            <th class="table-th">Maker</th>
-                            <th class="table-th">Risiko</th>
-                            <th class="table-th">Kategori</th>
-                            <th class="table-th text-center">Status</th>
-                            <th class="table-th text-center">Tindak Lanjut</th>
-                            <th class="table-th text-right">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-slate-100">
-                        @forelse($recentReports as $report)
-                        <tr class="table-tr">
-                            <td class="table-td">
-                                <span class="text-xs font-semibold text-slate-700">{{ $report->created_at->format('d/m/Y') }}</span>
-                                <span class="block text-[10px] text-slate-400">{{ $report->created_at->format('H:i') }}</span>
-                            </td>
-                            <td class="table-td font-semibold text-slate-700">{{ $report->branch->nama_cabang ?? 'HQ' }}</td>
-                            <td class="table-td">
-                                <span class="font-medium text-slate-800">{{ $report->user->name }}</span>
-                                <span class="block text-[10px] text-slate-400 uppercase">{{ optional($report->user->roles->first())->name ?? '—' }}</span>
-                            </td>
-                            <td class="table-td">
-                                <span class="text-sm font-medium text-slate-800">{{ $report->item->nama_risiko ?? $report->other_item_description ?? '—' }}</span>
-                            </td>
-                            <td class="table-td">
-                                @if($report->kategori === 'finansial')
-                                <span class="badge bg-rose-50 text-rose-700 border-rose-200 text-[10px]">Finansial</span>
-                                @else
-                                <span class="badge bg-amber-50 text-amber-700 border-amber-200 text-[10px]">Non-Finansial</span>
-                                @endif
-                            </td>
-                            <td class="table-td text-center">
-                                @if($report->approval_status === 'approved')
-                                <span class="badge-approved">Approved</span>
-                                @elseif($report->approval_status === 'rejected')
-                                <span class="badge-rejected">Rejected</span>
-                                @else
-                                <span class="badge-pending">Pending</span>
-                                @endif
-                            </td>
-                            <td class="table-td text-center">
-                                @php
-                                    $map = ['open' => 'badge-open', 'in_progress' => 'badge-in-progress', 'closed' => 'badge-closed'];
-                                    $class = $map[$report->resolution_status] ?? 'badge-open';
-                                @endphp
-                                <span class="{{ $class }}">{{ str_replace('_', ' ', $report->resolution_status ?? 'open') }}</span>
-                            </td>
-                            <td class="table-td text-right">
-                                <a href="{{ route('risk_reports.show', $report->id) }}"
-                                   class="btn-ghost btn-xs text-indigo-600 hover:text-indigo-800">
-                                    Detail
-                                </a>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="8" class="px-5 py-16 text-center">
-                                <div class="flex flex-col items-center justify-center gap-3">
-                                    <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
-                                        <svg class="w-7 h-7 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-semibold text-slate-600">Belum Ada Laporan</p>
-                                        <p class="text-xs text-slate-400 mt-1">Data laporan akan muncul di sini setelah Anda atau tim membuat laporan baru.</p>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            <div class="px-5 py-3 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between">
-                <p class="text-xs text-slate-400">Halaman 1 dari 1</p>
-                <div class="flex items-center gap-1">
-                    <button class="px-3 py-1.5 text-xs font-medium text-slate-400 bg-white border border-slate-200 rounded-lg cursor-not-allowed">&larr; Sebelumnya</button>
-                    <button class="px-3 py-1.5 text-xs font-medium text-slate-400 bg-white border border-slate-200 rounded-lg cursor-not-allowed">Selanjutnya &rarr;</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- ============================================================
          RINGKASAN WILAYAH (Khusus ManRisk)
          ============================================================ --}}
     @hasrole('manrisk')
@@ -576,39 +469,111 @@
     @endhasrole
 
     {{-- ============================================================
-         MANRISK SECTION — Panel Administrasi
+         DATA TABLE — Recent Reports
          ============================================================ --}}
-    @hasrole('manrisk')
-    <div>
+    <div class="mb-8">
         <div class="flex items-center gap-3 mb-5">
-            <div class="w-1 h-6 bg-purple-500 rounded-full"></div>
-            <h3 class="section-title">Panel Administrasi</h3>
+            <div class="w-1 h-6 bg-slate-400 rounded-full"></div>
+            <h3 class="section-title">Laporan Terbaru</h3>
+            <span class="badge bg-slate-100 text-slate-500 border border-slate-200 text-[10px]">Preview</span>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
-            <a href="{{ route('admin.risk_master.index') }}" class="surface-card-hover p-5 border-t-4 border-t-purple-500">
-                <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-3">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <div class="surface-card overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <p class="text-sm font-medium text-slate-500">Menampilkan <span class="font-semibold text-slate-700">{{ $recentReports->count() }}</span> laporan terbaru</p>
+                <div class="flex items-center gap-2">
+                    <div class="relative">
+                        <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input type="text" placeholder="Cari laporan..." class="pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50 w-full sm:w-56">
+                    </div>
+                    <button class="btn-secondary btn-sm">Filter</button>
                 </div>
-                <h4 class="text-sm font-bold text-slate-900 mb-1">Master Data Risiko</h4>
-                <p class="text-xs text-slate-500">Kelola bank soal risiko, penyebab, dan mitigasi</p>
-            </a>
-            <a href="{{ route('admin.users.index') }}" class="surface-card-hover p-5 border-t-4 border-t-rose-500">
-                <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mb-3">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            </div>
+            <div class="table-wrap">
+                <table class="table-min">
+                    <thead>
+                        <tr>
+                            <th class="table-th">Tgl Lapor</th>
+                            <th class="table-th">Cabang</th>
+                            <th class="table-th">Maker</th>
+                            <th class="table-th">Risiko</th>
+                            <th class="table-th">Kategori</th>
+                            <th class="table-th text-center">Status</th>
+                            <th class="table-th text-center">Tindak Lanjut</th>
+                            <th class="table-th text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        @forelse($recentReports as $report)
+                        <tr class="table-tr">
+                            <td class="table-td">
+                                <span class="text-xs font-semibold text-slate-700">{{ $report->created_at->format('d/m/Y') }}</span>
+                                <span class="block text-[10px] text-slate-400">{{ $report->created_at->format('H:i') }}</span>
+                            </td>
+                            <td class="table-td font-semibold text-slate-700">{{ $report->branch->nama_cabang ?? 'HQ' }}</td>
+                            <td class="table-td">
+                                <span class="font-medium text-slate-800">{{ $report->user->name }}</span>
+                                <span class="block text-[10px] text-slate-400 uppercase">{{ optional($report->user->roles->first())->name ?? '—' }}</span>
+                            </td>
+                            <td class="table-td">
+                                <span class="text-sm font-medium text-slate-800">{{ $report->item->nama_risiko ?? $report->other_item_description ?? '—' }}</span>
+                            </td>
+                            <td class="table-td">
+                                @if($report->kategori === 'finansial')
+                                <span class="badge bg-rose-50 text-rose-700 border-rose-200 text-[10px]">Finansial</span>
+                                @else
+                                <span class="badge bg-amber-50 text-amber-700 border-amber-200 text-[10px]">Non-Finansial</span>
+                                @endif
+                            </td>
+                            <td class="table-td text-center">
+                                @if($report->approval_status === 'approved')
+                                <span class="badge-approved">Approved</span>
+                                @elseif($report->approval_status === 'rejected')
+                                <span class="badge-rejected">Rejected</span>
+                                @else
+                                <span class="badge-pending">Pending</span>
+                                @endif
+                            </td>
+                            <td class="table-td text-center">
+                                @php
+                                    $map = ['open' => 'badge-open', 'in_progress' => 'badge-in-progress', 'closed' => 'badge-closed'];
+                                    $class = $map[$report->resolution_status] ?? 'badge-open';
+                                @endphp
+                                <span class="{{ $class }}">{{ str_replace('_', ' ', $report->resolution_status ?? 'open') }}</span>
+                            </td>
+                            <td class="table-td text-right">
+                                <a href="{{ route('risk_reports.show', $report->id) }}"
+                                   class="btn-ghost btn-xs text-indigo-600 hover:text-indigo-800">
+                                    Detail
+                                </a>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="8" class="px-5 py-16 text-center">
+                                <div class="flex flex-col items-center justify-center gap-3">
+                                    <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
+                                        <svg class="w-7 h-7 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-600">Belum Ada Laporan</p>
+                                        <p class="text-xs text-slate-400 mt-1">Data laporan akan muncul di sini setelah Anda atau tim membuat laporan baru.</p>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            <div class="px-5 py-3 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between">
+                <p class="text-xs text-slate-400">Halaman 1 dari 1</p>
+                <div class="flex items-center gap-1">
+                    <button class="px-3 py-1.5 text-xs font-medium text-slate-400 bg-white border border-slate-200 rounded-lg cursor-not-allowed">&larr; Sebelumnya</button>
+                    <button class="px-3 py-1.5 text-xs font-medium text-slate-400 bg-white border border-slate-200 rounded-lg cursor-not-allowed">Selanjutnya &rarr;</button>
                 </div>
-                <h4 class="text-sm font-bold text-slate-900 mb-1">Manajemen Pengguna</h4>
-                <p class="text-xs text-slate-500">Atur akun, role, dan status aktif pegawai</p>
-            </a>
-            <a href="{{ route('branches.index') }}" class="surface-card-hover p-5 border-t-4 border-t-sky-500">
-                <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center mb-3">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                </div>
-                <h4 class="text-sm font-bold text-slate-900 mb-1">Manajemen Cabang</h4>
-                <p class="text-xs text-slate-500">Kelola struktur cabang dan pengawasan</p>
-            </a>
+            </div>
         </div>
     </div>
-    @endhasrole
 
     {{-- Chart.js --}}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
