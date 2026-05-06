@@ -24,7 +24,11 @@ class DummyRiskReportSeeder extends Seeder
     public function run(): void
     {
         // Hapus data dummy sebelumnya biar gak duplicate key pas deploy ulang
-        RiskReport::truncate();
+        RiskReport::query()->delete();
+        \App\Models\RiskReportLog::query()->delete();
+        \App\Models\Notification::query()->delete();
+        \App\Models\RiskFreeDeclaration::query()->delete();
+        \App\Models\RiskFreeDeclarationDetail::query()->delete();
 
         $users = User::all();
         $branches = Branch::whereRaw('is_active = true')->get();

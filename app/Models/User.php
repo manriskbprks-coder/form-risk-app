@@ -7,7 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Spatie\Permission\Traits\HasRoles; // <-- 1. TAMBAHIN INI DI DERETAN ATAS
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
@@ -24,8 +24,9 @@ class User extends Authenticatable
         'username',
         'email',
         'password',
-        'branch_id', // Pastikan branch_id juga udah lu tambahin di $fillable ya biar seeder bisa masukin data
-        'is_active', // <-- TAMBAHIN INI
+        'branch_id',
+        'is_active',
+        'password_changed_at',
     ];
 
     /**
@@ -48,6 +49,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'password_changed_at' => 'datetime',
         ];
     }
 
@@ -68,5 +70,16 @@ class User extends Authenticatable
         $role = $this->getRoleNames()->first();
         return $role ? (string) $role : null;
     }
-    
+
+    /**
+     * Cek apakah password user sudah expired (lebih dari 30 hari).
+     */
+    public function mustChangePassword(): bool
+    {
+        if (is_null($this->password_changed_at)) {
+            return true;
+        }
+
+        return $this->password_changed_at->addDays(30)->isPast();
+    }
 }
