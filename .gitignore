@@ -27,3 +27,7 @@ Thumbs.db
 /TEST_SUMMARY.md
 /chartplan.md
 .rulescline
+.cursorrules
+/database/database.sqlite
+_ide_helper.php
+_ide_helper_models.php
