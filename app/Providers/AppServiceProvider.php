@@ -5,6 +5,9 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Gate;
+use App\Models\RiskReport;
+use App\Policies\RiskReportPolicy;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +24,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Daftarkan Policy
+        Gate::policy(RiskReport::class, RiskReportPolicy::class);
+
         // Maksa Laravel pakai HTTPS kalau bukan di XAMPP lokal
         if (config('app.env') !== 'local') {
             URL::forceScheme('https');

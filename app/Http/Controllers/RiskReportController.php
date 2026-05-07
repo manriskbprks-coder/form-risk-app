@@ -9,6 +9,7 @@ use App\Models\Branch;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Response;
 use App\Http\Requests\StoreRiskReportRequest;
 use App\Http\Requests\UpdateRiskApprovalStatusRequest;
@@ -20,79 +21,6 @@ class RiskReportController extends Controller
     private function primaryRoleName(): ?string
     {
         return Auth::user()?->primaryRoleName();
-    }
-
-    private function ensureCanViewReport(RiskReport $report): void
-    {
-        $user = Auth::user();
-        $role = $user?->primaryRoleName();
-
-        if (!$user || !$role) {
-            abort(Response::HTTP_FORBIDDEN, 'Akses ditolak.');
-        }
-
-        if ($role === 'manrisk') {
-            return;
-        }
-
-        if ($role === 'kacab' && (int) $report->branch_id === (int) $user->branch_id) {
-            return;
-        }
-
-        if ($role === 'korwil') {
-            $branchIds = Branch::where('korwil_id', $user->id)->pluck('id');
-            if ($branchIds->contains((int) $report->branch_id)) {
-                return;
-            }
-        }
-
-        if (in_array($role, ['teller', 'ca', 'csr', 'security'], true) && (int) $report->user_id === (int) $user->id) {
-            return;
-        }
-
-        abort(Response::HTTP_FORBIDDEN, 'Akses ditolak.');
-    }
-
-    private function ensureCanApproveReport(RiskReport $report): void
-    {
-        $user = Auth::user();
-        $role = $user?->primaryRoleName();
-
-        if (!$user || !$role) {
-            abort(Response::HTTP_FORBIDDEN, 'Akses ditolak.');
-        }
-
-        if ($role === 'kacab') {
-            if ((int) $report->branch_id !== (int) $user->branch_id || !in_array($report->approval_status, ['pending_kacab', 'need_revision'])) {
-                abort(Response::HTTP_FORBIDDEN, 'Anda tidak berwenang menyetujui laporan ini.');
-            }
-            return;
-        }
-
-        abort(Response::HTTP_FORBIDDEN, 'Anda tidak berwenang menyetujui laporan ini.');
-    }
-
-    private function ensureCanUpdateProgress(RiskReport $report): void
-    {
-        $user = Auth::user();
-        $role = $user?->primaryRoleName();
-
-        if (!$user || !$role) {
-            abort(Response::HTTP_FORBIDDEN, 'Akses ditolak.');
-        }
-
-        // ManRisk hanya pantau.
-        if ($role === 'manrisk') {
-            abort(Response::HTTP_FORBIDDEN, 'Akses Ditolak! Divisi ManRisk hanya berwenang memantau, bukan mengubah progress penanganan.');
-        }
-
-        // Korwil hanya pantau (read-only).
-        if ($role === 'korwil') {
-            abort(Response::HTTP_FORBIDDEN, 'Akses Ditolak! Korwil hanya berwenang memantau, bukan mengubah progress penanganan.');
-        }
-
-        // Minimal bisa melihat laporan dulu.
-        $this->ensureCanViewReport($report);
     }
 
     public function create($kategori)
@@ -250,7 +178,7 @@ class RiskReportController extends Controller
     public function updateStatus(UpdateRiskApprovalStatusRequest $request, $id)
     {
         $report = RiskReport::findOrFail($id);
-        $this->ensureCanApproveReport($report);
+        Gate::authorize('approve', $report);
 
         $user = Auth::user();
 
@@ -386,7 +314,7 @@ class RiskReportController extends Controller
     public function updateResolution(UpdateRiskResolutionRequest $request, $id)
     {
         $report = RiskReport::findOrFail($id);
-        $this->ensureCanUpdateProgress($report);
+        Gate::authorize('updateProgress', $report);
 
         $report->update(['resolution_status' => $request->resolution_status]);
 
@@ -398,7 +326,7 @@ class RiskReportController extends Controller
     {
         $user = Auth::user();
         $report = RiskReport::findOrFail($id);
-        $this->ensureCanUpdateProgress($report);
+        Gate::authorize('updateProgress', $report);
 
         if ($request->new_status === 'closed') {
             if (!$user->hasRole('kacab')) {
@@ -435,7 +363,7 @@ class RiskReportController extends Controller
     public function show($id)
     {
         $report = RiskReport::with(['user', 'item', 'branch', 'cause.mitigations', 'logs.user'])->findOrFail($id);
-        $this->ensureCanViewReport($report);
+        Gate::authorize('view', $report);
 
         return view('risk_reports.show', compact('report'));
     }
@@ -450,19 +378,13 @@ class RiskReportController extends Controller
     public function requestRevision(Request $request, $id)
     {
         $user = Auth::user();
-        if (!$user->hasRole('manrisk')) {
-            abort(Response::HTTP_FORBIDDEN, 'Hanya ManRisk yang bisa meminta revisi.');
-        }
+        $report = RiskReport::findOrFail($id);
+
+        Gate::authorize('requestRevision', $report);
 
         $request->validate([
             'revision_note' => 'required|string|min:10',
         ]);
-
-        $report = RiskReport::findOrFail($id);
-
-        if ($report->approval_status !== 'approved') {
-            return back()->with('error', 'Hanya laporan yang sudah approved yang bisa diminta revisi.');
-        }
 
         $report->update([
             'approval_status' => 'need_revision',
@@ -497,7 +419,7 @@ class RiskReportController extends Controller
         $report = RiskReport::findOrFail($id);
 
         // Pastikan user berhak merevisi
-        $this->ensureCanViewReport($report);
+        Gate::authorize('submitRevision', $report);
 
         if ($report->approval_status !== 'need_revision') {
             return back()->with('error', 'Laporan ini tidak dalam status perlu revisi.');
@@ -585,15 +507,9 @@ class RiskReportController extends Controller
     public function approveRevision($id)
     {
         $user = Auth::user();
-        if (!$user->hasRole('manrisk')) {
-            abort(Response::HTTP_FORBIDDEN, 'Hanya ManRisk yang bisa menyetujui revisi.');
-        }
-
         $report = RiskReport::findOrFail($id);
 
-        if ($report->approval_status !== 'pending_revision') {
-            return back()->with('error', 'Laporan ini tidak dalam status menunggu review revisi.');
-        }
+        Gate::authorize('approveRevision', $report);
 
         $report->update([
             'approval_status' => 'approved',

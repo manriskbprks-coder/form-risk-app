@@ -120,10 +120,8 @@ class RiskFreeDeclarationController extends Controller
             'jabatan' => 'required|array|min:1',
             'jabatan.*.is_clean' => 'required|boolean',
             'jabatan.*.keterangan' => 'nullable|string|max:500',
+            'statement_text' => 'required|string|min:10',
         ]);
-
-        // Teks pernyataan tanggung jawab default
-        $statementText = 'Saya yang bertanda tangan di bawah ini, selaku Kepala Cabang, dengan ini menyatakan dengan sesungguhnya bahwa pada periode ini tidak terdapat kejadian risiko operasional (risk event / loss event) pada seluruh jabatan di cabang saya. Apabila di kemudian hari terbukti terdapat risk event / loss event yang tidak dilaporkan pada periode ini, saya bersedia mempertanggungjawabkan sesuai dengan ketentuan dan peraturan yang berlaku di perusahaan.';
 
         // Buat deklarasi header
         $declaration = RiskFreeDeclaration::create([
@@ -132,7 +130,7 @@ class RiskFreeDeclarationController extends Controller
             'periode' => $periode,
             'bulan' => $bulan,
             'tahun' => $tahun,
-            'statement_text' => $statementText,
+            'statement_text' => $request->statement_text,
             'status' => 'active',
         ]);
 
