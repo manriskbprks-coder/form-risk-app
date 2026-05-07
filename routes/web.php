@@ -421,7 +421,7 @@ Route::middleware('auth')->group(function () {
 
     // --- Profile (Ganti Password) ---
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::match(['post', 'patch'], '/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     // --- MENU 1: INPUT LAPORAN (MAKER) — throttle 10 per menit ---
     Route::get('/form-risiko/{kategori}', [RiskReportController::class, 'create'])->name('form.risiko');
