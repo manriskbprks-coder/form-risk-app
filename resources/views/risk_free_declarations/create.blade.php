@@ -43,6 +43,7 @@
 
                     <form method="POST" action="{{ route('risk_free_declarations.store') }}" x-data="{ 
                         allClean: true,
+                        agreed: false,
                         toggleAll() {
                             this.allClean = !this.allClean;
                             document.querySelectorAll('.jabatan-checkbox').forEach(cb => cb.checked = this.allClean);
@@ -97,16 +98,28 @@
                         </div>
 
                         {{-- Statement Tanggung Jawab --}}
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <div class="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                            <label class="block text-sm font-medium text-gray-700 mb-3">
                                 Pernyataan Tanggung Jawab <span class="text-red-500">*</span>
                             </label>
-                            <textarea name="statement_text" rows="4" 
-                                class="w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                placeholder="Saya yang bertanda tangan di bawah ini, menyatakan dengan sesungguhnya bahwa pada periode ini tidak terdapat kejadian risiko operasional (risk event / loss event) pada seluruh jabatan di cabang saya. Jika terbukti ada risk event / loss event yang tidak dilaporkan, saya bersedia bertanggung jawab penuh sesuai ketentuan yang berlaku.">{{ old('statement_text') }}</textarea>
-                            @error('statement_text')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
+                            <div class="text-sm text-gray-700 leading-relaxed space-y-2">
+                                <p>
+                                    Saya yang bertanda tangan di bawah ini, selaku <strong>Kepala Cabang</strong>, dengan ini menyatakan dengan sesungguhnya bahwa pada periode ini <strong>tidak terdapat kejadian risiko operasional (risk event / loss event)</strong> pada seluruh jabatan di cabang saya.
+                                </p>
+                                <p>
+                                    Apabila di kemudian hari terbukti terdapat <strong>risk event / loss event yang tidak dilaporkan</strong> pada periode ini, saya bersedia mempertanggungjawabkan sesuai dengan ketentuan dan peraturan yang berlaku di perusahaan.
+                                </p>
+                            </div>
+                        </div>
+
+                        {{-- Checkbox Persetujuan --}}
+                        <div class="mb-6">
+                            <label class="inline-flex items-start">
+                                <input type="checkbox" x-model="agreed" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-5 w-5 mt-0.5">
+                                <span class="ml-2 text-sm text-gray-700">
+                                    Saya menyetujui dan menyatakan kebenaran pernyataan tanggung jawab di atas. <span class="text-red-500">*</span>
+                                </span>
+                            </label>
                         </div>
 
                         {{-- Tombol Submit --}}
@@ -115,7 +128,9 @@
                                 ← Kembali ke Dashboard
                             </a>
                             <button type="submit" 
-                                class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                                :disabled="!agreed"
+                                :class="agreed ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer' : 'bg-gray-400 cursor-not-allowed'"
+                                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
                                 Simpan Deklarasi
                             </button>
                         </div>
