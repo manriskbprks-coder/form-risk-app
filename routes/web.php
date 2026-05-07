@@ -423,18 +423,24 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
-    // --- MENU 1: INPUT LAPORAN (MAKER) ---
+    // --- MENU 1: INPUT LAPORAN (MAKER) — throttle 10 per menit ---
     Route::get('/form-risiko/{kategori}', [RiskReportController::class, 'create'])->name('form.risiko');
-    Route::post('/form-risiko', [RiskReportController::class, 'store'])->name('form.risiko.store');
+    Route::post('/form-risiko', [RiskReportController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('form.risiko.store');
 
-    // --- MENU 2: REVIEW & TINDAK LANJUT (CHECKER: KACAB & KORWIL) ---
+    // --- MENU 2: REVIEW & TINDAK LANJUT (CHECKER: KACAB) ---
     Route::get('/review-laporan', [RiskReportController::class, 'review'])->name('review.laporan');
 
-    // Ini perbaikan rute persetujuan (Approve/Reject)
-    Route::post('/risk-reports/{id}/status', [RiskReportController::class, 'updateStatus'])->name('risk_reports.update_status');
+    // Approve/Reject — throttle 10 per menit
+    Route::post('/risk-reports/{id}/status', [RiskReportController::class, 'updateStatus'])
+        ->middleware('throttle:10,1')
+        ->name('risk_reports.update_status');
 
-    // Ini rute baru buat Tindak Lanjut (Monitoring/Closed)
-    Route::post('/risk-reports/{id}/resolution', [RiskReportController::class, 'updateResolution'])->name('risk_reports.update_resolution');
+    // Tindak Lanjut (Monitoring/Closed) — throttle 10 per menit
+    Route::post('/risk-reports/{id}/resolution', [RiskReportController::class, 'updateResolution'])
+        ->middleware('throttle:10,1')
+        ->name('risk_reports.update_resolution');
 
     // --- MENU 3: RIWAYAT KESELURUHAN ---
     Route::get('/riwayat-risiko', [RiskReportController::class, 'index'])->name('risk.history');
@@ -442,13 +448,21 @@ Route::middleware('auth')->group(function () {
     // Rute Detail & Progress Laporan
     Route::get('/risk-report/{id}', [RiskReportController::class, 'show'])->name('risk_reports.show');
 
-    // Rute untuk nambahin Progress Catatan (Action POST dari halaman show)
-    Route::post('/risk-report/{id}/progress', [RiskReportController::class, 'addProgress'])->name('risk_reports.add_progress');
+    // Rute untuk nambahin Progress Catatan — throttle 10 per menit
+    Route::post('/risk-report/{id}/progress', [RiskReportController::class, 'addProgress'])
+        ->middleware('throttle:10,1')
+        ->name('risk_reports.add_progress');
 
-    // --- RUTE REVISI LAPORAN ---
-    Route::post('/risk-report/{id}/request-revision', [RiskReportController::class, 'requestRevision'])->name('risk_reports.request_revision');
-    Route::post('/risk-report/{id}/submit-revision', [RiskReportController::class, 'submitRevision'])->name('risk_reports.submit_revision');
-    Route::post('/risk-report/{id}/approve-revision', [RiskReportController::class, 'approveRevision'])->name('risk_reports.approve_revision');
+    // --- RUTE REVISI LAPORAN — throttle 10 per menit ---
+    Route::post('/risk-report/{id}/request-revision', [RiskReportController::class, 'requestRevision'])
+        ->middleware('throttle:10,1')
+        ->name('risk_reports.request_revision');
+    Route::post('/risk-report/{id}/submit-revision', [RiskReportController::class, 'submitRevision'])
+        ->middleware('throttle:10,1')
+        ->name('risk_reports.submit_revision');
+    Route::post('/risk-report/{id}/approve-revision', [RiskReportController::class, 'approveRevision'])
+        ->middleware('throttle:10,1')
+        ->name('risk_reports.approve_revision');
 
     // --- NOTIFIKASI IN-APP ---
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
@@ -459,9 +473,11 @@ Route::middleware('auth')->group(function () {
     // --- EXPORT CSV ---
     Route::get('/export-risiko', [ExportRiskReportController::class, 'export'])->name('risk.export');
 
-    // --- DEKLARASI NIHIL RISIKO (Kacab) ---
+    // --- DEKLARASI NIHIL RISIKO (Kacab) — throttle 10 per menit ---
     Route::get('/deklarasi-nihil', [RiskFreeDeclarationController::class, 'create'])->name('risk_free_declarations.create');
-    Route::post('/deklarasi-nihil', [RiskFreeDeclarationController::class, 'store'])->name('risk_free_declarations.store');
+    Route::post('/deklarasi-nihil', [RiskFreeDeclarationController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('risk_free_declarations.store');
     Route::get('/deklarasi-nihil/riwayat', [RiskFreeDeclarationController::class, 'history'])->name('risk_free_declarations.history');
 });
 

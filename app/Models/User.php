@@ -72,7 +72,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Cek apakah password user sudah expired (lebih dari 30 hari).
+     * Cek apakah password user sudah expired (lebih dari 90 hari).
      */
     public function mustChangePassword(): bool
     {
@@ -80,6 +80,6 @@ class User extends Authenticatable
             return true;
         }
 
-        return $this->password_changed_at->addDays(30)->isPast();
+        return $this->password_changed_at->addDays(90)->isPast();
     }
 }

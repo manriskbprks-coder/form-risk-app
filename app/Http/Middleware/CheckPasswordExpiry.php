@@ -28,7 +28,7 @@ class CheckPasswordExpiry
 
             if (!$request->routeIs('profile.edit') && !$request->routeIs('login') && !$request->routeIs('logout')) {
                 return redirect()->route('profile.edit')
-                    ->with('error', 'Password Anda sudah berusia lebih dari 30 hari. Silakan ganti password Anda.');
+                    ->with('error', 'Password Anda sudah berusia lebih dari 90 hari. Silakan ganti password Anda.');
             }
         }
 
