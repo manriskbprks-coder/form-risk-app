@@ -23,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Security Headers — dipasang di semua request
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
+        // Force HTTPS — redirect HTTP → HTTPS di production
+        $middleware->append(\App\Http\Middleware\ForceHttps::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
