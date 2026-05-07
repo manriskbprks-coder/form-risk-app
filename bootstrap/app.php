@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -26,6 +27,14 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Force HTTPS — redirect HTTP → HTTPS di production
         $middleware->append(\App\Http\Middleware\ForceHttps::class);
+
+        // Trusted proxies — biar Laravel tau kalau dibelakang load balancer (Render, Cloudflare, dll)
+        $middleware->trustProxies(at: '*', headers: Request::HEADER_X_FORWARDED_FOR |
+            Request::HEADER_X_FORWARDED_HOST |
+            Request::HEADER_X_FORWARDED_PORT |
+            Request::HEADER_X_FORWARDED_PROTO |
+            Request::HEADER_X_FORWARDED_AWS_ELB
+        );
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
