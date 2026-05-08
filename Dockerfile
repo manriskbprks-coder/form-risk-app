@@ -4,7 +4,7 @@ FROM php:8.2-cli
 RUN apt-get update -y && apt-get install -y libpq-dev unzip curl default-mysql-client \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
-    && docker-php-ext-install pdo pdo_mysql
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql
 
 # Ambil Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
