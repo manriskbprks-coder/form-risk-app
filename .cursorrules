@@ -1,7 +1,0 @@
-# Coding Standards & Rules
-- Selalu terapkan prinsip DRY (Don't Repeat Yourself). Ekstrak kode yang berulang menjadi helper function, service, atau reusable component.
-- Fokus pada optimasi performa dan kemudahan maintenance.
-- Jika menemukan bug, jelaskan akar masalahnya terlebih dahulu secara singkat sebelum memperbaiki.
-- DILARANG mengubah inti dari business logic tanpa konfirmasi.
-- Pastikan semua error handling tertangani dengan baik (jangan biarkan ada silent error).
-- Hapus komentar kode yang sudah tidak relevan (dead code/commented out code).

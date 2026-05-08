@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\RiskReport;
 use App\Models\Branch;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExportRiskReportController extends Controller
@@ -74,6 +75,17 @@ class ExportRiskReportController extends Controller
         }
 
         $reports = $query->orderBy('created_at', 'desc')->get();
+
+        // Catat aktivitas export ke log harian
+        Log::channel('daily')->info('[AUDIT] User export CSV', [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'role' => $role,
+            'filename' => 'export-risiko-' . now()->format('Ymd-His') . '.csv',
+            'total_reports' => $reports->count(),
+            'filters' => $request->only(['search', 'branch_id', 'kategori', 'jabatan', 'start_date', 'end_date', 'resolution_status']),
+            'ip' => $request->ip(),
+        ]);
 
         // Generate CSV
         $filename = 'export-risiko-' . now()->format('Ymd-His') . '.csv';

@@ -26,9 +26,25 @@ Thumbs.db
 /ROADMAP.md
 /TEST_SUMMARY.md
 /chartplan.md
-.rulescline
-.cursorrules
 /database/database.sqlite
 _ide_helper.php
 _ide_helper_models.php
 /sc_phase.md
+rulescline
+cursorrules
+query
+RISK_REPORT_POLICY.md
+TEST_REPORT_PHASE1_2.md
+TEST_REPORT_PHASE3.md
+TEST_REPORT_PHASE4.md
+TEST_REPORT_PHASE5.md
+TEST_REPORT_PHASE6.md
+TEST_REPORT_PHASE7.md
+TEST_REPORT_PHASE8.md
+
+# Production - exclude development/testing files
+/phpunit.dusk.xml
+/Dockerfile
+/vite.config.js
+/postcss.config.js
+/tailwind.config.js

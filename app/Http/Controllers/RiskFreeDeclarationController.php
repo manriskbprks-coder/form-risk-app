@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class RiskFreeDeclarationController extends Controller
 {
@@ -178,6 +179,17 @@ class RiskFreeDeclarationController extends Controller
             'status' => 'violated',
             'violated_at' => now(),
             'violated_by' => $user->id,
+        ]);
+
+        // Catat aktivitas violate ke log harian
+        Log::channel('daily')->info('[AUDIT] Declaration violated by ManRisk', [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'declaration_id' => $declaration->id,
+            'branch_id' => $declaration->branch_id,
+            'periode' => $declaration->periode,
+            'bulan' => $declaration->bulan,
+            'tahun' => $declaration->tahun,
         ]);
 
         // Notifikasi ke Kacab

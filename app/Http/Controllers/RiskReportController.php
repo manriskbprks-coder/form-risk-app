@@ -10,6 +10,7 @@ use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Response;
 use App\Http\Requests\StoreRiskReportRequest;
 use App\Http\Requests\UpdateRiskApprovalStatusRequest;
@@ -78,30 +79,31 @@ class RiskReportController extends Controller
 
     public function store(StoreRiskReportRequest $request)
     {
-        $user = Auth::user();
-        $targetApproval = $user->hasRole('kacab') ? 'approved' : 'pending_kacab';
+        try {
+            $user = Auth::user();
+            $targetApproval = $user->hasRole('kacab') ? 'approved' : 'pending_kacab';
 
-        $report = RiskReport::create([
-            'kode_laporan' => $this->generateKodeLaporan($user),
-            'user_id' => $user->id,
-            'branch_id' => $user->branch_id,
-            'kategori' => $request->kategori,
-            'tanggal_kejadian' => $request->tanggal_kejadian,
-            'tanggal_diketahui' => $request->tanggal_diketahui,
-            'risk_item_id' => $request->risk_item_id,
-            'other_item_description' => $request->other_item_description,
-            'risk_cause_id' => $request->risk_cause_id,
-            'other_cause_description' => $request->other_cause_description,
-            'kronologis_kejadian' => $request->kronologis_kejadian,
-            'mitigasi_tambahan' => $request->mitigasi_tambahan,
-            'durasi_penyelesaian' => $request->durasi_penyelesaian,
-            'durasi_satuan' => $request->durasi_satuan,
-            'dampak_finansial' => $request->dampak_finansial ?? 0,
-            'dampak_non_finansial' => $request->dampak_non_finansial,
-            'skala_dampak' => $request->skala_dampak,
-            'approval_status' => $targetApproval,
-            'resolution_status' => $request->status_awal,
-        ]);
+            $report = RiskReport::create([
+                'kode_laporan' => $this->generateKodeLaporan($user),
+                'user_id' => $user->id,
+                'branch_id' => $user->branch_id,
+                'kategori' => $request->kategori,
+                'tanggal_kejadian' => $request->tanggal_kejadian,
+                'tanggal_diketahui' => $request->tanggal_diketahui,
+                'risk_item_id' => $request->risk_item_id,
+                'other_item_description' => $request->other_item_description,
+                'risk_cause_id' => $request->risk_cause_id,
+                'other_cause_description' => $request->other_cause_description,
+                'kronologis_kejadian' => $request->kronologis_kejadian,
+                'mitigasi_tambahan' => $request->mitigasi_tambahan,
+                'durasi_penyelesaian' => $request->durasi_penyelesaian,
+                'durasi_satuan' => $request->durasi_satuan,
+                'dampak_finansial' => $request->dampak_finansial ?? 0,
+                'dampak_non_finansial' => $request->dampak_non_finansial,
+                'skala_dampak' => $request->skala_dampak,
+                'approval_status' => $targetApproval,
+                'resolution_status' => $request->status_awal,
+            ]);
 
         // Snapshot data original saat laporan dibuat (biar bisa liat history awal)
         $originalData = $report->only([
@@ -142,6 +144,14 @@ class RiskReportController extends Controller
         }
 
         return redirect()->route('dashboard')->with('success', 'Laporan berhasil dikirim!');
+        } catch (\Exception $e) {
+            Log::channel('daily')->error('[ERROR] Gagal menyimpan laporan', [
+                'user_id' => Auth::user()?->id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return back()->with('error', 'Terjadi kesalahan saat menyimpan laporan. Silakan coba lagi.');
+        }
     }
 
     // VIEW 1 & 2: MONITORING & PERSETUJUAN — Khusus Kacab
@@ -210,6 +220,15 @@ class RiskReportController extends Controller
 
         // Approved
         $report->update(['approval_status' => 'approved', 'revision_note' => null]);
+
+        // Catat log approval
+        \App\Models\RiskReportLog::create([
+            'risk_report_id' => $report->id,
+            'user_id' => $user->id,
+            'note' => 'Laporan disetujui oleh Kacab',
+            'status_after_note' => 'approved',
+            'old_data' => null,
+        ]);
 
         Notification::create([
             'user_id' => $report->user_id,
@@ -313,10 +332,22 @@ class RiskReportController extends Controller
     // UPDATE TINDAK LANJUT (RESOLUTION)
     public function updateResolution(UpdateRiskResolutionRequest $request, $id)
     {
+        $user = Auth::user();
         $report = RiskReport::findOrFail($id);
         Gate::authorize('updateProgress', $report);
 
+        $oldStatus = $report->resolution_status;
         $report->update(['resolution_status' => $request->resolution_status]);
+
+        // Catat perubahan resolution status ke log harian
+        Log::channel('daily')->info('[AUDIT] Resolution status updated', [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'report_id' => $report->id,
+            'kode_laporan' => $report->kode_laporan,
+            'old_status' => $oldStatus,
+            'new_status' => $request->resolution_status,
+        ]);
 
         return redirect()->back()->with('success', 'Status tindak lanjut diperbarui!');
     }
@@ -383,12 +414,15 @@ class RiskReportController extends Controller
         Gate::authorize('requestRevision', $report);
 
         $request->validate([
-            'revision_note' => 'required|string|min:10',
+            'revision_note' => 'required|string|min:10|max:2000',
         ]);
+
+        // Sanitasi XSS
+        $revisionNote = strip_tags($request->input('revision_note'));
 
         $report->update([
             'approval_status' => 'need_revision',
-            'revision_note' => $request->revision_note,
+            'revision_note' => $revisionNote,
         ]);
 
         // Snapshot data lama
