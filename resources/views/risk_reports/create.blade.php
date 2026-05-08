@@ -28,14 +28,14 @@
                         <div class="flex-1">
                             <h4 class="text-sm font-bold text-rose-800">Terdapat {{ $errors->count() }} kesalahan dalam pengisian form</h4>
                             <p class="text-xs text-rose-600 mt-0.5">Silakan perbaiki data yang ditandai dengan warna merah di bawah ini.</p>
+                            <ul class="mt-2 text-xs text-rose-700 list-disc list-inside space-y-0.5">
+                                @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
                         </div>
                         <button @click="show = false" class="text-rose-400 hover:text-rose-600 transition shrink-0">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
+                            <svg class="w-5 h-
                 @endif
 
                 <form action="{{ route('form.risiko.store') }}" method="POST" id="riskForm">
@@ -359,6 +359,9 @@
 
         // Trigger saat milih dropdown penyebab
         causeSelect.addEventListener('change', function() {
+            // Guard: kalo dropdown kosong atau ga ada option yang dipilih, skip
+            if (!this.options.length || !this.options[this.selectedIndex]) return;
+
             const otherCauseContainer = document.getElementById('otherCauseContainer');
             const otherCauseInput = document.getElementById('otherCauseInput');
 
@@ -452,21 +455,5 @@
             updateMinTanggalDiketahui();
         });
 
-        // Logika Format Uang (Masking Ribuan)
-        const nominalInput = document.getElementById('nominalInput');
-        const nominalReal = document.getElementById('nominalReal');
-
-        nominalInput.addEventListener('keyup', function(e) {
-            // Hapus semua huruf/simbol, cuma sisain angka
-            let val = this.value.replace(/[^0-9]/g, '');
-            // Masukin nilai aslinya (tanpa koma) ke input hidden buat dikirim ke database
-            nominalReal.value = val;
-
-            // Format tampilannya pakai koma (150,000)
-            if (val != '') {
-                val = parseInt(val, 10).toLocaleString('en-US');
-            }
-            this.value = val;
-        });
     </script>
 </x-app-layout>

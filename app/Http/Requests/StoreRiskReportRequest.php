@@ -74,7 +74,7 @@ class StoreRiskReportRequest extends FormRequest
 
             // Validasi durasi
             'durasi_penyelesaian' => ['nullable', 'integer', 'min:1', 'max:9999'],
-            'durasi_satuan' => ['nullable', 'in:jam,hari,minggu'],
+            'durasi_satuan' => ['nullable', 'in:menit,jam,hari,minggu,bulan'],
         ];
 
         if ($kategori === 'finansial') {

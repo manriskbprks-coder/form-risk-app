@@ -72,6 +72,7 @@
                             </select>
                         </div>
 
+                        @if(!in_array($role, ['teller', 'ca', 'csr', 'security']))
                         <div>
                             <select name="jabatan" class="w-full rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
                                 <option value="">Semua Jabatan</option>
@@ -80,6 +81,7 @@
                                 @endforeach
                             </select>
                         </div>
+                        @endif
 
                         <div>
                             <select name="approval_status" class="w-full rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
@@ -224,7 +226,6 @@
                                         <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded {{ $skalaColor }}">
                                             {{ $skalaDampak ?: '—' }}
                                         </span>
-                                        <span class="text-xs italic line-clamp-2 max-w-[140px]" title="{{ $report->dampak_non_finansial }}">{{ $report->dampak_non_finansial ?? '—' }}</span>
                                     </div>
                                     @endif
                                 </td>
@@ -369,7 +370,6 @@
                                         <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded {{ $skalaColor }}">
                                             {{ $skalaDampak ?: '—' }}
                                         </span>
-                                        <span class="text-xs italic line-clamp-2 max-w-[140px]" title="{{ $report->dampak_non_finansial }}">{{ $report->dampak_non_finansial ?? '—' }}</span>
                                     </div>
                                     @endif
                                 </td>

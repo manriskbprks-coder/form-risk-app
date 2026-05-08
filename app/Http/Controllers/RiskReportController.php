@@ -105,18 +105,12 @@ class RiskReportController extends Controller
                 'resolution_status' => $request->status_awal,
             ]);
 
-        // Snapshot data original saat laporan dibuat (biar bisa liat history awal)
-        $originalData = $report->only([
-            'kronologis_kejadian', 'dampak_finansial', 'skala_dampak',
-            'dampak_non_finansial', 'mitigasi_tambahan',
-            'durasi_penyelesaian', 'durasi_satuan',
-        ]);
-
+        // Log pertama: laporan dibuat — tanpa old_data (biar ga muncul diff di UI)
         $report->logs()->create([
             'user_id' => $user->id,
             'note' => 'Laporan dibuat',
             'status_after_note' => $targetApproval,
-            'old_data' => json_encode($originalData),
+            'old_data' => null,
         ]);
 
         if ($request->filled('tindakan_awal')) {
