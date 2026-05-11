@@ -66,12 +66,20 @@ class ExportRiskReportController extends Controller
             });
         }
 
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('tanggal_kejadian', [$request->start_date, $request->end_date]);
+        if ($request->filled('start_date')) {
+            $query->where('tanggal_kejadian', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->where('tanggal_kejadian', '<=', $request->end_date);
         }
 
         if ($request->filled('resolution_status')) {
             $query->where('resolution_status', $request->resolution_status);
+        }
+
+        if ($request->filled('approval_status')) {
+            $query->where('approval_status', $request->approval_status);
         }
 
         $reports = $query->orderBy('created_at', 'desc')->get();
@@ -83,7 +91,7 @@ class ExportRiskReportController extends Controller
             'role' => $role,
             'filename' => 'export-risiko-' . now()->format('Ymd-His') . '.csv',
             'total_reports' => $reports->count(),
-            'filters' => $request->only(['search', 'branch_id', 'kategori', 'jabatan', 'start_date', 'end_date', 'resolution_status']),
+            'filters' => $request->only(['search', 'branch_id', 'kategori', 'jabatan', 'start_date', 'end_date', 'resolution_status', 'approval_status']),
             'ip' => $request->ip(),
         ]);
 
