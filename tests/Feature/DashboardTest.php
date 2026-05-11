@@ -31,18 +31,19 @@ class DashboardTest extends TestCase
         $this->branch = Branch::factory()->create(['nama_cabang' => 'Cabang A', 'is_active' => true]);
         $this->branchLain = Branch::factory()->create(['nama_cabang' => 'Cabang B', 'is_active' => true]);
 
-        $this->teller = User::factory()->create(['branch_id' => $this->branch->id]);
+        $this->teller = User::factory()->create(['branch_id' => $this->branch->id, 'role_category' => 'maker']);
         $this->teller->assignRole('teller');
 
-        $this->kacab = User::factory()->create(['branch_id' => $this->branch->id]);
+        $this->kacab = User::factory()->create(['branch_id' => $this->branch->id, 'role_category' => 'checker']);
         $this->kacab->assignRole('kacab');
 
-        $this->korwil = User::factory()->create();
+        $this->korwil = User::factory()->create(['role_category' => 'viewer']);
         $this->korwil->assignRole('korwil');
+
         $this->branch->update(['korwil_id' => $this->korwil->id]);
         $this->branchLain->update(['korwil_id' => $this->korwil->id]);
 
-        $this->manrisk = User::factory()->create();
+        $this->manrisk = User::factory()->create(['role_category' => 'viewer']);
         $this->manrisk->assignRole('manrisk');
     }
 

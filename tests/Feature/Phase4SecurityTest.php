@@ -48,13 +48,13 @@ class Phase4SecurityTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->teller = User::factory()->create(['branch_id' => $this->branch->id]);
+        $this->teller = User::factory()->asMaker()->create(['branch_id' => $this->branch->id]);
         $this->teller->assignRole('teller');
 
-        $this->kacab = User::factory()->create(['branch_id' => $this->branch->id]);
+        $this->kacab = User::factory()->asChecker()->create(['branch_id' => $this->branch->id]);
         $this->kacab->assignRole('kacab');
 
-        $this->manrisk = User::factory()->create(['branch_id' => $this->branch->id]);
+        $this->manrisk = User::factory()->asViewer()->create(['branch_id' => $this->branch->id]);
         $this->manrisk->assignRole('manrisk');
 
         $this->riskItem = RiskItem::factory()->create([

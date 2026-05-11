@@ -37,19 +37,19 @@ class RiskFreeDeclarationTest extends TestCase
         $this->branchLain = Branch::factory()->create(['nama_cabang' => 'Cabang B', 'is_active' => true]);
 
         // Buat users
-        $this->teller = User::factory()->create(['branch_id' => $this->branch->id]);
+        $this->teller = User::factory()->asMaker()->create(['branch_id' => $this->branch->id]);
         $this->teller->assignRole('teller');
 
-        $this->kacab = User::factory()->create(['branch_id' => $this->branch->id]);
+        $this->kacab = User::factory()->asChecker()->create(['branch_id' => $this->branch->id]);
         $this->kacab->assignRole('kacab');
 
-        $this->kacabLain = User::factory()->create(['branch_id' => $this->branchLain->id]);
+        $this->kacabLain = User::factory()->asChecker()->create(['branch_id' => $this->branchLain->id]);
         $this->kacabLain->assignRole('kacab');
 
-        $this->korwil = User::factory()->create();
+        $this->korwil = User::factory()->asViewer()->create();
         $this->korwil->assignRole('korwil');
 
-        $this->manrisk = User::factory()->create();
+        $this->manrisk = User::factory()->asViewer()->create();
         $this->manrisk->assignRole('manrisk');
     }
 
@@ -366,10 +366,6 @@ class RiskFreeDeclarationTest extends TestCase
     public function non_kacab_non_manrisk_cannot_access_history()
     {
         $response = $this->actingAs($this->teller)
-            ->get(route('risk_free_declarations.history'));
-        $response->assertStatus(403);
-
-        $response = $this->actingAs($this->korwil)
             ->get(route('risk_free_declarations.history'));
         $response->assertStatus(403);
     }

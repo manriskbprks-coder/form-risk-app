@@ -51,7 +51,7 @@
                         </a>
                         @endif
 
-                        @if($role === 'manrisk')
+                        @if(Auth::user()->hasRole('manrisk'))
                         <a href="{{ route('risk.export', request()->query()) }}" class="w-full sm:w-auto inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition shadow-sm">
                             <svg class="w-4 h-4 inline-block -mt-0.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -81,7 +81,7 @@
                             </select>
                         </div>
 
-                        @if(!in_array($role, ['teller', 'ca', 'csr', 'security']))
+                        @if(Auth::user()->role_category !== 'maker')
                         <div>
                             <select name="jabatan" class="w-full rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
                                 <option value="">Semua Jabatan</option>
@@ -107,12 +107,12 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Tanggal Kejadian Dari</label>
-                            <input type="date" name="start_date" value="{{ request('start_date') }}"
+                            <input type="date" name="start_date" id="date_from" value="{{ request('start_date') }}"
                                    class="w-full rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Sampai</label>
-                            <input type="date" name="end_date" value="{{ request('end_date') }}"
+                            <input type="date" name="end_date" id="date_to" value="{{ request('end_date') }}"
                                    class="w-full rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
                         </div>
                     </div>
@@ -137,19 +137,16 @@
                 </div>
                 @else
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
-                    <table class="min-w-[1400px] w-full bg-white border border-gray-200">
+                    <table class="min-w-[1000px] w-full bg-white border border-gray-200">
                         <thead class="bg-gray-100">
                             <tr>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="kode">ID Laporan</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="tgl">Tgl Lapor & Kejadian</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="pelapor">Pelapor</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="cabang">Cabang</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="sumber">Sumber Risiko</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="kategori">Kategori</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="pelapor">Pelapor / Cabang</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="sumber">Sumber / Kategori</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider">Risiko & Penyebab</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="dampak">Dampak</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="approval">Approval</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="resolusi">Resolusi</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="approval">Status</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Aksi</th>
                             </tr>
                         </thead>
@@ -191,20 +188,23 @@
                                     <div class="text-xs font-bold text-blue-700">Lapor: {{ $report->created_at->format('d/m/Y') }}</div>
                                     <div class="text-xs text-gray-600 mt-1">Kejadian: {{ \Carbon\Carbon::parse($report->tanggal_kejadian)->format('d/m/Y') }}</div>
                                 </td>
-                                <td class="px-4 py-3 border-b text-sm font-bold text-gray-800 text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->user->name }}">{{ $report->user->name }}</td>
-                                <td class="px-4 py-3 border-b text-sm text-gray-600 text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->branch->nama_cabang ?? '' }}">{{ $report->branch->nama_cabang ?? '—' }}</td>
-                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
-                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $sumber['color'] }}">
-                                        {{ $sumber['label'] }}
-                                    </span>
+                                {{-- Pelapor / Cabang --}}
+                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->user->name }}">
+                                    <div class="text-sm font-bold text-gray-800">{{ $report->user->name }}</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">{{ $report->branch->nama_cabang ?? '—' }}</div>
                                 </td>
-                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
-                                    @if($report->kategori === 'finansial')
-                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border bg-green-100 text-green-800 border-green-200">Finansial</span>
-                                    @else
-                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border bg-orange-100 text-orange-800 border-orange-200">Non-Finansial</span>
-                                    @endif
+                                {{-- Sumber / Kategori --}}
+                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap" data-sort-value="{{ $sumberRisiko }}">
+                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $sumber['color'] }}">{{ $sumber['label'] }}</span>
+                                    <div class="mt-1">
+                                        @if($report->kategori === 'finansial')
+                                        <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border bg-green-100 text-green-800 border-green-200">Finansial</span>
+                                        @else
+                                        <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border bg-orange-100 text-orange-800 border-orange-200">Non-Finansial</span>
+                                        @endif
+                                    </div>
                                 </td>
+                                {{-- Risiko & Penyebab --}}
                                 <td class="px-4 py-3 border-b align-middle">
                                     <div class="text-sm font-bold text-gray-900 truncate max-w-[240px]" title="{{ $report->item->nama_risiko ?? $report->other_item_description }}">
                                         {{ $report->item->nama_risiko ?? $report->other_item_description }}
@@ -216,6 +216,7 @@
                                         </span>
                                     </div>
                                 </td>
+                                {{-- Dampak --}}
                                 <td class="px-4 py-3 border-b text-sm text-gray-800 text-center align-middle">
                                     @if($report->kategori === 'finansial')
                                     <span class="font-bold whitespace-nowrap">Rp {{ number_format($report->dampak_finansial, 0, ',', '.') }}</span>
@@ -223,31 +224,29 @@
                                     <div class="flex flex-col items-center gap-1">
                                         @php
                                             $skalaDampak = $report->skala_dampak ?? '';
-                                            $skalaColors = [
-                                                'Sangat Tinggi' => 'bg-red-700 text-white',
-                                                'Tinggi' => 'bg-orange-500 text-white',
-                                                'Sedang' => 'bg-yellow-500 text-white',
-                                                'Rendah' => 'bg-blue-500 text-white',
-                                                'Sangat Rendah' => 'bg-green-600 text-white',
-                                            ];
+                                        $skalaColors = [
+                                            'Sangat Tinggi' => 'bg-red-600 text-white border-red-100',
+                                            'Tinggi' => 'bg-red-100 text-red-800 border-red-400',
+                                            'Sedang' => 'bg-yellow-100 text-yellow-800 border-yellow-400',
+                                            'Rendah' => 'bg-green-100 text-green-700 border-green-400',
+                                            'Sangat Rendah' => 'bg-green-600 text-white border-green-900',
+                                        ];
                                             $skalaColor = $skalaColors[$skalaDampak] ?? 'bg-gray-500 text-white';
                                         @endphp
-                                        <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded {{ $skalaColor }}">
+                                        <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded border {{ $skalaColor }}">
                                             {{ $skalaDampak ?: '—' }}
                                         </span>
                                     </div>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
-                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $approvalClass }}">
-                                        {{ str_replace('_', ' ', $report->approval_status) }}
-                                    </span>
+                                {{-- Status (Approval + Resolusi) --}}
+                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->approval_status }}">
+                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $approvalClass }}">{{ str_replace('_', ' ', $report->approval_status) }}</span>
+                                    <div class="mt-1">
+                                        <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $resolutionClass }}">{{ str_replace('_', ' ', $report->resolution_status) }}</span>
+                                    </div>
                                 </td>
-                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
-                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $resolutionClass }}">
-                                        {{ str_replace('_', ' ', $report->resolution_status) }}
-                                    </span>
-                                </td>
+                                {{-- Aksi --}}
                                 <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
                                     <a href="{{ route('risk_reports.show', $report->id) }}"
                                        class="inline-flex items-center gap-1 bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow-sm">
@@ -289,18 +288,16 @@
                 </div>
                 @else
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
-                    <table class="min-w-[1400px] w-full bg-white border border-gray-200">
+                    <table class="min-w-[1000px] w-full bg-white border border-gray-200">
                         <thead class="bg-gray-100">
                             <tr>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="kode">ID Laporan</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="tgl">Tgl Lapor & Kejadian</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="pelapor">Pelapor</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="cabang">Cabang</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="sumber">Sumber Risiko</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="kategori">Kategori</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="pelapor">Pelapor / Cabang</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="sumber">Sumber / Kategori</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider">Risiko & Penyebab</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="dampak">Dampak</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="approval">Approval</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="approval">Status</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Aksi</th>
                             </tr>
                         </thead>
@@ -324,6 +321,13 @@
                                 'pending_revision' => 'bg-blue-100 text-blue-800 border-blue-200',
                             ];
                             $approvalClass = $approvalColors[$report->approval_status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
+
+                            $resolutionColors = [
+                                'open' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                                'in_progress' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                'closed' => 'bg-green-100 text-green-800 border-green-200',
+                            ];
+                            $resolutionClass = $resolutionColors[$report->resolution_status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
                             @endphp
                             <tr class="hover:bg-gray-50 align-middle">
                                 <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->kode_laporan ?? '' }}">
@@ -335,20 +339,23 @@
                                     <div class="text-xs font-bold text-blue-700">Lapor: {{ $report->created_at->format('d/m/Y') }}</div>
                                     <div class="text-xs text-gray-600 mt-1">Kejadian: {{ \Carbon\Carbon::parse($report->tanggal_kejadian)->format('d/m/Y') }}</div>
                                 </td>
-                                <td class="px-4 py-3 border-b text-sm font-bold text-gray-800 text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->user->name }}">{{ $report->user->name }}</td>
-                                <td class="px-4 py-3 border-b text-sm text-gray-600 text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->branch->nama_cabang ?? '' }}">{{ $report->branch->nama_cabang ?? '—' }}</td>
-                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
-                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $sumber['color'] }}">
-                                        {{ $sumber['label'] }}
-                                    </span>
+                                {{-- Pelapor / Cabang --}}
+                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->user->name }}">
+                                    <div class="text-sm font-bold text-gray-800">{{ $report->user->name }}</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">{{ $report->branch->nama_cabang ?? '—' }}</div>
                                 </td>
-                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
-                                    @if($report->kategori === 'finansial')
-                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border bg-green-100 text-green-800 border-green-200">Finansial</span>
-                                    @else
-                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border bg-orange-100 text-orange-800 border-orange-200">Non-Finansial</span>
-                                    @endif
+                                {{-- Sumber / Kategori --}}
+                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap" data-sort-value="{{ $sumberRisiko }}">
+                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $sumber['color'] }}">{{ $sumber['label'] }}</span>
+                                    <div class="mt-1">
+                                        @if($report->kategori === 'finansial')
+                                        <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border bg-green-100 text-green-800 border-green-200">Finansial</span>
+                                        @else
+                                        <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border bg-orange-100 text-orange-800 border-orange-200">Non-Finansial</span>
+                                        @endif
+                                    </div>
                                 </td>
+                                {{-- Risiko & Penyebab --}}
                                 <td class="px-4 py-3 border-b align-middle">
                                     <div class="text-sm font-bold text-gray-900 truncate max-w-[240px]" title="{{ $report->item->nama_risiko ?? $report->other_item_description }}">
                                         {{ $report->item->nama_risiko ?? $report->other_item_description }}
@@ -360,6 +367,7 @@
                                         </span>
                                     </div>
                                 </td>
+                                {{-- Dampak --}}
                                 <td class="px-4 py-3 border-b text-sm text-gray-800 text-center align-middle">
                                     @if($report->kategori === 'finansial')
                                     <span class="font-bold whitespace-nowrap">Rp {{ number_format($report->dampak_finansial, 0, ',', '.') }}</span>
@@ -368,25 +376,28 @@
                                         @php
                                             $skalaDampak = $report->skala_dampak ?? '';
                                             $skalaColors = [
-                                                'Sangat Tinggi' => 'bg-red-700 text-white',
-                                                'Tinggi' => 'bg-orange-500 text-white',
-                                                'Sedang' => 'bg-yellow-500 text-white',
-                                                'Rendah' => 'bg-blue-500 text-white',
-                                                'Sangat Rendah' => 'bg-green-600 text-white',
+                                                'Sangat Tinggi' => 'bg-red-600 text-white border-red-100',
+                                                'Tinggi' => 'bg-red-100 text-red-800 border-red-400',
+                                                'Sedang' => 'bg-yellow-100 text-yellow-800 border-yellow-400',
+                                                'Rendah' => 'bg-green-100 text-green-700 border-green-400',
+                                                'Sangat Rendah' => 'bg-green-600 text-white border-green-900',
                                             ];
                                             $skalaColor = $skalaColors[$skalaDampak] ?? 'bg-gray-500 text-white';
                                         @endphp
-                                        <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded {{ $skalaColor }}">
+                                        <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded border {{ $skalaColor }}">
                                             {{ $skalaDampak ?: '—' }}
                                         </span>
                                     </div>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
-                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $approvalClass }}">
-                                        {{ str_replace('_', ' ', $report->approval_status) }}
-                                    </span>
+                                {{-- Status (Approval + Resolusi) --}}
+                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->approval_status }}">
+                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $approvalClass }}">{{ str_replace('_', ' ', $report->approval_status) }}</span>
+                                    <div class="mt-1">
+                                        <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $resolutionClass }}">{{ str_replace('_', ' ', $report->resolution_status) }}</span>
+                                    </div>
                                 </td>
+                                {{-- Aksi --}}
                                 <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
                                     <a href="{{ route('risk_reports.show', $report->id) }}"
                                        class="inline-flex items-center gap-1 bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow-sm">
@@ -439,63 +450,98 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Date validation — max today, date_from <= date_to, date_to >= date_from
+            var dateFrom = document.getElementById('date_from');
+            var dateTo = document.getElementById('date_to');
+            var today = new Date().toISOString().split('T')[0];
+            if (dateFrom) dateFrom.setAttribute('max', today);
+            if (dateTo) dateTo.setAttribute('max', today);
+
+            if (dateFrom && dateTo) {
+                dateFrom.addEventListener('change', function() {
+                    dateTo.setAttribute('min', dateFrom.value);
+                    if (dateTo.value && dateTo.value < dateFrom.value) {
+                        dateTo.value = dateFrom.value;
+                    }
+                });
+                dateTo.addEventListener('change', function() {
+                    dateFrom.setAttribute('max', dateTo.value);
+                    if (dateFrom.value && dateFrom.value > dateTo.value) {
+                        dateFrom.value = dateTo.value;
+                    }
+                });
+            }
+
             // Client-side table sorting — default descending (terbaru di atas)
             document.querySelectorAll('table').forEach(function(table) {
                 const headers = table.querySelectorAll('th.sortable');
                 const tbody = table.querySelector('tbody');
 
-                // Auto-sort by first column (Tgl Lapor) descending on load
+                // Auto-sort by Tgl Lapor column descending on load
                 const defaultSortHeader = table.querySelector('th.sortable[data-sort="tgl"]');
-                if (defaultSortHeader) {
+                if (defaultSortHeader && tbody) {
                     setTimeout(function() {
                         defaultSortHeader.classList.add('desc');
                         const rows = Array.from(tbody.querySelectorAll('tr'));
-                        const dataRows = rows.filter(row => row.querySelector('td[data-sort-value]'));
-
-                        dataRows.sort(function(a, b) {
-                            const tdIndex = Array.from(defaultSortHeader.parentElement.children).indexOf(defaultSortHeader);
-                            const aTd = a.children[tdIndex];
-                            const bTd = b.children[tdIndex];
-                            let aVal = aTd?.dataset.sortValue || '';
-                            let bVal = bTd?.dataset.sortValue || '';
-
-                            // Descending: terbaru di atas
-                            return bVal.localeCompare(aVal);
+                        const dataRows = rows.filter(function(row) {
+                            return row.querySelector('td[data-sort-value]');
                         });
-
-                        dataRows.forEach(row => tbody.appendChild(row));
-                    }, 50);
+                        dataRows.sort(function(a, b) {
+                            const valA = a.querySelector('td[data-sort-value]').getAttribute('data-sort-value') || '';
+                            const valB = b.querySelector('td[data-sort-value]').getAttribute('data-sort-value') || '';
+                            return valB.localeCompare(valA); // descending
+                        });
+                        dataRows.forEach(function(row) {
+                            tbody.appendChild(row);
+                        });
+                    }, 100);
                 }
 
                 headers.forEach(function(header) {
                     header.addEventListener('click', function() {
-                        const isAsc = this.classList.contains('asc');
+                        const sortKey = header.getAttribute('data-sort');
+                        if (!sortKey || !tbody) return;
 
-                        // Reset all headers
-                        headers.forEach(h => h.classList.remove('asc', 'desc'));
+                        const isAsc = header.classList.contains('asc');
+                        const isDesc = header.classList.contains('desc');
 
-                        // Toggle
-                        this.classList.add(isAsc ? 'desc' : 'asc');
-
-                        const rows = Array.from(tbody.querySelectorAll('tr'));
-                        const dataRows = rows.filter(row => row.querySelector('td[data-sort-value]'));
-
-                        dataRows.sort(function(a, b) {
-                            const tdIndex = Array.from(header.parentElement.children).indexOf(header);
-                            const aTd = a.children[tdIndex];
-                            const bTd = b.children[tdIndex];
-                            let aVal = aTd?.dataset.sortValue || '';
-                            let bVal = bTd?.dataset.sortValue || '';
-
-                            if (!isNaN(aVal) && !isNaN(bVal)) {
-                                return isAsc ? bVal - aVal : aVal - bVal;
-                            }
-                            return isAsc
-                                ? bVal.localeCompare(aVal)
-                                : aVal.localeCompare(bVal);
+                        headers.forEach(function(h) {
+                            h.classList.remove('asc', 'desc');
                         });
 
-                        dataRows.forEach(row => tbody.appendChild(row));
+                        if (!isAsc && !isDesc) {
+                            header.classList.add('asc');
+                        } else if (isAsc) {
+                            header.classList.add('desc');
+                        } else {
+                            header.classList.add('asc');
+                        }
+
+                        const sortAsc = header.classList.contains('asc');
+                        const rows = Array.from(tbody.querySelectorAll('tr'));
+                        const dataRows = rows.filter(function(row) {
+                            return row.querySelector('td[data-sort-value]');
+                        });
+
+                        dataRows.sort(function(a, b) {
+                            const cellA = a.querySelector('td[data-sort-value]');
+                            const cellB = b.querySelector('td[data-sort-value]');
+                            if (!cellA || !cellB) return 0;
+                            const valA = cellA.getAttribute('data-sort-value') || '';
+                            const valB = cellB.getAttribute('data-sort-value') || '';
+
+                            if (sortKey === 'dampak') {
+                                const numA = parseFloat(valA.replace(/[^0-9.-]/g, '')) || 0;
+                                const numB = parseFloat(valB.replace(/[^0-9.-]/g, '')) || 0;
+                                return sortAsc ? numA - numB : numB - numA;
+                            }
+
+                            return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                        });
+
+                        dataRows.forEach(function(row) {
+                            tbody.appendChild(row);
+                        });
                     });
                 });
             });

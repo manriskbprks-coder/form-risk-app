@@ -67,29 +67,29 @@ class Phase7PenetrationTest extends TestCase
         ]);
 
         // Buat user di cabang A
-        $this->tellerA = User::factory()->create([
+        $this->tellerA = User::factory()->asMaker()->create([
             'branch_id' => $this->branchA->id,
         ]);
         $this->tellerA->assignRole('teller');
 
-        $this->kacabA = User::factory()->create([
+        $this->kacabA = User::factory()->asChecker()->create([
             'branch_id' => $this->branchA->id,
         ]);
         $this->kacabA->assignRole('kacab');
 
         // Buat user di cabang B
-        $this->tellerB = User::factory()->create([
+        $this->tellerB = User::factory()->asMaker()->create([
             'branch_id' => $this->branchB->id,
         ]);
         $this->tellerB->assignRole('teller');
 
-        $this->kacabB = User::factory()->create([
+        $this->kacabB = User::factory()->asChecker()->create([
             'branch_id' => $this->branchB->id,
         ]);
         $this->kacabB->assignRole('kacab');
 
         // ManRisk — bisa akses semua
-        $this->manrisk = User::factory()->create([
+        $this->manrisk = User::factory()->asViewer()->create([
             'branch_id' => $this->branchA->id,
         ]);
         $this->manrisk->assignRole('manrisk');

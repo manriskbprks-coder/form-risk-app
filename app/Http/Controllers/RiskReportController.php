@@ -35,8 +35,8 @@ class RiskReportController extends Controller
             abort(Response::HTTP_FORBIDDEN, 'Akses ditolak. Role user tidak ditemukan.');
         }
 
-        // ManRisk & Korwil tidak boleh membuat laporan
-        if (in_array($userRole, ['manrisk', 'korwil'])) {
+        // Viewer (manrisk, korwil) tidak boleh membuat laporan
+        if (Auth::user()->isViewer()) {
             abort(Response::HTTP_FORBIDDEN, 'Akses Ditolak! Role Anda tidak berwenang membuat laporan risiko.');
         }
 
@@ -81,7 +81,7 @@ class RiskReportController extends Controller
     {
         try {
             $user = Auth::user();
-            $targetApproval = $user->hasRole('kacab') ? 'approved' : 'pending_kacab';
+            $targetApproval = $user->role_category === 'checker' ? 'approved' : 'pending_kacab';
 
             $report = RiskReport::create([
                 'kode_laporan' => $this->generateKodeLaporan($user),
@@ -148,19 +148,18 @@ class RiskReportController extends Controller
         }
     }
 
-    // VIEW 1 & 2: MONITORING & PERSETUJUAN — Khusus Kacab
+    // VIEW 1 & 2: MONITORING & PERSETUJUAN — Khusus Checker (Kacab)
     public function review()
     {
         $user = Auth::user();
-        $role = $user?->primaryRoleName();
-        if (!$user || !$role) {
+        if (!$user) {
             abort(Response::HTTP_FORBIDDEN, 'Akses ditolak.');
         }
 
         $reports = collect();
         $tindakLanjut = collect();
 
-        if ($role === 'kacab') {
+        if ($user->role_category === 'checker') {
             $reports = RiskReport::with(['user.roles', 'item', 'cause.mitigations', 'branch'])
                 ->where('branch_id', $user->branch_id)
                 ->whereIn('approval_status', ['pending_kacab', 'need_revision'])
@@ -238,25 +237,31 @@ class RiskReportController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $role = $user?->primaryRoleName();
-        if (!$user || !$role) {
+        if (!$user) {
             abort(Response::HTTP_FORBIDDEN, 'Akses ditolak.');
         }
 
+        $roleCategory = $user->role_category;
+        $role = $user->primaryRoleName();
+
         $query = RiskReport::with(['user', 'item', 'cause.mitigations', 'branch']);
 
-        if ($role === 'kacab') {
+        if ($roleCategory === 'checker') {
             $query->where('branch_id', $user->branch_id);
             $branches = collect();
-        } elseif ($role === 'korwil') {
-            $branchIds = Branch::where('korwil_id', $user->id)->pluck('id');
-            $query->whereIn('branch_id', $branchIds);
-            $branches = Branch::whereIn('id', $branchIds)->get();
-        } elseif (in_array($role, ['teller', 'ca', 'csr', 'security'])) {
+        } elseif ($roleCategory === 'viewer') {
+            // Viewer: Korwil lihat cabang diawasi, ManRisk lihat semua
+            if ($role === 'korwil') {
+                $branchIds = Branch::where('korwil_id', $user->id)->pluck('id');
+                $query->whereIn('branch_id', $branchIds);
+                $branches = Branch::whereIn('id', $branchIds)->get();
+            } else {
+                $branches = Branch::all();
+            }
+        } else {
+            // Maker: hanya lihat laporan sendiri
             $query->where('user_id', $user->id);
             $branches = collect();
-        } else {
-            $branches = Branch::all();
         }
 
         // === SEARCH ===
@@ -293,8 +298,8 @@ class RiskReportController extends Controller
             });
         }
 
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('tanggal_kejadian', [$request->start_date, $request->end_date]);
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('tanggal_kejadian', [$request->date_from, $request->date_to]);
         }
 
         if ($request->filled('resolution_status')) {
@@ -309,14 +314,31 @@ class RiskReportController extends Controller
         $totalKejadian = (clone $query)->count();
         $totalRejected = (clone $query)->where('approval_status', 'rejected')->count();
 
+        // === SORTING ===
+        $sortField = 'created_at';
+        $sortDir = 'desc';
+        if ($request->filled('sort')) {
+            $sortMap = [
+                'created_at_desc' => ['field' => 'created_at', 'dir' => 'desc'],
+                'created_at_asc'  => ['field' => 'created_at', 'dir' => 'asc'],
+                'dampak_desc'     => ['field' => 'dampak_finansial', 'dir' => 'desc'],
+                'dampak_asc'      => ['field' => 'dampak_finansial', 'dir' => 'asc'],
+                'kode_asc'        => ['field' => 'kode_laporan', 'dir' => 'asc'],
+                'kode_desc'       => ['field' => 'kode_laporan', 'dir' => 'desc'],
+            ];
+            $sort = $sortMap[$request->sort] ?? $sortMap['created_at_desc'];
+            $sortField = $sort['field'];
+            $sortDir = $sort['dir'];
+        }
+
         // Split into 2 queries: Active (not closed) and Closed
         $activeReports = (clone $query)->where('resolution_status', '!=', 'closed')
-            ->orderBy('created_at', 'desc')
+            ->orderBy($sortField, $sortDir)
             ->paginate(15, ['*'], 'active_page')
             ->appends($request->query());
 
         $closedReports = (clone $query)->where('resolution_status', 'closed')
-            ->orderBy('created_at', 'desc')
+            ->orderBy($sortField, $sortDir)
             ->paginate(15, ['*'], 'closed_page')
             ->appends($request->query());
 
@@ -354,8 +376,8 @@ class RiskReportController extends Controller
         Gate::authorize('updateProgress', $report);
 
         if ($request->new_status === 'closed') {
-            if (!$user->hasRole('kacab')) {
-                return back()->with('error', 'Hanya Kacab yang berwenang menutup laporan.');
+            if ($user->role_category !== 'checker') {
+                return back()->with('error', 'Hanya Checker (Kacab) yang berwenang menutup laporan.');
             }
 
             if ((int) $report->branch_id !== (int) $user->branch_id) {

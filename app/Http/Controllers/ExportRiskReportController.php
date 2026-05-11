@@ -14,21 +14,24 @@ class ExportRiskReportController extends Controller
     public function export(Request $request)
     {
         $user = Auth::user();
-        $role = $user?->primaryRoleName();
 
-        if (!$user || !$role) {
+        if (!$user || !$user->role_category) {
             abort(403, 'Akses ditolak.');
         }
 
         $query = RiskReport::with(['user', 'item', 'cause.mitigations', 'branch']);
 
-        // Filter by role
-        if ($role === 'kacab') {
+        // Filter by role_category
+        if ($user->role_category === 'checker') {
             $query->where('branch_id', $user->branch_id);
-        } elseif ($role === 'korwil') {
-            $branchIds = Branch::where('korwil_id', $user->id)->pluck('id');
-            $query->whereIn('branch_id', $branchIds);
-        } elseif (in_array($role, ['teller', 'ca', 'csr', 'security'])) {
+        } elseif ($user->role_category === 'viewer') {
+            // Viewer: korwil sees supervised branches, manrisk sees all
+            if ($user->hasRole('korwil')) {
+                $branchIds = Branch::where('korwil_id', $user->id)->pluck('id');
+                $query->whereIn('branch_id', $branchIds);
+            }
+            // manrisk: no filter (sees all)
+        } elseif ($user->role_category === 'maker') {
             $query->where('user_id', $user->id);
         }
 
@@ -52,7 +55,7 @@ class ExportRiskReportController extends Controller
             });
         }
 
-        if ($request->filled('branch_id') && in_array($role, ['manrisk', 'korwil'])) {
+        if ($request->filled('branch_id') && $user->role_category === 'viewer') {
             $query->where('branch_id', $request->branch_id);
         }
 
@@ -66,12 +69,16 @@ class ExportRiskReportController extends Controller
             });
         }
 
-        if ($request->filled('start_date')) {
-            $query->where('tanggal_kejadian', '>=', $request->start_date);
+        // Terima date_from/date_to (dari form) ATAU start_date/end_date (backward compatible)
+        $dateFrom = $request->date_from ?? $request->start_date;
+        $dateTo = $request->date_to ?? $request->end_date;
+
+        if ($request->filled('date_from') || $request->filled('start_date')) {
+            $query->where('tanggal_kejadian', '>=', $dateFrom);
         }
 
-        if ($request->filled('end_date')) {
-            $query->where('tanggal_kejadian', '<=', $request->end_date);
+        if ($request->filled('date_to') || $request->filled('end_date')) {
+            $query->where('tanggal_kejadian', '<=', $dateTo);
         }
 
         if ($request->filled('resolution_status')) {
@@ -88,7 +95,7 @@ class ExportRiskReportController extends Controller
         Log::channel('daily')->info('[AUDIT] User export CSV', [
             'user_id' => $user->id,
             'user_name' => $user->name,
-            'role' => $role,
+            'role_category' => $user->role_category,
             'filename' => 'export-risiko-' . now()->format('Ymd-His') . '.csv',
             'total_reports' => $reports->count(),
             'filters' => $request->only(['search', 'branch_id', 'kategori', 'jabatan', 'start_date', 'end_date', 'resolution_status', 'approval_status']),

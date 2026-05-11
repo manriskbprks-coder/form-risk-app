@@ -25,6 +25,7 @@ class User extends Authenticatable
         'email',
         'password',
         'branch_id',
+        'role_category',
         'is_active',
         'password_changed_at',
     ];
@@ -81,5 +82,41 @@ class User extends Authenticatable
         }
 
         return $this->password_changed_at->addDays(90)->isPast();
+    }
+
+    // ============================================================
+    // ROLE CATEGORY HELPERS
+    // ============================================================
+
+    /**
+     * Cek apakah user termasuk kategori Maker (bisa bikin laporan).
+     */
+    public function isMaker(): bool
+    {
+        return $this->role_category === 'maker' || $this->role_category === 'checker';
+    }
+
+    /**
+     * Cek apakah user termasuk kategori Checker (bisa approve/reject).
+     */
+    public function isChecker(): bool
+    {
+        return $this->role_category === 'checker';
+    }
+
+    /**
+     * Cek apakah user termasuk kategori Viewer (hanya lihat).
+     */
+    public function isViewer(): bool
+    {
+        return $this->role_category === 'viewer';
+    }
+
+    /**
+     * Cek apakah user bisa bikin laporan (maker + checker).
+     */
+    public function canCreateReport(): bool
+    {
+        return in_array($this->role_category, ['maker', 'checker']);
     }
 }

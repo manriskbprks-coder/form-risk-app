@@ -18,6 +18,7 @@ Route::get('/dashboard', function () {
     $user = auth()->user();
     $userBranchId = $user->branch_id;
     $role = $user?->primaryRoleName();
+    $roleCategory = $user->role_category;
 
     // ================================================================
     // FILTER: Periode & Cabang (khusus ManRisk, opsional untuk role lain)
@@ -26,20 +27,22 @@ Route::get('/dashboard', function () {
     $cabangFilter = request('cabang_id', 'all');
 
     // Tentukan branch IDs yang bisa dilihat user
-    if ($role === 'korwil') {
-        $branchIds = \App\Models\Branch::where('korwil_id', $user->id)
-            ->whereRaw('is_active = true')
-            ->pluck('id');
-    } elseif ($role === 'kacab') {
-        $branchIds = collect([$userBranchId]);
-    } elseif ($role === 'manrisk') {
-        if ($cabangFilter === 'all') {
-            $branchIds = \App\Models\Branch::whereRaw('is_active = true')->pluck('id');
-        } else {
-            $branchIds = collect([(int) $cabangFilter]);
+    if ($roleCategory === 'viewer') {
+        if ($role === 'korwil') {
+            $branchIds = \App\Models\Branch::where('korwil_id', $user->id)
+                ->whereRaw('is_active = true')
+                ->pluck('id');
+        } else { // manrisk
+            if ($cabangFilter === 'all') {
+                $branchIds = \App\Models\Branch::whereRaw('is_active = true')->pluck('id');
+            } else {
+                $branchIds = collect([(int) $cabangFilter]);
+            }
         }
+    } elseif ($roleCategory === 'checker') {
+        $branchIds = collect([$userBranchId]);
     } else {
-        // Maker (teller/ca/csr/security) — lihat laporan sendiri
+        // Maker — lihat laporan sendiri
         $branchIds = collect();
     }
 
@@ -47,14 +50,14 @@ Route::get('/dashboard', function () {
     $allBranches = \App\Models\Branch::whereRaw('is_active = true')->get();
 
     // Laporan terbaru (untuk tabel)
-    if (in_array($role, ['korwil', 'kacab', 'manrisk'])) {
+    if (in_array($roleCategory, ['viewer', 'checker'])) {
         $recentReports = RiskReport::with(['user', 'branch', 'item'])
             ->whereIn('branch_id', $branchIds)
             ->latest()
             ->take(10)
             ->get();
     } else {
-        // Teller/CA/CSR/Security — lihat laporan sendiri
+        // Maker — lihat laporan sendiri
         $recentReports = RiskReport::with(['user', 'branch', 'item'])
             ->where('user_id', $user->id)
             ->latest()
@@ -64,14 +67,15 @@ Route::get('/dashboard', function () {
 
     // Stat cards — difilter sesuai role
     $reportQuery = RiskReport::query();
-    if ($role === 'korwil') {
-        $reportQuery->whereIn('branch_id', $branchIds);
-    } elseif ($role === 'kacab') {
+    if ($roleCategory === 'viewer') {
+        if ($role === 'korwil') {
+            $reportQuery->whereIn('branch_id', $branchIds);
+        } // manrisk ga perlu filter
+    } elseif ($roleCategory === 'checker') {
         $reportQuery->where('branch_id', $userBranchId);
-    } elseif (in_array($role, ['teller', 'ca', 'csr', 'security'])) {
+    } elseif ($roleCategory === 'maker') {
         $reportQuery->where('user_id', $user->id);
     }
-    // ManRisk ga perlu filter
 
     $totalClosed = (clone $reportQuery)
         ->where('resolution_status', 'closed')
@@ -115,7 +119,7 @@ Route::get('/dashboard', function () {
     $trenTop5Labels = [];
     $trenTop5Datasets = [];
 
-    if (in_array($role, ['kacab', 'korwil', 'manrisk'])) {
+    if ($roleCategory !== 'maker') {
         // Tentukan jumlah bulan untuk chart tren
         $bulanTren = $periode > 0 ? $periode : 12; // max 12 bulan kalau "semua waktu"
 
@@ -357,22 +361,21 @@ Route::get('/dashboard', function () {
 
     // Hitung badge pending untuk checker
     $pendingCount = 0;
-    if ($role === 'kacab') {
+    if ($roleCategory === 'checker') {
         $pendingCount = RiskReport::where('branch_id', $userBranchId)
             ->where('approval_status', 'pending_kacab')
             ->count();
-    } elseif ($role === 'korwil') {
+    } elseif ($roleCategory === 'viewer' && $role === 'korwil') {
         $pendingCount = RiskReport::whereIn('branch_id', $branchIds)
             ->where('approval_status', 'pending_korwil')
             ->count();
     }
 
     // Label dinamis untuk card Total Laporan berdasarkan role
-    $labelTotalLaporan = match($role) {
-        'teller', 'ca', 'csr', 'security' => 'Laporan Saya (Closed)',
-        'kacab' => 'Laporan Cabang (Closed)',
-        'korwil' => 'Laporan Wilayah (Closed)',
-        'manrisk' => 'Total Laporan (Closed)',
+    $labelTotalLaporan = match($roleCategory) {
+        'maker' => 'Laporan Saya (Closed)',
+        'checker' => 'Laporan Cabang (Closed)',
+        'viewer' => $role === 'korwil' ? 'Laporan Wilayah (Closed)' : 'Total Laporan (Closed)',
         default => 'Total Laporan (Closed)',
     };
 
@@ -384,6 +387,7 @@ Route::get('/dashboard', function () {
         'totalInProgress',
         'pendingCount',
         'role',
+        'roleCategory',
         'labelTotalLaporan',
         'chartMonths',
         'chartCounts',

@@ -46,30 +46,30 @@ class RiskReportControllerTest extends TestCase
         $this->branchLain = Branch::factory()->create(['nama_cabang' => 'Cabang B']);
 
         // Buat users
-        $this->teller = User::factory()->create(['branch_id' => $this->branch->id]);
+        $this->teller = User::factory()->create(['branch_id' => $this->branch->id, 'role_category' => 'maker']);
         $this->teller->assignRole('teller');
 
-        $this->ca = User::factory()->create(['branch_id' => $this->branch->id]);
+        $this->ca = User::factory()->create(['branch_id' => $this->branch->id, 'role_category' => 'maker']);
         $this->ca->assignRole('ca');
 
-        $this->csr = User::factory()->create(['branch_id' => $this->branch->id]);
+        $this->csr = User::factory()->create(['branch_id' => $this->branch->id, 'role_category' => 'maker']);
         $this->csr->assignRole('csr');
 
-        $this->security = User::factory()->create(['branch_id' => $this->branch->id]);
+        $this->security = User::factory()->create(['branch_id' => $this->branch->id, 'role_category' => 'maker']);
         $this->security->assignRole('security');
 
-        $this->kacab = User::factory()->create(['branch_id' => $this->branch->id]);
+        $this->kacab = User::factory()->create(['branch_id' => $this->branch->id, 'role_category' => 'checker']);
         $this->kacab->assignRole('kacab');
 
-        $this->kacabLain = User::factory()->create(['branch_id' => $this->branchLain->id]);
+        $this->kacabLain = User::factory()->create(['branch_id' => $this->branchLain->id, 'role_category' => 'checker']);
         $this->kacabLain->assignRole('kacab');
 
-        $this->korwil = User::factory()->create();
+        $this->korwil = User::factory()->create(['role_category' => 'viewer']);
         $this->korwil->assignRole('korwil');
         $this->branch->update(['korwil_id' => $this->korwil->id]);
         $this->branchLain->update(['korwil_id' => $this->korwil->id]);
 
-        $this->manrisk = User::factory()->create();
+        $this->manrisk = User::factory()->create(['role_category' => 'viewer']);
         $this->manrisk->assignRole('manrisk');
 
         // Buat master data risiko
@@ -934,8 +934,8 @@ class RiskReportControllerTest extends TestCase
 
         $response = $this->actingAs($this->manrisk)
             ->get(route('risk.history', [
-                'start_date' => '2026-01-01',
-                'end_date' => '2026-03-31',
+                'date_from' => '2026-01-01',
+                'date_to' => '2026-03-31',
             ]));
 
         $response->assertOk();

@@ -16,30 +16,26 @@ class RiskReportPolicy
      */
     public function view(User $user, RiskReport $report): bool
     {
-        $role = $user->primaryRoleName();
+        $category = $user->role_category;
 
-        // ManRisk bisa lihat semua
-        if ($role === 'manrisk') {
-            return true;
+        // Viewer — ManRisk bisa lihat semua, Korwil hanya cabang yang diawasi
+        if ($category === 'viewer') {
+            if ($user->hasRole('manrisk')) {
+                return true;
+            }
+
+            // Korwil — hanya cabang yang diawasi
+            $branch = $report->branch;
+            return $branch && (int) $branch->korwil_id === (int) $user->id;
         }
 
-        // Kacab — lihat laporan cabang sendiri
-        if ($role === 'kacab') {
+        // Checker — lihat laporan cabang sendiri
+        if ($category === 'checker') {
             return (int) $report->branch_id === (int) $user->branch_id;
         }
 
-        // Korwil — lihat laporan di wilayahnya
-        if ($role === 'korwil') {
-            $branchIds = Branch::where('korwil_id', $user->id)->pluck('id');
-            return $branchIds->contains((int) $report->branch_id);
-        }
-
-        // Staff — lihat laporan sendiri
-        if (in_array($role, ['teller', 'ca', 'csr', 'security'], true)) {
-            return (int) $report->user_id === (int) $user->id;
-        }
-
-        return false;
+        // Maker — lihat laporan sendiri
+        return (int) $report->user_id === (int) $user->id;
     }
 
     /**
@@ -47,13 +43,12 @@ class RiskReportPolicy
      */
     public function approve(User $user, RiskReport $report): bool
     {
-        $role = $user->primaryRoleName();
-
-        if ($role !== 'kacab') {
+        // Hanya checker yang bisa approve
+        if ($user->role_category !== 'checker') {
             return false;
         }
 
-        // Kacab cuma bisa approve laporan cabang sendiri
+        // Checker cuma bisa approve laporan cabang sendiri
         if ((int) $report->branch_id !== (int) $user->branch_id) {
             return false;
         }
@@ -67,14 +62,12 @@ class RiskReportPolicy
      */
     public function updateProgress(User $user, RiskReport $report): bool
     {
-        $role = $user->primaryRoleName();
-
-        // ManRisk & Korwil hanya pantau
-        if (in_array($role, ['manrisk', 'korwil'], true)) {
+        // Viewer (manrisk, korwil) hanya pantau
+        if ($user->isViewer()) {
             return false;
         }
 
-        // Kacab & Staff — harus bisa lihat laporan dulu
+        // Checker & Maker — harus bisa lihat laporan dulu
         return $this->view($user, $report);
     }
 
@@ -83,9 +76,8 @@ class RiskReportPolicy
      */
     public function close(User $user, RiskReport $report): bool
     {
-        $role = $user->primaryRoleName();
-
-        if ($role !== 'kacab') {
+        // Hanya checker yang bisa close
+        if ($user->role_category !== 'checker') {
             return false;
         }
 
@@ -110,12 +102,12 @@ class RiskReportPolicy
             return false;
         }
 
-        // Kacab bisa submit revisi untuk laporan cabangnya
-        if ($user->primaryRoleName() === 'kacab') {
+        // Checker (kacab) bisa submit revisi untuk laporan cabangnya
+        if ($user->role_category === 'checker') {
             return (int) $report->branch_id === (int) $user->branch_id;
         }
 
-        // Staff bisa submit revisi untuk laporannya sendiri
+        // Maker bisa submit revisi untuk laporannya sendiri
         return (int) $report->user_id === (int) $user->id;
     }
 
@@ -132,7 +124,6 @@ class RiskReportPolicy
      */
     public function export(User $user): bool
     {
-        // Semua role bisa export, tapi data discope sesuai role
-        return in_array($user->primaryRoleName(), ['kacab', 'korwil', 'manrisk', 'teller', 'ca', 'csr', 'security']);
+        return true; // Semua role bisa export, data discope sesuai role di controller
     }
 }

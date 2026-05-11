@@ -67,10 +67,9 @@ class RiskFreeDeclarationController extends Controller
     public function create()
     {
         $user = Auth::user();
-        $role = $user?->primaryRoleName();
 
-        if (!$user || $role !== 'kacab') {
-            abort(Response::HTTP_FORBIDDEN, 'Hanya Kacab yang bisa mengakses halaman ini.');
+        if (!$user || $user->role_category !== 'checker') {
+            abort(Response::HTTP_FORBIDDEN, 'Hanya Checker (Kacab) yang bisa mengakses halaman ini.');
         }
 
         $periode = $this->getCurrentPeriode();
@@ -101,10 +100,9 @@ class RiskFreeDeclarationController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        $role = $user?->primaryRoleName();
 
-        if (!$user || $role !== 'kacab') {
-            abort(Response::HTTP_FORBIDDEN, 'Hanya Kacab yang bisa melakukan deklarasi.');
+        if (!$user || $user->role_category !== 'checker') {
+            abort(Response::HTTP_FORBIDDEN, 'Hanya Checker (Kacab) yang bisa melakukan deklarasi.');
         }
 
         $periode = $this->getCurrentPeriode();
@@ -213,15 +211,14 @@ class RiskFreeDeclarationController extends Controller
     public function history()
     {
         $user = Auth::user();
-        $role = $user?->primaryRoleName();
 
-        if (!$user || !in_array($role, ['kacab', 'manrisk'])) {
+        if (!$user || !in_array($user->role_category, ['checker', 'viewer'])) {
             abort(Response::HTTP_FORBIDDEN, 'Akses ditolak.');
         }
 
         $query = RiskFreeDeclaration::with(['branch', 'user', 'details']);
 
-        if ($role === 'kacab') {
+        if ($user->role_category === 'checker') {
             $query->where('branch_id', $user->branch_id);
         }
 

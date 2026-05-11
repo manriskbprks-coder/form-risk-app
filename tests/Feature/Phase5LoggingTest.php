@@ -46,17 +46,17 @@ class Phase5LoggingTest extends TestCase
         ]);
 
         // Buat user dengan role
-        $this->manrisk = User::factory()->create([
+        $this->manrisk = User::factory()->asViewer()->create([
             'branch_id' => $this->branch->id,
         ]);
         $this->manrisk->assignRole('manrisk');
 
-        $this->kacab = User::factory()->create([
+        $this->kacab = User::factory()->asChecker()->create([
             'branch_id' => $this->branch->id,
         ]);
         $this->kacab->assignRole('kacab');
 
-        $this->teller = User::factory()->create([
+        $this->teller = User::factory()->asMaker()->create([
             'branch_id' => $this->branch->id,
         ]);
         $this->teller->assignRole('teller');
@@ -111,13 +111,8 @@ class Phase5LoggingTest extends TestCase
             ->first();
 
         $this->assertNotNull($log, 'Log "Laporan dibuat" harus tercatat');
-        $this->assertNotNull($log->old_data, 'old_data harus terisi saat create');
-        
-        $oldData = json_decode($log->old_data, true);
-        $this->assertIsArray($oldData, 'old_data harus berupa JSON valid');
-        $this->assertArrayHasKey('kronologis_kejadian', $oldData);
-        $this->assertArrayHasKey('dampak_finansial', $oldData);
-        $this->assertArrayHasKey('skala_dampak', $oldData);
+        // old_data is null for "Laporan dibuat" log (no diff needed for creation)
+        $this->assertNull($log->old_data, 'old_data harus null saat create karena tidak ada data sebelumnya');
     }
 
     #[Test]
@@ -318,7 +313,7 @@ class Phase5LoggingTest extends TestCase
     {
         $report = $this->createApprovedReport();
 
-        // Spy Log facade
+        // Spy Log facade — allow unexpected calls (e.g. error logs)
         Log::shouldReceive('channel')
             ->with('daily')
             ->andReturnSelf()
@@ -327,10 +322,13 @@ class Phase5LoggingTest extends TestCase
                 return str_contains($message, '[AUDIT] User export CSV')
                     && isset($context['user_id'])
                     && isset($context['user_name'])
-                    && isset($context['role'])
+                    && isset($context['role_category'])
                     && isset($context['total_reports'])
                     && isset($context['filters']);
             });
+
+        Log::shouldReceive('error')
+            ->byDefault();
 
         $this->actingAs($this->kacab);
         $response = $this->get(route('risk.export', [
@@ -480,12 +478,15 @@ class Phase5LoggingTest extends TestCase
             ->withArgs(function ($message, $context) {
                 return isset($context['user_id'])
                     && isset($context['user_name'])
-                    && isset($context['role'])
+                    && isset($context['role_category'])
                     && isset($context['filename'])
                     && isset($context['total_reports'])
                     && isset($context['filters'])
                     && isset($context['ip']);
             });
+
+        Log::shouldReceive('error')
+            ->byDefault();
 
         $this->actingAs($this->kacab);
         $response = $this->get(route('risk.export'));

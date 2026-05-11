@@ -81,8 +81,10 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'korwil1',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
+            'role_category' => 'viewer',
         ]);
         $this->korwil->assignRole('korwil');
+
         $this->branchA->update(['korwil_id' => $this->korwil->id]);
         $this->branchB->update(['korwil_id' => $this->korwil->id]);
 
@@ -92,6 +94,7 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'manrisk1',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
+            'role_category' => 'viewer',
         ]);
         $this->manrisk->assignRole('manrisk');
 
@@ -101,6 +104,7 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'kacabA',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
+            'role_category' => 'checker',
         ]);
         $this->kacabA->assignRole('kacab');
 
@@ -109,6 +113,7 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'kacabB',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
+            'role_category' => 'checker',
         ]);
         $this->kacabB->assignRole('kacab');
 
@@ -118,6 +123,7 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'tellerA',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
+            'role_category' => 'maker',
         ]);
         $this->tellerA->assignRole('teller');
 
@@ -126,6 +132,7 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'tellerB',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
+            'role_category' => 'maker',
         ]);
         $this->tellerB->assignRole('teller');
 
@@ -134,6 +141,7 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'ca1',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
+            'role_category' => 'maker',
         ]);
         $this->ca->assignRole('ca');
 
@@ -142,6 +150,7 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'csr1',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
+            'role_category' => 'maker',
         ]);
         $this->csr->assignRole('csr');
 
@@ -150,6 +159,7 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'security1',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
+            'role_category' => 'maker',
         ]);
         $this->security->assignRole('security');
 

@@ -278,8 +278,7 @@
                                             <input type="hidden" name="note" value="Update status dari halaman Review">
 
                                             @php
-                                            $userRole = auth()->user()?->primaryRoleName() ?? '';
-                                            $canClose = ($userRole === 'kacab');
+                                            $canClose = (auth()->user()->role_category === 'checker');
                                             @endphp
 
                                             <select name="new_status" class="w-full max-w-[150px] text-xs border-gray-300 rounded shadow-sm focus:ring-blue-500">

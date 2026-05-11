@@ -72,7 +72,7 @@
                 @endhasrole
             </a>
 
-            @hasanyrole('teller|ca|csr|security|kacab')
+            @if(Auth::user()->isMaker())
             <a href="{{ route('risk.history') }}"
                class="{{ request()->routeIs('risk.history') ? 'sidebar-link-active' : 'sidebar-link' }}">
                 <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,9 +98,9 @@
                 </svg>
                 <span>Risiko Non-Finansial</span>
             </a>
-            @endhasanyrole
+            @endif
 
-            @hasrole('kacab')
+            @if(Auth::user()->isChecker())
             <a href="{{ route('review.laporan') }}"
                class="{{ request()->routeIs('review.laporan') ? 'sidebar-link-active' : 'sidebar-link' }}">
                 <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,9 +118,7 @@
                 </span>
                 @endif
             </a>
-            @endhasrole
 
-            @hasrole('kacab')
             @php
                 $now = now();
                 $day = $now->day;
@@ -145,9 +143,9 @@
                     <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-bold text-blue-700 bg-blue-100 rounded-full">Periode {{ $periode }}</span>
                 @endif
             </a>
-            @endhasrole
+            @endif
 
-            @hasanyrole('korwil|manrisk')
+            @if(Auth::user()->isViewer())
             <a href="{{ route('risk.history') }}"
                class="{{ request()->routeIs('risk.history') ? 'sidebar-link-active' : 'sidebar-link' }}">
                 <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,7 +153,7 @@
                 </svg>
                 <span>Monitoring</span>
             </a>
-            @endhasanyrole
+            @endif
 
             @hasrole('manrisk')
             <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-[0.14em] mb-2 mt-6">Administrasi</p>
