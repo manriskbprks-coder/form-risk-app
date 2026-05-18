@@ -22,8 +22,8 @@ class MasterRiskControllerTest extends TestCase
     {
         parent::setUp();
 
-        Role::firstOrCreate(['name' => 'manrisk']);
-        Role::firstOrCreate(['name' => 'kacab']);
+        Role::firstOrCreate(['name' => 'manrisk', 'role_category' => 'admin']);
+        Role::firstOrCreate(['name' => 'kacab', 'role_category' => 'checker']);
 
         $this->manriskUser = User::factory()->create();
         $this->manriskUser->assignRole('manrisk');

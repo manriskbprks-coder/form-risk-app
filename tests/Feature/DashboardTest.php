@@ -25,25 +25,29 @@ class DashboardTest extends TestCase
     {
         parent::setUp();
 
-        collect(['teller', 'kacab', 'korwil', 'manrisk'])
-            ->each(fn ($r) => Role::firstOrCreate(['name' => $r]));
+        $roleMapping = [
+            'teller' => 'maker', 'kacab' => 'checker', 'korwil' => 'viewer', 'manrisk' => 'admin',
+        ];
+        foreach ($roleMapping as $name => $category) {
+            Role::firstOrCreate(['name' => $name], ['role_category' => $category]);
+        }
 
         $this->branch = Branch::factory()->create(['nama_cabang' => 'Cabang A', 'is_active' => true]);
         $this->branchLain = Branch::factory()->create(['nama_cabang' => 'Cabang B', 'is_active' => true]);
 
-        $this->teller = User::factory()->create(['branch_id' => $this->branch->id, 'role_category' => 'maker']);
+        $this->teller = User::factory()->create(['branch_id' => $this->branch->id]);
         $this->teller->assignRole('teller');
 
-        $this->kacab = User::factory()->create(['branch_id' => $this->branch->id, 'role_category' => 'checker']);
+        $this->kacab = User::factory()->create(['branch_id' => $this->branch->id]);
         $this->kacab->assignRole('kacab');
 
-        $this->korwil = User::factory()->create(['role_category' => 'viewer']);
+        $this->korwil = User::factory()->create();
         $this->korwil->assignRole('korwil');
 
         $this->branch->update(['korwil_id' => $this->korwil->id]);
         $this->branchLain->update(['korwil_id' => $this->korwil->id]);
 
-        $this->manrisk = User::factory()->create(['role_category' => 'viewer']);
+        $this->manrisk = User::factory()->create();
         $this->manrisk->assignRole('manrisk');
     }
 

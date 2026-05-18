@@ -89,6 +89,21 @@
                         <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    <!-- SUMBER RISIKO (khusus Lainnya) -->
+                    <div id="sumberRisikoContainer" class="mt-3 hidden p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                        <label class="block text-sm font-medium text-purple-700">Sumber Risiko <span class="text-red-500">*</span></label>
+                        <select name="sumber_risiko" id="sumberRisikoSelect" class="mt-1 block w-full rounded-md border-purple-300 shadow-sm @error('sumber_risiko') border-red-500 bg-red-50 @enderror">
+                            <option value="">-- Pilih Sumber Risiko --</option>
+                            <option value="manusia" {{ old('sumber_risiko') == 'manusia' ? 'selected' : '' }}>Manusia (Human Error)</option>
+                            <option value="sistem_teknologi" {{ old('sumber_risiko') == 'sistem_teknologi' ? 'selected' : '' }}>Sistem & Teknologi</option>
+                            <option value="proses_internal" {{ old('sumber_risiko') == 'proses_internal' ? 'selected' : '' }}>Proses Internal</option>
+                            <option value="faktor_eksternal" {{ old('sumber_risiko') == 'faktor_eksternal' ? 'selected' : '' }}>Faktor Eksternal</option>
+                        </select>
+                        @error('sumber_risiko')
+                        <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
                     <div id="causeContainer" class="mb-4 hidden">
                         <label class="block text-sm font-medium text-gray-700">Apa penyebabnya? <span class="text-red-500">*</span></label>
                         <select id="riskCauseSelect" name="risk_cause_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm @error('risk_cause_id') border-red-500 bg-red-50 @enderror">
@@ -265,6 +280,8 @@
         const mitigationText = document.getElementById('mitigationText');
         const durasiContainer = document.getElementById('durasiContainer');
         const durasiInput = document.getElementById('durasiInput');
+        const sumberRisikoContainer = document.getElementById('sumberRisikoContainer');
+        const sumberRisikoSelect = document.getElementById('sumberRisikoSelect');
 
         // Fungsi untuk cek apakah sumber risiko = sistem_teknologi
         function cekSumberTeknologi(itemId) {
@@ -314,11 +331,20 @@
                 otherCauseInput.setAttribute('required', 'required');
 
                 causeContainer.classList.add('hidden'); // Sembunyiin dropdown penyebab
+
+                // 3. Munculin dropdown sumber risiko
+                sumberRisikoContainer.classList.remove('hidden');
+                sumberRisikoSelect.setAttribute('required', 'required');
             } else {
                 otherItemInput.removeAttribute('required');
                 otherItemInput.value = '';
                 otherCauseInput.removeAttribute('required');
                 otherCauseInput.value = '';
+
+                // Sembunyiin dropdown sumber risiko
+                sumberRisikoContainer.classList.add('hidden');
+                sumberRisikoSelect.removeAttribute('required');
+                sumberRisikoSelect.value = '';
 
                 // ... (Lanjutin kode narik data cause dari riskData kayak biasa di sini) ...
                 if (selectedItemId) {

@@ -16,18 +16,20 @@ class RiskReportPolicy
      */
     public function view(User $user, RiskReport $report): bool
     {
-        $category = $user->role_category;
+        $category = $user->roleCategory();
 
-        // Viewer — ManRisk bisa lihat semua, Korwil hanya cabang yang diawasi
+        // Admin (ManRisk) — bisa lihat semua laporan
+        if ($category === 'admin') {
+            return true;
+        }
+
+        // Viewer (Korwil) — hanya cabang yang diawasi
         if ($category === 'viewer') {
-            if ($user->hasRole('manrisk')) {
-                return true;
-            }
-
             // Korwil — hanya cabang yang diawasi
             $branch = $report->branch;
             return $branch && (int) $branch->korwil_id === (int) $user->id;
         }
+
 
         // Checker — lihat laporan cabang sendiri
         if ($category === 'checker') {
@@ -44,7 +46,7 @@ class RiskReportPolicy
     public function approve(User $user, RiskReport $report): bool
     {
         // Hanya checker yang bisa approve
-        if ($user->role_category !== 'checker') {
+        if ($user->roleCategory() !== 'checker') {
             return false;
         }
 
@@ -62,8 +64,8 @@ class RiskReportPolicy
      */
     public function updateProgress(User $user, RiskReport $report): bool
     {
-        // Viewer (manrisk, korwil) hanya pantau
-        if ($user->isViewer()) {
+        // Admin (manrisk) & Viewer (korwil) hanya pantau
+        if ($user->isAdmin() || $user->isViewer()) {
             return false;
         }
 
@@ -71,13 +73,14 @@ class RiskReportPolicy
         return $this->view($user, $report);
     }
 
+
     /**
      * Siapa yang bisa close laporan (Kacab).
      */
     public function close(User $user, RiskReport $report): bool
     {
         // Hanya checker yang bisa close
-        if ($user->role_category !== 'checker') {
+        if ($user->roleCategory() !== 'checker') {
             return false;
         }
 
@@ -89,7 +92,7 @@ class RiskReportPolicy
      */
     public function requestRevision(User $user, RiskReport $report): bool
     {
-        return $user->hasRole('manrisk') && $report->approval_status === 'approved';
+        return $user->isAdmin() && $report->approval_status === 'approved';
     }
 
     /**
@@ -103,7 +106,7 @@ class RiskReportPolicy
         }
 
         // Checker (kacab) bisa submit revisi untuk laporan cabangnya
-        if ($user->role_category === 'checker') {
+        if ($user->roleCategory() === 'checker') {
             return (int) $report->branch_id === (int) $user->branch_id;
         }
 
@@ -116,7 +119,7 @@ class RiskReportPolicy
      */
     public function approveRevision(User $user, RiskReport $report): bool
     {
-        return $user->hasRole('manrisk') && $report->approval_status === 'pending_revision';
+        return $user->isAdmin() && $report->approval_status === 'pending_revision';
     }
 
     /**

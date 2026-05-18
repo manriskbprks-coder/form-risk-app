@@ -81,7 +81,7 @@
                             </select>
                         </div>
 
-                        @if(Auth::user()->role_category !== 'maker')
+                        @if(Auth::user()->roleCategory() !== 'maker')
                         <div>
                             <select name="jabatan" class="w-full rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
                                 <option value="">Semua Jabatan</option>
@@ -153,7 +153,7 @@
                         <tbody>
                             @foreach($activeReports as $report)
                             @php
-                            $sumberRisiko = $report->cause->sumber_risiko ?? $report->item->sumber_risiko ?? 'manusia';
+                            $sumberRisiko = $report->sumber_risiko ?? $report->cause->sumber_risiko ?? $report->item->sumber_risiko ?? 'manusia';
                             $sumberLabels = [
                                 'manusia' => ['label' => 'Manusia', 'color' => 'bg-red-100 text-red-800 border-red-200'],
                                 'proses_internal' => ['label' => 'Proses Internal', 'color' => 'bg-yellow-100 text-yellow-800 border-yellow-200'],
@@ -304,7 +304,7 @@
                         <tbody>
                             @foreach($closedReports as $report)
                             @php
-                            $sumberRisiko = $report->cause->sumber_risiko ?? $report->item->sumber_risiko ?? 'manusia';
+                            $sumberRisiko = $report->sumber_risiko ?? $report->cause->sumber_risiko ?? $report->item->sumber_risiko ?? 'manusia';
                             $sumberLabels = [
                                 'manusia' => ['label' => 'Manusia', 'color' => 'bg-red-100 text-red-800 border-red-200'],
                                 'proses_internal' => ['label' => 'Proses Internal', 'color' => 'bg-yellow-100 text-yellow-800 border-yellow-200'],

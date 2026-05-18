@@ -9,18 +9,25 @@ class RoleSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. System Admin
-        Role::firstOrCreate(['name' => 'manrisk']);
-        
-        // 2. Checker Tier
-        Role::firstOrCreate(['name' => 'korwil']);
-        Role::firstOrCreate(['name' => 'kacab']);
-        
-        // 3. Maker Tier
-        Role::firstOrCreate(['name' => 'ca']); 
-        Role::firstOrCreate(['name' => 'teller']);
-        Role::firstOrCreate(['name' => 'csr']);
-        Role::firstOrCreate(['name' => 'security']);
+        // Mapping role name → role_category
+        $roles = [
+            'manrisk'  => 'admin',
+            'korwil'   => 'viewer',
+            'kacab'    => 'checker',
+            'ca'       => 'maker',
+            'teller'   => 'maker',
+            'csr'      => 'maker',
+            'security' => 'maker',
+        ];
+
+        foreach ($roles as $name => $category) {
+            // Create or update role with correct role_category
+            Role::updateOrCreate(
+                ['name' => $name],
+                ['role_category' => $category]
+            );
+        }
+
 
         $this->command->info('Hierarki Jabatan Perbankan berhasil disinkronisasi!');
     }

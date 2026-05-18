@@ -25,7 +25,6 @@ class User extends Authenticatable
         'email',
         'password',
         'branch_id',
-        'role_category',
         'is_active',
         'password_changed_at',
     ];
@@ -85,15 +84,25 @@ class User extends Authenticatable
     }
 
     // ============================================================
-    // ROLE CATEGORY HELPERS
+    // ROLE CATEGORY HELPERS (diambil dari role, bukan dari kolom user)
     // ============================================================
+
+    /**
+     * Ambil role_category dari role pertama user.
+     */
+    public function roleCategory(): ?string
+    {
+        $role = $this->roles->first();
+        return $role?->role_category ?? null;
+    }
 
     /**
      * Cek apakah user termasuk kategori Maker (bisa bikin laporan).
      */
     public function isMaker(): bool
     {
-        return $this->role_category === 'maker' || $this->role_category === 'checker';
+        $cat = $this->roleCategory();
+        return $cat === 'maker' || $cat === 'checker';
     }
 
     /**
@@ -101,7 +110,7 @@ class User extends Authenticatable
      */
     public function isChecker(): bool
     {
-        return $this->role_category === 'checker';
+        return $this->roleCategory() === 'checker';
     }
 
     /**
@@ -109,7 +118,15 @@ class User extends Authenticatable
      */
     public function isViewer(): bool
     {
-        return $this->role_category === 'viewer';
+        return $this->roleCategory() === 'viewer';
+    }
+
+    /**
+     * Cek apakah user termasuk kategori Admin (manrisk).
+     */
+    public function isAdmin(): bool
+    {
+        return $this->roleCategory() === 'admin';
     }
 
     /**
@@ -117,6 +134,6 @@ class User extends Authenticatable
      */
     public function canCreateReport(): bool
     {
-        return in_array($this->role_category, ['maker', 'checker']);
+        return in_array($this->roleCategory(), ['maker', 'checker']);
     }
 }

@@ -68,7 +68,7 @@ class RiskFreeDeclarationController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user || $user->role_category !== 'checker') {
+        if (!$user || $user->roleCategory() !== 'checker') {
             abort(Response::HTTP_FORBIDDEN, 'Hanya Checker (Kacab) yang bisa mengakses halaman ini.');
         }
 
@@ -101,7 +101,7 @@ class RiskFreeDeclarationController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user || $user->role_category !== 'checker') {
+        if (!$user || $user->roleCategory() !== 'checker') {
             abort(Response::HTTP_FORBIDDEN, 'Hanya Checker (Kacab) yang bisa melakukan deklarasi.');
         }
 
@@ -143,8 +143,10 @@ class RiskFreeDeclarationController extends Controller
             ]);
         }
 
-        // Notifikasi ke ManRisk
-        $manriskUsers = User::role('manrisk')->get();
+        // Notifikasi ke Admin (ManRisk)
+        $manriskUsers = User::whereHas('roles', function ($q) {
+            $q->where('role_category', 'admin');
+        })->get();
         foreach ($manriskUsers as $mr) {
             Notification::create([
                 'user_id' => $mr->id,
@@ -163,8 +165,8 @@ class RiskFreeDeclarationController extends Controller
     public function violate($id)
     {
         $user = Auth::user();
-        if (!$user->hasRole('manrisk')) {
-            abort(Response::HTTP_FORBIDDEN, 'Hanya ManRisk yang bisa melakukan ini.');
+        if (!$user->isAdmin()) {
+            abort(Response::HTTP_FORBIDDEN, 'Hanya Admin (ManRisk) yang bisa melakukan ini.');
         }
 
         $declaration = RiskFreeDeclaration::findOrFail($id);
@@ -191,8 +193,9 @@ class RiskFreeDeclarationController extends Controller
         ]);
 
         // Notifikasi ke Kacab
-        $kacabUsers = User::role('kacab')
-            ->where('branch_id', $declaration->branch_id)
+        $kacabUsers = User::whereHas('roles', function ($q) {
+            $q->where('role_category', 'checker');
+        })->where('branch_id', $declaration->branch_id)
             ->get();
         foreach ($kacabUsers as $kacab) {
             Notification::create([
@@ -212,13 +215,14 @@ class RiskFreeDeclarationController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user || !in_array($user->role_category, ['checker', 'viewer'])) {
+        if (!$user || !in_array($user->roleCategory(), ['checker', 'viewer', 'admin'])) {
+
             abort(Response::HTTP_FORBIDDEN, 'Akses ditolak.');
         }
 
         $query = RiskFreeDeclaration::with(['branch', 'user', 'details']);
 
-        if ($user->role_category === 'checker') {
+        if ($user->roleCategory() === 'checker') {
             $query->where('branch_id', $user->branch_id);
         }
 

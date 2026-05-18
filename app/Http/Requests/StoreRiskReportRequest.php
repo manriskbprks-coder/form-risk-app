@@ -49,6 +49,15 @@ class StoreRiskReportRequest extends FormRequest
                 'dampak_non_finansial' => strip_tags($this->input('dampak_non_finansial')),
             ]);
         }
+        // Sumber risiko: kalo empty string (hidden field), konversi ke null biar validasi lolos
+        if ($this->has('sumber_risiko') && $this->input('sumber_risiko') === '') {
+            $this->merge(['sumber_risiko' => null]);
+        }
+        if ($this->has('sumber_risiko') && $this->input('sumber_risiko') !== null) {
+            $this->merge([
+                'sumber_risiko' => strip_tags($this->input('sumber_risiko')),
+            ]);
+        }
     }
 
     public function rules(): array
@@ -75,6 +84,7 @@ class StoreRiskReportRequest extends FormRequest
             // Validasi durasi
             'durasi_penyelesaian' => ['nullable', 'integer', 'min:1', 'max:9999'],
             'durasi_satuan' => ['nullable', 'in:menit,jam,hari,minggu,bulan'],
+            'sumber_risiko' => ['nullable', 'string', 'in:manusia,sistem_teknologi,proses_internal,faktor_eksternal'],
         ];
 
         if ($kategori === 'finansial') {

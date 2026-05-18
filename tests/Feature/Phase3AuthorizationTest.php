@@ -54,9 +54,14 @@ class Phase3AuthorizationTest extends TestCase
     {
         parent::setUp();
 
-        // Buat roles
-        collect(['teller', 'ca', 'csr', 'security', 'kacab', 'korwil', 'manrisk'])
-            ->each(fn ($r) => Role::firstOrCreate(['name' => $r]));
+        // Buat roles dengan role_category
+        $roleMapping = [
+            'teller' => 'maker', 'ca' => 'maker', 'csr' => 'maker', 'security' => 'maker',
+            'kacab' => 'checker', 'korwil' => 'viewer', 'manrisk' => 'admin',
+        ];
+        foreach ($roleMapping as $name => $category) {
+            Role::firstOrCreate(['name' => $name], ['role_category' => $category]);
+        }
 
         // Buat 3 branch: A (diawasi korwil), B (diawasi korwil), C (tidak diawasi)
         $this->branchA = Branch::factory()->create([
@@ -81,8 +86,7 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'korwil1',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
-            'role_category' => 'viewer',
-        ]);
+            ]);
         $this->korwil->assignRole('korwil');
 
         $this->branchA->update(['korwil_id' => $this->korwil->id]);
@@ -94,8 +98,7 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'manrisk1',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
-            'role_category' => 'viewer',
-        ]);
+            ]);
         $this->manrisk->assignRole('manrisk');
 
         // Buat Kacab
@@ -104,8 +107,7 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'kacabA',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
-            'role_category' => 'checker',
-        ]);
+            ]);
         $this->kacabA->assignRole('kacab');
 
         $this->kacabB = User::factory()->create([
@@ -113,8 +115,7 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'kacabB',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
-            'role_category' => 'checker',
-        ]);
+            ]);
         $this->kacabB->assignRole('kacab');
 
         // Buat Staff
@@ -123,8 +124,7 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'tellerA',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
-            'role_category' => 'maker',
-        ]);
+            ]);
         $this->tellerA->assignRole('teller');
 
         $this->tellerB = User::factory()->create([
@@ -132,8 +132,7 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'tellerB',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
-            'role_category' => 'maker',
-        ]);
+            ]);
         $this->tellerB->assignRole('teller');
 
         $this->ca = User::factory()->create([
@@ -141,8 +140,7 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'ca1',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
-            'role_category' => 'maker',
-        ]);
+            ]);
         $this->ca->assignRole('ca');
 
         $this->csr = User::factory()->create([
@@ -150,8 +148,7 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'csr1',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
-            'role_category' => 'maker',
-        ]);
+            ]);
         $this->csr->assignRole('csr');
 
         $this->security = User::factory()->create([
@@ -159,8 +156,7 @@ class Phase3AuthorizationTest extends TestCase
             'is_active' => true,
             'username' => 'security1',
             'password' => bcrypt('CorrectHorseBatteryStaple1!'),
-            'role_category' => 'maker',
-        ]);
+            ]);
         $this->security->assignRole('security');
 
         // Buat Risk Master Data

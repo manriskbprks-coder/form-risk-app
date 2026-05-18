@@ -35,9 +35,14 @@ class Phase5LoggingTest extends TestCase
     {
         parent::setUp();
 
-        // Buat roles
-        collect(['teller', 'ca', 'csr', 'security', 'kacab', 'korwil', 'manrisk'])
-            ->each(fn ($r) => Role::firstOrCreate(['name' => $r]));
+        // Buat roles dengan role_category
+        $roleMapping = [
+            'teller' => 'maker', 'ca' => 'maker', 'csr' => 'maker', 'security' => 'maker',
+            'kacab' => 'checker', 'korwil' => 'viewer', 'manrisk' => 'admin',
+        ];
+        foreach ($roleMapping as $name => $category) {
+            Role::firstOrCreate(['name' => $name], ['role_category' => $category]);
+        }
 
         // Buat branch
         $this->branch = Branch::factory()->create([
@@ -46,17 +51,17 @@ class Phase5LoggingTest extends TestCase
         ]);
 
         // Buat user dengan role
-        $this->manrisk = User::factory()->asViewer()->create([
+        $this->manrisk = User::factory()->create([
             'branch_id' => $this->branch->id,
         ]);
         $this->manrisk->assignRole('manrisk');
 
-        $this->kacab = User::factory()->asChecker()->create([
+        $this->kacab = User::factory()->create([
             'branch_id' => $this->branch->id,
         ]);
         $this->kacab->assignRole('kacab');
 
-        $this->teller = User::factory()->asMaker()->create([
+        $this->teller = User::factory()->create([
             'branch_id' => $this->branch->id,
         ]);
         $this->teller->assignRole('teller');

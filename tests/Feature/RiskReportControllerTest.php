@@ -37,39 +37,44 @@ class RiskReportControllerTest extends TestCase
     {
         parent::setUp();
 
-        // Buat roles
-        collect(['teller', 'ca', 'csr', 'security', 'kacab', 'korwil', 'manrisk'])
-            ->each(fn ($r) => Role::firstOrCreate(['name' => $r]));
+        // Buat roles dengan role_category
+        $roleMapping = [
+            'teller' => 'maker', 'ca' => 'maker', 'csr' => 'maker', 'security' => 'maker',
+            'kacab' => 'checker', 'korwil' => 'viewer', 'manrisk' => 'admin',
+        ];
+        foreach ($roleMapping as $name => $category) {
+            Role::firstOrCreate(['name' => $name], ['role_category' => $category]);
+        }
 
         // Buat branch
         $this->branch = Branch::factory()->create(['nama_cabang' => 'Cabang A']);
         $this->branchLain = Branch::factory()->create(['nama_cabang' => 'Cabang B']);
 
         // Buat users
-        $this->teller = User::factory()->create(['branch_id' => $this->branch->id, 'role_category' => 'maker']);
+        $this->teller = User::factory()->create(['branch_id' => $this->branch->id, ]);
         $this->teller->assignRole('teller');
 
-        $this->ca = User::factory()->create(['branch_id' => $this->branch->id, 'role_category' => 'maker']);
+        $this->ca = User::factory()->create(['branch_id' => $this->branch->id, ]);
         $this->ca->assignRole('ca');
 
-        $this->csr = User::factory()->create(['branch_id' => $this->branch->id, 'role_category' => 'maker']);
+        $this->csr = User::factory()->create(['branch_id' => $this->branch->id, ]);
         $this->csr->assignRole('csr');
 
-        $this->security = User::factory()->create(['branch_id' => $this->branch->id, 'role_category' => 'maker']);
+        $this->security = User::factory()->create(['branch_id' => $this->branch->id, ]);
         $this->security->assignRole('security');
 
-        $this->kacab = User::factory()->create(['branch_id' => $this->branch->id, 'role_category' => 'checker']);
+        $this->kacab = User::factory()->create(['branch_id' => $this->branch->id, ]);
         $this->kacab->assignRole('kacab');
 
-        $this->kacabLain = User::factory()->create(['branch_id' => $this->branchLain->id, 'role_category' => 'checker']);
+        $this->kacabLain = User::factory()->create(['branch_id' => $this->branchLain->id, ]);
         $this->kacabLain->assignRole('kacab');
 
-        $this->korwil = User::factory()->create(['role_category' => 'viewer']);
+        $this->korwil = User::factory()->create([]);
         $this->korwil->assignRole('korwil');
         $this->branch->update(['korwil_id' => $this->korwil->id]);
         $this->branchLain->update(['korwil_id' => $this->korwil->id]);
 
-        $this->manrisk = User::factory()->create(['role_category' => 'viewer']);
+        $this->manrisk = User::factory()->create([]);
         $this->manrisk->assignRole('manrisk');
 
         // Buat master data risiko

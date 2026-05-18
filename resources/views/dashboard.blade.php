@@ -50,7 +50,7 @@
     {{-- ============================================================
          STAT CARDS — Staff: 3 kolom, Kacab/Korwil/ManRisk: 4 kolom
          ============================================================ --}}
-    @hasanyrole('teller|ca|csr|security')
+    @if(Auth::user()->roleCategory() === 'maker')
     {{-- Staff: 3 card --}}
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-8">
         <div class="stat-card border-l-4 border-l-amber-400">
@@ -128,12 +128,12 @@
             <p class="text-xs text-slate-400 mt-1.5">Total Dampak</p>
         </div>
     </div>
-    @endhasanyrole
+    @endif
 
     {{-- ============================================================
          FILTER DROPDOWN (Khusus ManRisk)
          ============================================================ --}}
-    @hasrole('manrisk')
+    @if(Auth::user()->isAdmin())
     <div class="surface-card section-pad mb-6">
         <form method="GET" action="{{ route('dashboard') }}" class="flex flex-col sm:flex-row sm:items-end gap-4">
             <div class="flex-1">
@@ -168,14 +168,14 @@
             </div>
         </form>
     </div>
-    @endhasrole
+    @endif
 
     {{-- ============================================================
          CHART ANALISA RISIKO SECTION (Khusus Kacab/Korwil/Manrisk)
          HIDE: Diatur lewat env SHOW_CHARTS=true — default false
          ============================================================ --}}
     @if(env('SHOW_CHARTS', false))
-    @hasanyrole('kacab|korwil|manrisk')
+    @if(Auth::user()->isChecker() || Auth::user()->isViewer() || Auth::user()->isAdmin())
     {{-- Baris 1: Ranking Risiko + Sumber Risiko --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 mb-8">
         {{-- Ranking Risiko (Horizontal Bar) --}}
@@ -213,13 +213,13 @@
             </div>
         </div>
     </div>
-    @endhasanyrole
+    @endif
     @endif
 
     {{-- ============================================================
          MAKER SECTION — Form Entry Cards
          ============================================================ --}}
-    @hasanyrole('teller|ca|csr|security|kacab')
+    @if(Auth::user()->isMaker() || Auth::user()->isChecker())
     <div class="mb-8">
         <div class="flex items-center gap-3 mb-5">
             <div class="w-1 h-6 bg-indigo-500 rounded-full"></div>
@@ -246,12 +246,12 @@
             </a>
         </div>
     </div>
-    @endhasanyrole
+    @endif
 
     {{-- ============================================================
          CHECKER SECTION — Review (Khusus Kacab)
          ============================================================ --}}
-    @hasrole('kacab')
+    @if(Auth::user()->isChecker())
     <div class="mb-8">
         <div class="flex items-center gap-3 mb-5">
             <div class="w-1 h-6 bg-amber-500 rounded-full"></div>
@@ -273,12 +273,12 @@
             </div>
         </a>
     </div>
-    @endhasrole
+    @endif
 
     {{-- ============================================================
          DEKLARASI NIHIL RISIKO (Khusus Kacab)
          ============================================================ --}}
-    @hasrole('kacab')
+    @if(Auth::user()->isChecker())
     @php
         $hariIni = now()->day;
         $periodeSekarang = $hariIni <= 14 ? '1' : '2';
@@ -333,12 +333,12 @@
             </div>
         </div>
     </div>
-    @endhasrole
+    @endif
 
     {{-- ============================================================
          RINGKASAN WILAYAH (Khusus ManRisk)
          ============================================================ --}}
-    @hasrole('manrisk')
+    @if(Auth::user()->isAdmin())
     @if(count($branchSummaries) > 0)
     <div class="mb-8">
         <div class="flex items-center gap-3 mb-5">
@@ -490,7 +490,7 @@
         @endif
     </div>
     @endif
-    @endhasrole
+    @endif
 
     {{-- ============================================================
          DATA TABLE — Recent Reports

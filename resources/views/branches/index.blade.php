@@ -74,12 +74,15 @@
                                     @endif
                                 </td>
 
-                                <td class="px-6 py-4" colspan="2">
-                                    <form action="{{ route('branches.update', $branch->id) }}" method="POST" class="flex items-center justify-between gap-4 w-full">
-                                        @csrf
-                                        @method('PUT')
+                                 <td class="px-6 py-4" colspan="2">
+                                     <form action="{{ route('branches.update', $branch->id) }}" method="POST" class="flex items-center justify-between gap-4 w-full">
+                                         @csrf
+                                         @method('PUT')
 
-                                        <select name="korwil_id" class="flex-1 text-sm rounded border-gray-300 focus:ring-blue-500 focus:border-blue-500">
+                                         <input type="hidden" name="kode_cabang" value="{{ $branch->kode_cabang }}">
+                                         <input type="hidden" name="nickname_cabang" value="{{ $branch->nickname_cabang }}">
+
+                                         <select name="korwil_id" class="flex-1 text-sm rounded border-gray-300 focus:ring-blue-500 focus:border-blue-500">
                                             <option value="">-- Tanpa Korwil --</option>
                                             @foreach($listKorwil as $k)
                                             <option value="{{ $k->id }}" {{ $branch->korwil_id == $k->id ? 'selected' : '' }}>

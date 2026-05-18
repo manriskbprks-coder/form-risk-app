@@ -59,7 +59,7 @@
             {{-- Dashboard — semua role --}}
             <a href="{{ route('dashboard') }}"
                class="{{ request()->routeIs('dashboard') ? 'sidebar-link-active' : 'sidebar-link' }}">
-                @hasrole('manrisk')
+                @if(Auth::user()->isAdmin())
                 <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
@@ -69,7 +69,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
                 </svg>
                 <span>Home</span>
-                @endhasrole
+                @endif
             </a>
 
             @if(Auth::user()->isMaker())
@@ -145,7 +145,7 @@
             </a>
             @endif
 
-            @if(Auth::user()->isViewer())
+            @if(Auth::user()->isViewer() || Auth::user()->isAdmin())
             <a href="{{ route('risk.history') }}"
                class="{{ request()->routeIs('risk.history') ? 'sidebar-link-active' : 'sidebar-link' }}">
                 <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,7 +155,8 @@
             </a>
             @endif
 
-            @hasrole('manrisk')
+
+            @if(Auth::user()->isAdmin())
             <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-[0.14em] mb-2 mt-6">Administrasi</p>
 
             <a href="{{ route('admin.risk_master.index') }}"
@@ -175,6 +176,14 @@
                 <span>Manajemen Pengguna</span>
             </a>
 
+            <a href="{{ route('admin.roles.index') }}"
+               class="{{ request()->routeIs('admin.roles.*') ? 'sidebar-link-active' : 'sidebar-link' }}">
+                <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <span>Manajemen Role</span>
+            </a>
+
             <a href="{{ route('branches.index') }}"
                class="{{ request()->routeIs('branches.*') ? 'sidebar-link-active' : 'sidebar-link' }}">
                 <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,7 +191,7 @@
                 </svg>
                 <span>Manajemen Cabang</span>
             </a>
-            @endhasrole
+            @endif
         </nav>
 
     </aside>

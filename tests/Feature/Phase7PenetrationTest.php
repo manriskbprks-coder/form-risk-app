@@ -49,9 +49,14 @@ class Phase7PenetrationTest extends TestCase
     {
         parent::setUp();
 
-        // Buat roles
-        collect(['teller', 'ca', 'csr', 'security', 'kacab', 'korwil', 'manrisk'])
-            ->each(fn ($r) => Role::firstOrCreate(['name' => $r]));
+        // Buat roles dengan role_category
+        $roleMapping = [
+            'teller' => 'maker', 'ca' => 'maker', 'csr' => 'maker', 'security' => 'maker',
+            'kacab' => 'checker', 'korwil' => 'viewer', 'manrisk' => 'admin',
+        ];
+        foreach ($roleMapping as $name => $category) {
+            Role::firstOrCreate(['name' => $name], ['role_category' => $category]);
+        }
 
         // Buat 2 cabang berbeda
         $this->branchA = Branch::factory()->create([
@@ -67,29 +72,29 @@ class Phase7PenetrationTest extends TestCase
         ]);
 
         // Buat user di cabang A
-        $this->tellerA = User::factory()->asMaker()->create([
+        $this->tellerA = User::factory()->create([
             'branch_id' => $this->branchA->id,
         ]);
         $this->tellerA->assignRole('teller');
 
-        $this->kacabA = User::factory()->asChecker()->create([
+        $this->kacabA = User::factory()->create([
             'branch_id' => $this->branchA->id,
         ]);
         $this->kacabA->assignRole('kacab');
 
         // Buat user di cabang B
-        $this->tellerB = User::factory()->asMaker()->create([
+        $this->tellerB = User::factory()->create([
             'branch_id' => $this->branchB->id,
         ]);
         $this->tellerB->assignRole('teller');
 
-        $this->kacabB = User::factory()->asChecker()->create([
+        $this->kacabB = User::factory()->create([
             'branch_id' => $this->branchB->id,
         ]);
         $this->kacabB->assignRole('kacab');
 
         // ManRisk — bisa akses semua
-        $this->manrisk = User::factory()->asViewer()->create([
+        $this->manrisk = User::factory()->create([
             'branch_id' => $this->branchA->id,
         ]);
         $this->manrisk->assignRole('manrisk');

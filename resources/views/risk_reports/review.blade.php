@@ -37,7 +37,7 @@
                         <tbody>
                             @foreach($reports as $report)
                             @php
-                            $sumberRisiko = $report->cause->sumber_risiko ?? $report->item->sumber_risiko ?? 'manusia';
+                            $sumberRisiko = $report->sumber_risiko ?? $report->cause->sumber_risiko ?? $report->item->sumber_risiko ?? 'manusia';
                             $sumberLabels = [
                                 'manusia' => ['label' => 'Manusia', 'color' => 'bg-red-100 text-red-800 border-red-200'],
                                 'proses_internal' => ['label' => 'Proses Internal', 'color' => 'bg-yellow-100 text-yellow-800 border-yellow-200'],
@@ -181,7 +181,7 @@
                         <tbody>
                             @foreach($tindakLanjut as $tl)
                             @php
-                            $sumberRisiko = $tl->cause->sumber_risiko ?? $tl->item->sumber_risiko ?? 'manusia';
+                            $sumberRisiko = $tl->sumber_risiko ?? $tl->cause->sumber_risiko ?? $tl->item->sumber_risiko ?? 'manusia';
                             $sumberLabels = [
                                 'manusia' => ['label' => 'Manusia', 'color' => 'bg-red-100 text-red-800 border-red-200'],
                                 'proses_internal' => ['label' => 'Proses Internal', 'color' => 'bg-yellow-100 text-yellow-800 border-yellow-200'],
@@ -278,7 +278,7 @@
                                             <input type="hidden" name="note" value="Update status dari halaman Review">
 
                                             @php
-                                            $canClose = (auth()->user()->role_category === 'checker');
+                                            $canClose = (auth()->user()->roleCategory() === 'checker');
                                             @endphp
 
                                             <select name="new_status" class="w-full max-w-[150px] text-xs border-gray-300 rounded shadow-sm focus:ring-blue-500">
@@ -517,7 +517,7 @@
                 'sistem_teknologi': { label: 'Sistem Teknologi', color: 'bg-blue-100 text-blue-800 border-blue-200' },
                 'faktor_eksternal': { label: 'Faktor Eksternal', color: 'bg-purple-100 text-purple-800 border-purple-200' },
             };
-            var sumberKey = (r.cause && r.cause.sumber_risiko) || (r.item && r.item.sumber_risiko) || 'manusia';
+            var sumberKey = r.sumber_risiko || (r.cause && r.cause.sumber_risiko) || (r.item && r.item.sumber_risiko) || 'manusia';
             var sumber = sumberLabels[sumberKey] || sumberLabels['manusia'];
 
             // Status labels

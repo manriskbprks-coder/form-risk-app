@@ -28,28 +28,32 @@ class RiskFreeDeclarationTest extends TestCase
     {
         parent::setUp();
 
-        // Buat roles
-        collect(['teller', 'kacab', 'korwil', 'manrisk'])
-            ->each(fn ($r) => Role::firstOrCreate(['name' => $r]));
+        // Buat roles dengan role_category
+        $roleMapping = [
+            'teller' => 'maker', 'kacab' => 'checker', 'korwil' => 'viewer', 'manrisk' => 'admin',
+        ];
+        foreach ($roleMapping as $name => $category) {
+            Role::firstOrCreate(['name' => $name], ['role_category' => $category]);
+        }
 
         // Buat branch
         $this->branch = Branch::factory()->create(['nama_cabang' => 'Cabang A', 'is_active' => true]);
         $this->branchLain = Branch::factory()->create(['nama_cabang' => 'Cabang B', 'is_active' => true]);
 
         // Buat users
-        $this->teller = User::factory()->asMaker()->create(['branch_id' => $this->branch->id]);
+        $this->teller = User::factory()->create(['branch_id' => $this->branch->id]);
         $this->teller->assignRole('teller');
 
-        $this->kacab = User::factory()->asChecker()->create(['branch_id' => $this->branch->id]);
+        $this->kacab = User::factory()->create(['branch_id' => $this->branch->id]);
         $this->kacab->assignRole('kacab');
 
-        $this->kacabLain = User::factory()->asChecker()->create(['branch_id' => $this->branchLain->id]);
+        $this->kacabLain = User::factory()->create(['branch_id' => $this->branchLain->id]);
         $this->kacabLain->assignRole('kacab');
 
-        $this->korwil = User::factory()->asViewer()->create();
+        $this->korwil = User::factory()->create();
         $this->korwil->assignRole('korwil');
 
-        $this->manrisk = User::factory()->asViewer()->create();
+        $this->manrisk = User::factory()->create();
         $this->manrisk->assignRole('manrisk');
     }
 

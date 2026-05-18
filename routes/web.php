@@ -8,6 +8,7 @@ use App\Http\Controllers\ExportRiskReportController;
 use App\Http\Controllers\RiskFreeDeclarationController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\Admin\RiskMasterController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Models\RiskReport;
 
 Route::get('/', function () {
@@ -17,8 +18,7 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     $user = auth()->user();
     $userBranchId = $user->branch_id;
-    $role = $user?->primaryRoleName();
-    $roleCategory = $user->role_category;
+    $roleCategory = $user->roleCategory();
 
     // ================================================================
     // FILTER: Periode & Cabang (khusus ManRisk, opsional untuk role lain)
@@ -27,12 +27,12 @@ Route::get('/dashboard', function () {
     $cabangFilter = request('cabang_id', 'all');
 
     // Tentukan branch IDs yang bisa dilihat user
-    if ($roleCategory === 'viewer') {
-        if ($role === 'korwil') {
+    if (in_array($roleCategory, ['viewer', 'admin'])) {
+        if ($roleCategory === 'viewer') {
             $branchIds = \App\Models\Branch::where('korwil_id', $user->id)
                 ->whereRaw('is_active = true')
                 ->pluck('id');
-        } else { // manrisk
+        } else { // admin
             if ($cabangFilter === 'all') {
                 $branchIds = \App\Models\Branch::whereRaw('is_active = true')->pluck('id');
             } else {
@@ -50,7 +50,7 @@ Route::get('/dashboard', function () {
     $allBranches = \App\Models\Branch::whereRaw('is_active = true')->get();
 
     // Laporan terbaru (untuk tabel)
-    if (in_array($roleCategory, ['viewer', 'checker'])) {
+    if (in_array($roleCategory, ['viewer', 'checker', 'admin'])) {
         $recentReports = RiskReport::with(['user', 'branch', 'item'])
             ->whereIn('branch_id', $branchIds)
             ->latest()
@@ -67,10 +67,10 @@ Route::get('/dashboard', function () {
 
     // Stat cards — difilter sesuai role
     $reportQuery = RiskReport::query();
-    if ($roleCategory === 'viewer') {
-        if ($role === 'korwil') {
+    if (in_array($roleCategory, ['viewer', 'admin'])) {
+        if ($roleCategory === 'viewer') {
             $reportQuery->whereIn('branch_id', $branchIds);
-        } // manrisk ga perlu filter
+        } // admin ga perlu filter (lihat semua)
     } elseif ($roleCategory === 'checker') {
         $reportQuery->where('branch_id', $userBranchId);
     } elseif ($roleCategory === 'maker') {
@@ -211,16 +211,17 @@ Route::get('/dashboard', function () {
         $sumberRisikoData = [];
         $sumberRisikoColors = [];
 
-        $sumberQuery = RiskReport::selectRaw('risk_items.sumber_risiko, COUNT(*) as total')
+        $sumberQuery = RiskReport::selectRaw('COALESCE(risk_reports.sumber_risiko, risk_causes.sumber_risiko, risk_items.sumber_risiko, \'manusia\') as sumber_risiko_alias, COUNT(*) as total')
             ->join('risk_items', 'risk_reports.risk_item_id', '=', 'risk_items.id')
+            ->leftJoin('risk_causes', 'risk_reports.risk_cause_id', '=', 'risk_causes.id')
             ->whereIn('risk_reports.branch_id', $branchIds)
             ->where('risk_reports.created_at', '>=', $dateFilter)
-            ->groupBy('risk_items.sumber_risiko')
+            ->groupBy('sumber_risiko_alias')
             ->orderByDesc('total')
             ->get();
 
         foreach ($sumberQuery as $row) {
-            $key = $row->sumber_risiko;
+            $key = $row->sumber_risiko_alias;
             $label = $sumberMapping[$key]['label'] ?? ucfirst($key);
             $color = $sumberMapping[$key]['color'] ?? '#6b7280';
             $sumberRisikoLabels[] = $label;
@@ -279,7 +280,7 @@ Route::get('/dashboard', function () {
     $branchChartData = [];
     $branchChartColors = [];
 
-    if ($role === 'manrisk') {
+    if ($roleCategory === 'admin') {
         $dateFilter = $periode > 0 ? now()->subMonths($periode) : now()->subYears(10);
         $maxTotal = 0;
         foreach ($allBranches as $branch) {
@@ -318,7 +319,7 @@ Route::get('/dashboard', function () {
     // === DATA DEKLARASI NIHIL RISIKO (Khusus ManRisk) ===
     $deklarasiSummaries = [];
 
-    if ($role === 'manrisk') {
+    if ($roleCategory === 'admin') {
         $bulanIni = now()->month;
         $tahunIni = now()->year;
 
@@ -365,7 +366,7 @@ Route::get('/dashboard', function () {
         $pendingCount = RiskReport::where('branch_id', $userBranchId)
             ->where('approval_status', 'pending_kacab')
             ->count();
-    } elseif ($roleCategory === 'viewer' && $role === 'korwil') {
+    } elseif ($roleCategory === 'viewer') {
         $pendingCount = RiskReport::whereIn('branch_id', $branchIds)
             ->where('approval_status', 'pending_korwil')
             ->count();
@@ -375,7 +376,7 @@ Route::get('/dashboard', function () {
     $labelTotalLaporan = match($roleCategory) {
         'maker' => 'Laporan Saya (Closed)',
         'checker' => 'Laporan Cabang (Closed)',
-        'viewer' => $role === 'korwil' ? 'Laporan Wilayah (Closed)' : 'Total Laporan (Closed)',
+        'viewer' => 'Laporan Wilayah (Closed)',
         default => 'Total Laporan (Closed)',
     };
 
@@ -386,7 +387,6 @@ Route::get('/dashboard', function () {
         'totalLossApproved',
         'totalInProgress',
         'pendingCount',
-        'role',
         'roleCategory',
         'labelTotalLaporan',
         'chartMonths',
@@ -489,7 +489,7 @@ Route::middleware('auth')->group(function () {
 // =========================================================================
 // AREA KHUSUS DEWA APLIKASI (MANAJEMEN RISIKO)
 // =========================================================================
-Route::middleware(['auth', 'role:manrisk'])->group(function () {
+Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');
     Route::post('/admin/users/{user}/toggle-status', [AdminUserController::class, 'toggleStatus'])->name('admin.users.toggle');
 
@@ -504,6 +504,12 @@ Route::middleware(['auth', 'role:manrisk'])->group(function () {
     // CRUD User Management
     Route::post('/admin/users', [AdminUserController::class, 'store'])->name('admin.users.store');
     Route::patch('/admin/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
+
+    // CRUD Role Management
+    Route::get('/admin/roles', [RoleController::class, 'index'])->name('admin.roles.index');
+    Route::post('/admin/roles', [RoleController::class, 'store'])->name('admin.roles.store');
+    Route::patch('/admin/roles/{role}', [RoleController::class, 'update'])->name('admin.roles.update');
+    Route::delete('/admin/roles/{role}', [RoleController::class, 'destroy'])->name('admin.roles.destroy');
 
     // Rute buat update penyebab & mitigasi
     Route::patch('/admin/risk-master/cause/{id}', [\App\Http\Controllers\Admin\RiskMasterController::class, 'updateCause'])->name('admin.risk_master.update_cause');

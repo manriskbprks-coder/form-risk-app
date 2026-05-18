@@ -33,6 +33,7 @@ class RiskReportFactory extends Factory
             'risk_cause_id' => $cause->id,
             'kronologis_kejadian' => 'Kejadian ini terjadi pada saat jam operasional dimana terdapat selisih yang cukup signifikan setelah dilakukan pengecekan ulang oleh supervisor.',
             'kategori' => fake()->randomElement(['finansial', 'non-finansial']),
+            'sumber_risiko' => fake()->randomElement(['manusia', 'sistem_teknologi', 'proses_internal', 'faktor_eksternal']),
             'dampak_finansial' => fake()->optional(0.7)->numberBetween(100000, 10000000),
             'approval_status' => 'pending_kacab',
             'resolution_status' => 'open',

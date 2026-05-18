@@ -30,7 +30,6 @@ class UserFactory extends Factory
             'username' => fake()->unique()->userName(),
             'email' => fake()->unique()->safeEmail(),
             'branch_id' => Branch::factory(),
-            'role_category' => 'maker',
             'email_verified_at' => now(),
             'password_changed_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
@@ -45,27 +44,6 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
-        ]);
-    }
-
-    public function asMaker(): static
-    {
-        return $this->state(fn(array $attributes) => [
-            'role_category' => 'maker',
-        ]);
-    }
-
-    public function asChecker(): static
-    {
-        return $this->state(fn(array $attributes) => [
-            'role_category' => 'checker',
-        ]);
-    }
-
-    public function asViewer(): static
-    {
-        return $this->state(fn(array $attributes) => [
-            'role_category' => 'viewer',
         ]);
     }
 }

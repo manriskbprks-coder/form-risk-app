@@ -19,6 +19,7 @@ class RiskReport extends Model
         'dampak_non_finansial',
         'skala_dampak',
         'kategori',
+        'sumber_risiko',
         'approval_status', 'resolution_status',
         'revision_note'
     ];

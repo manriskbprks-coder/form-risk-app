@@ -17,7 +17,7 @@ class RiskItemFactory extends Factory
         return [
             'nama_risiko' => fake()->sentence(3),
             'kategori' => fake()->randomElement(['finansial', 'non-finansial']),
-            'role_target' => fake()->randomElement(['kacab', 'korwil', 'teller', 'csr', 'security', 'ca']),
+            'role_target' => fake()->randomElement(['teller', 'ca', 'csr', 'security', 'kacab', 'korwil']),
         ];
     }
 }

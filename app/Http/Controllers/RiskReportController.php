@@ -30,8 +30,8 @@ class RiskReportController extends Controller
             abort(404, 'Kategori Risiko Tidak Ditemukan');
         }
 
-        $userRole = $this->primaryRoleName();
-        if (!$userRole) {
+        $userRoleCategory = Auth::user()->roleCategory();
+        if (!$userRoleCategory) {
             abort(Response::HTTP_FORBIDDEN, 'Akses ditolak. Role user tidak ditemukan.');
         }
 
@@ -41,7 +41,7 @@ class RiskReportController extends Controller
         }
 
         $riskItems = RiskItem::with('causes.mitigations')
-            ->where('role_target', $userRole)
+            ->where('role_target', Auth::user()->primaryRoleName())
             ->where('kategori', $kategori)
             ->get();
 
@@ -81,7 +81,7 @@ class RiskReportController extends Controller
     {
         try {
             $user = Auth::user();
-            $targetApproval = $user->role_category === 'checker' ? 'approved' : 'pending_kacab';
+            $targetApproval = $user->roleCategory() === 'checker' ? 'approved' : 'pending_kacab';
 
             $report = RiskReport::create([
                 'kode_laporan' => $this->generateKodeLaporan($user),
@@ -101,6 +101,7 @@ class RiskReportController extends Controller
                 'dampak_finansial' => $request->dampak_finansial ?? 0,
                 'dampak_non_finansial' => $request->dampak_non_finansial,
                 'skala_dampak' => $request->skala_dampak,
+                'sumber_risiko' => $request->sumber_risiko,
                 'approval_status' => $targetApproval,
                 'resolution_status' => $request->status_awal,
             ]);
@@ -123,8 +124,9 @@ class RiskReportController extends Controller
 
         // === NOTIFIKASI: Beri tahu Kacab cabang ini ===
         if ($targetApproval === 'pending_kacab') {
-            $kacabUsers = User::role('kacab')
-                ->where('branch_id', $user->branch_id)
+            $kacabUsers = User::whereHas('roles', function ($q) {
+                $q->where('role_category', 'checker');
+            })->where('branch_id', $user->branch_id)
                 ->get();
 
             foreach ($kacabUsers as $kacab) {
@@ -159,7 +161,7 @@ class RiskReportController extends Controller
         $reports = collect();
         $tindakLanjut = collect();
 
-        if ($user->role_category === 'checker') {
+        if ($user->roleCategory() === 'checker') {
             $reports = RiskReport::with(['user.roles', 'item', 'cause.mitigations', 'branch'])
                 ->where('branch_id', $user->branch_id)
                 ->whereIn('approval_status', ['pending_kacab', 'need_revision'])
@@ -241,7 +243,7 @@ class RiskReportController extends Controller
             abort(Response::HTTP_FORBIDDEN, 'Akses ditolak.');
         }
 
-        $roleCategory = $user->role_category;
+        $roleCategory = $user->roleCategory();
         $role = $user->primaryRoleName();
 
         $query = RiskReport::with(['user', 'item', 'cause.mitigations', 'branch']);
@@ -249,9 +251,9 @@ class RiskReportController extends Controller
         if ($roleCategory === 'checker') {
             $query->where('branch_id', $user->branch_id);
             $branches = collect();
-        } elseif ($roleCategory === 'viewer') {
-            // Viewer: Korwil lihat cabang diawasi, ManRisk lihat semua
-            if ($role === 'korwil') {
+        } elseif (in_array($roleCategory, ['viewer', 'admin'])) {
+            // Viewer & Admin: Viewer lihat cabang diawasi, Admin lihat semua
+            if ($roleCategory === 'viewer') {
                 $branchIds = Branch::where('korwil_id', $user->id)->pluck('id');
                 $query->whereIn('branch_id', $branchIds);
                 $branches = Branch::whereIn('id', $branchIds)->get();
@@ -284,7 +286,7 @@ class RiskReportController extends Controller
             });
         }
 
-        if ($request->filled('branch_id') && in_array($role, ['manrisk', 'korwil'])) {
+        if ($request->filled('branch_id') && in_array($roleCategory, ['admin', 'viewer'])) {
             $query->where('branch_id', $request->branch_id);
         }
 
@@ -376,7 +378,7 @@ class RiskReportController extends Controller
         Gate::authorize('updateProgress', $report);
 
         if ($request->new_status === 'closed') {
-            if ($user->role_category !== 'checker') {
+            if ($user->roleCategory() !== 'checker') {
                 return back()->with('error', 'Hanya Checker (Kacab) yang berwenang menutup laporan.');
             }
 
@@ -484,6 +486,7 @@ class RiskReportController extends Controller
             'mitigasi_tambahan' => 'nullable|string',
             'durasi_penyelesaian' => 'nullable|integer|min:1',
             'durasi_satuan' => 'nullable|in:jam,hari,minggu',
+            'sumber_risiko' => 'nullable|string|in:manusia,sistem_teknologi,proses_internal,faktor_eksternal',
         ]);
 
         // Snapshot data lama SEBELUM diupdate
@@ -491,6 +494,7 @@ class RiskReportController extends Controller
             'kronologis_kejadian', 'dampak_finansial', 'skala_dampak',
             'dampak_non_finansial', 'mitigasi_tambahan',
             'durasi_penyelesaian', 'durasi_satuan',
+            'sumber_risiko',
         ]);
 
         // Tentukan status baru berdasarkan siapa yang minta revisi
@@ -511,6 +515,7 @@ class RiskReportController extends Controller
             'mitigasi_tambahan' => $request->mitigasi_tambahan,
             'durasi_penyelesaian' => $request->durasi_penyelesaian,
             'durasi_satuan' => $request->durasi_satuan,
+            'sumber_risiko' => $request->sumber_risiko ?? $report->sumber_risiko,
             'approval_status' => $newStatus,
             'revision_note' => null, // bersihin catatan revisi
         ]);
@@ -525,8 +530,9 @@ class RiskReportController extends Controller
 
         // Notif ke reviewer
         if ($newStatus === 'pending_kacab') {
-            $kacabUsers = User::role('kacab')
-                ->where('branch_id', $report->branch_id)
+            $kacabUsers = User::whereHas('roles', function ($q) {
+                $q->where('role_category', 'checker');
+            })->where('branch_id', $report->branch_id)
                 ->get();
             foreach ($kacabUsers as $kacab) {
                 Notification::create([
@@ -537,7 +543,9 @@ class RiskReportController extends Controller
                 ]);
             }
         } else {
-            $manriskUsers = User::role('manrisk')->get();
+            $manriskUsers = User::whereHas('roles', function ($q) {
+                $q->where('role_category', 'admin');
+            })->get();
             foreach ($manriskUsers as $mr) {
                 Notification::create([
                     'user_id' => $mr->id,

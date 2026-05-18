@@ -15,23 +15,20 @@ class ExportRiskReportController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user || !$user->role_category) {
+        if (!$user || !$user->roleCategory()) {
             abort(403, 'Akses ditolak.');
         }
 
         $query = RiskReport::with(['user', 'item', 'cause.mitigations', 'branch']);
 
         // Filter by role_category
-        if ($user->role_category === 'checker') {
+        if ($user->roleCategory() === 'checker') {
             $query->where('branch_id', $user->branch_id);
-        } elseif ($user->role_category === 'viewer') {
-            // Viewer: korwil sees supervised branches, manrisk sees all
-            if ($user->hasRole('korwil')) {
-                $branchIds = Branch::where('korwil_id', $user->id)->pluck('id');
-                $query->whereIn('branch_id', $branchIds);
-            }
-            // manrisk: no filter (sees all)
-        } elseif ($user->role_category === 'maker') {
+        } elseif ($user->roleCategory() === 'viewer') {
+            // Viewer: hanya melihat cabang yang diawasi
+            $branchIds = Branch::where('korwil_id', $user->id)->pluck('id');
+            $query->whereIn('branch_id', $branchIds);
+        } elseif ($user->roleCategory() === 'maker') {
             $query->where('user_id', $user->id);
         }
 
@@ -55,7 +52,7 @@ class ExportRiskReportController extends Controller
             });
         }
 
-        if ($request->filled('branch_id') && $user->role_category === 'viewer') {
+        if ($request->filled('branch_id') && $user->roleCategory() === 'viewer') {
             $query->where('branch_id', $request->branch_id);
         }
 
@@ -95,7 +92,7 @@ class ExportRiskReportController extends Controller
         Log::channel('daily')->info('[AUDIT] User export CSV', [
             'user_id' => $user->id,
             'user_name' => $user->name,
-            'role_category' => $user->role_category,
+            'role_category' => $user->roleCategory(),
             'filename' => 'export-risiko-' . now()->format('Ymd-His') . '.csv',
             'total_reports' => $reports->count(),
             'filters' => $request->only(['search', 'branch_id', 'kategori', 'jabatan', 'start_date', 'end_date', 'resolution_status', 'approval_status']),
@@ -151,7 +148,7 @@ class ExportRiskReportController extends Controller
                     $mitigasiList->push($report->mitigasi_tambahan);
                 }
 
-                $sumberRisiko = $report->cause->sumber_risiko ?? $report->item->sumber_risiko ?? 'manusia';
+                $sumberRisiko = $report->sumber_risiko ?? $report->cause->sumber_risiko ?? $report->item->sumber_risiko ?? 'manusia';
                 $sumberLabels = [
                     'manusia' => 'Manusia',
                     'proses_internal' => 'Proses Internal',

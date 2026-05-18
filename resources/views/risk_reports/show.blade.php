@@ -66,7 +66,7 @@
                             </div>
                             <div class="flex flex-wrap gap-2 sm:max-w-[280px] sm:justify-end sm:text-right">
                                 @php
-                                $sumberRisiko = $report->cause->sumber_risiko ?? $report->item->sumber_risiko ?? 'manusia';
+                                $sumberRisiko = $report->sumber_risiko ?? $report->cause->sumber_risiko ?? $report->item->sumber_risiko ?? 'manusia';
                                 $sumberLabels = [
                                     'manusia' => ['label' => 'Manusia', 'color' => 'bg-red-100 text-red-800 border-red-200'],
                                     'proses_internal' => ['label' => 'Proses Internal', 'color' => 'bg-yellow-100 text-yellow-800 border-yellow-200'],
@@ -172,9 +172,9 @@
                         @if($report->approval_status === 'need_revision')
                         @php
                             $isOwner = (int) $report->user_id === (int) auth()->id();
-                            $isCheckerOwner = auth()->user()->role_category === 'checker' && (int) $report->branch_id === (int) auth()->user()->branch_id;
+                            $isCheckerOwner = auth()->user()->roleCategory() === 'checker' && (int) $report->branch_id === (int) auth()->user()->branch_id;
                             $canRevise = $isOwner || $isCheckerOwner;
-                            $sumberRisiko = $report->cause->sumber_risiko ?? $report->item->sumber_risiko ?? '';
+                            $sumberRisiko = $report->sumber_risiko ?? $report->cause->sumber_risiko ?? $report->item->sumber_risiko ?? '';
                             $isSistemTeknologi = $sumberRisiko === 'sistem_teknologi';
                         @endphp
 
@@ -288,7 +288,7 @@
                                 // Checker bisa update kalo laporan dari cabangnya
                                 $showForm = $canUpdate && (
                                     (auth()->user()->isMaker() && $isOwner) ||
-                                    (auth()->user()->role_category === 'checker' && (int) $report->branch_id === (int) auth()->user()->branch_id)
+                                    (auth()->user()->roleCategory() === 'checker' && (int) $report->branch_id === (int) auth()->user()->branch_id)
                                 );
                             @endphp
 
@@ -303,7 +303,7 @@
                                     <label class="block text-xs font-bold text-blue-800 uppercase mb-1">Set Status Menjadi:</label>
                                     <select name="new_status" class="w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500 mb-3">
                                         <option value="in_progress" {{ $report->resolution_status == 'in_progress' ? 'selected' : '' }}>In Progress (Sedang dikerjakan)</option>
-                                        @if(auth()->user()->role_category === 'checker')
+                                        @if(auth()->user()->roleCategory() === 'checker')
                                         <option value="closed" class="font-bold text-green-600">Closed (Selesai Tuntas)</option>
                                         @endif
                                     </select>

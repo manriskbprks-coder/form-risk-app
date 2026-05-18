@@ -34,9 +34,10 @@ class BranchManagementController extends Controller
         // 1. Tarik semua cabang
         $branches = \App\Models\Branch::orderBy('nama_cabang', 'asc')->get();
 
-        // 2. Tarik semua user yang jabatannya (role) Korwil
-        // Asumsi lu pake Spatie Permission, pakai role 'korwil'
-        $listKorwil = \App\Models\User::role('korwil')->orderBy('name', 'asc')->get();
+        // 2. Tarik semua user yang jabatannya viewer (Korwil)
+        $listKorwil = \App\Models\User::whereHas('roles', function ($q) {
+            $q->where('role_category', 'viewer');
+        })->orderBy('name', 'asc')->get();
 
         return view('branches.index', compact('branches', 'listKorwil'));
     }

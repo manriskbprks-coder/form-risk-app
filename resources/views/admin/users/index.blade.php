@@ -37,52 +37,137 @@
                             </button>
                         </div>
 
-                        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
+                        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200"
+                             x-data="{
+                                search: '',
+                                sortField: 'name',
+                                sortDir: 'asc',
+                                get sortedUsers() {
+                                    let items = {{ Js::from($users->map(function($u) {
+                                        return [
+                                            'id' => $u->id,
+                                            'name' => $u->name,
+                                            'username' => $u->username,
+                                            'email' => $u->email,
+                                            'branch_name' => $u->branch->nama_cabang ?? 'Pusat',
+                                            'role_name' => $u->roles->first()->name ?? '-',
+                                            'is_active' => $u->is_active,
+                                        ];
+                                    })->values()->toArray()) }};
+
+                                    // Filter
+                                    if (this.search.trim() !== '') {
+                                        let q = this.search.toLowerCase().trim();
+                                        items = items.filter(u =>
+                                            u.name.toLowerCase().includes(q) ||
+                                            u.username.toLowerCase().includes(q) ||
+                                            u.email.toLowerCase().includes(q)
+                                        );
+                                    }
+
+                                    // Sort
+                                    items.sort((a, b) => {
+                                        let valA, valB;
+                                        if (this.sortField === 'name') {
+                                            valA = a.name.toLowerCase();
+                                            valB = b.name.toLowerCase();
+                                        } else if (this.sortField === 'branch') {
+                                            valA = a.branch_name.toLowerCase();
+                                            valB = b.branch_name.toLowerCase();
+                                        } else if (this.sortField === 'role') {
+                                            valA = a.role_name.toLowerCase();
+                                            valB = b.role_name.toLowerCase();
+                                        } else if (this.sortField === 'status') {
+                                            valA = a.is_active ? 1 : 0;
+                                            valB = b.is_active ? 1 : 0;
+                                        }
+                                        if (valA < valB) return this.sortDir === 'asc' ? -1 : 1;
+                                        if (valA > valB) return this.sortDir === 'asc' ? 1 : -1;
+                                        return 0;
+                                    });
+
+                                    return items;
+                                },
+                                sortBy(field) {
+                                    if (this.sortField === field) {
+                                        this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+                                    } else {
+                                        this.sortField = field;
+                                        this.sortDir = 'asc';
+                                    }
+                                },
+                                sortIcon(field) {
+                                    if (this.sortField !== field) return '↕';
+                                    return this.sortDir === 'asc' ? '▲' : '▼';
+                                }
+                             }">
+                            <div class="p-4 border-b border-gray-200 bg-gray-50/50">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                    <div class="relative w-full sm:w-72">
+                                        <input type="text"
+                                               x-model="search"
+                                               placeholder="Cari nama, username, atau email..."
+                                               class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                        <svg class="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        <span x-text="sortedUsers.length"></span> dari <span>{{ $users->count() }}</span> karyawan
+                                    </div>
+                                </div>
+                            </div>
                             <div class="overflow-x-auto -mx-4 sm:mx-0">
                             <table class="min-w-[850px] w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nama & Username</th>
-                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Cabang</th>
-                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Jabatan</th>
-                                        <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Status</th>
+                                        <th @click="sortBy('name')" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase cursor-pointer select-none hover:text-gray-700">
+                                            <span class="inline-flex items-center gap-1">Nama & Username <span x-text="sortIcon('name')" class="text-[10px]"></span></span>
+                                        </th>
+                                        <th @click="sortBy('branch')" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase cursor-pointer select-none hover:text-gray-700">
+                                            <span class="inline-flex items-center gap-1">Cabang <span x-text="sortIcon('branch')" class="text-[10px]"></span></span>
+                                        </th>
+                                        <th @click="sortBy('role')" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase cursor-pointer select-none hover:text-gray-700">
+                                            <span class="inline-flex items-center gap-1">Jabatan <span x-text="sortIcon('role')" class="text-[10px]"></span></span>
+                                        </th>
+                                        <th @click="sortBy('status')" class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase cursor-pointer select-none hover:text-gray-700">
+                                            <span class="inline-flex items-center gap-1">Status <span x-text="sortIcon('status')" class="text-[10px]"></span></span>
+                                        </th>
                                         <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    @foreach($users as $user)
-                                    <tr class="{{ !$user->is_active ? 'bg-gray-50' : '' }}">
+                                    <template x-for="user in sortedUsers" :key="user.id">
+                                    <tr :class="!user.is_active ? 'bg-gray-50' : ''">
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-bold text-gray-900">{{ $user->name }}</div>
-                                            <div class="text-xs text-gray-500">{{ $user->username }} | {{ $user->email }}</div>
+                                            <div class="text-sm font-bold text-gray-900" x-text="user.name"></div>
+                                            <div class="text-xs text-gray-500" x-text="user.username + ' | ' + user.email"></div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 uppercase">
-                                            {{ $user->branch->nama_cabang ?? 'Pusat' }}
-                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 uppercase" x-text="user.branch_name"></td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-[10px] font-bold uppercase">
-                                                {{ $user->roles->first()->name ?? '-' }}
-                                            </span>
+                                            <span class="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-[10px] font-bold uppercase" x-text="user.role_name"></span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <span class="px-2 py-1 {{ $user->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }} rounded text-[10px] font-bold uppercase">
-                                                {{ $user->is_active ? 'Aktif' : 'Non-Aktif' }}
-                                            </span>
+                                            <span class="px-2 py-1 rounded text-[10px] font-bold uppercase"
+                                                  :class="user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                                                  x-text="user.is_active ? 'Aktif' : 'Non-Aktif'"></span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                            <button onclick="openEditModal({{ $user }})" class="inline-block text-indigo-600 hover:text-indigo-900 font-bold uppercase text-[10px]">Edit</button>
-
-                                            <form action="{{ route('admin.users.toggle', $user->id) }}" method="POST" class="inline">
+                                            <button @click="openEditModalFromAlpine(user)" class="inline-block text-indigo-600 hover:text-indigo-900 font-bold uppercase text-[10px]">Edit</button>
+                                            <form :action="`/admin/users/${user.id}/toggle`" method="POST" class="inline">
                                                 @csrf
-                                                <button type="submit" class="{{ $user->is_active ? 'text-red-600' : 'text-green-600' }} font-bold uppercase text-[10px]">
-                                                    {{ $user->is_active ? 'Non-Aktifkan' : 'Aktifkan' }}
-                                                </button>
+                                                <button type="submit" class="font-bold uppercase text-[10px]"
+                                                        :class="user.is_active ? 'text-red-600' : 'text-green-600'"
+                                                        x-text="user.is_active ? 'Non-Aktifkan' : 'Aktifkan'"></button>
                                             </form>
                                         </td>
                                     </tr>
-                                    @endforeach
+                                    </template>
                                 </tbody>
                             </table>
+                            </div>
+                            <div x-show="sortedUsers.length === 0" class="p-8 text-center text-gray-500 text-sm">
+                                Tidak ada karyawan yang cocok dengan pencarian "<span x-text="search" class="font-semibold"></span>".
                             </div>
                         </div>
                     </div>
@@ -208,6 +293,15 @@
                 }
 
                 // 3. Ubah tujuan action formnya dinamis ke ID user yang diklik
+                document.getElementById('editForm').action = `/admin/users/${user.id}`;
+            }
+
+            // Alpine.js version: receives simplified user object from x-for template
+            function openEditModalFromAlpine(user) {
+                document.getElementById('modalEdit').classList.remove('hidden');
+                document.getElementById('edit_name').value = user.name;
+                document.getElementById('edit_branch').value = user.branch_id;
+                document.getElementById('edit_role').value = user.role_name;
                 document.getElementById('editForm').action = `/admin/users/${user.id}`;
             }
         </script>
