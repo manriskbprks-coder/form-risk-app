@@ -128,7 +128,7 @@ class DummyRiskReportSeeder extends Seeder
 
                 $kategori = $riskItem->kategori ?? 'non-finansial';
                 $dampakFinansial = ($kategori === 'finansial') ? rand(100000, 15000000) : null;
-                $skalaDampak = ($kategori === 'non-finansial') ? rand(1, 5) : null;
+                $skalaDampak = ($kategori === 'non-finansial') ? fake()->randomElement(['Sangat Tinggi', 'Tinggi', 'Sedang', 'Rendah', 'Sangat Rendah']) : null;
 
                 // Approval status logic
                 $isKacab = $user->hasRole('kacab');
