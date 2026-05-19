@@ -7,6 +7,8 @@ use App\Models\Branch;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
 
 class AdminUserController extends Controller
@@ -64,12 +66,6 @@ class AdminUserController extends Controller
         // Logika Ganti Jabatan (Promosi/Demosi)
         $user->syncRoles($request->role);
 
-        // Update Password Jika Diisi (Opsional)
-        if ($request->filled('password')) {
-            $request->validate(['password' => ['confirmed', Rules\Password::defaults()]]);
-            $user->update(['password' => Hash::make($request->password)]);
-        }
-
         return back()->with('success', 'Data user berhasil diperbarui!');
     }
 
@@ -85,5 +81,39 @@ class AdminUserController extends Controller
         $status = $user->is_active ? 'diaktifkan' : 'dinonaktifkan';
 
         return back()->with('success', "Akun {$user->name} berhasil {$status}!");
+    }
+
+    // 4. RESET PASSWORD (2-STEP VERIFICATION DARI VIEW)
+    public function resetPassword(Request $request, User $user)
+    {
+        // Proteksi: ManRisk gak bisa reset dirinya sendiri
+        if (auth()->id() === $user->id) {
+            return response()->json([
+                'error' => 'Anda tidak bisa mereset password akun sendiri!'
+            ], 403);
+        }
+
+        // Generate password sementara 12 karakter
+        $tempPassword = Str::random(12);
+
+        // Update password + reset password_changed_at biar user WAJIB ganti pas login
+        $user->update([
+            'password' => Hash::make($tempPassword),
+            'password_changed_at' => null,
+        ]);
+
+        // Log aktivitas
+        Log::info('Reset password', [
+            'reseted_by' => auth()->user()->name,
+            'reseted_user' => $user->name,
+            'reseted_user_id' => $user->id,
+            'ip' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'temp_password' => $tempPassword,
+            'user_name' => $user->name,
+        ]);
     }
 }

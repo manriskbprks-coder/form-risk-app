@@ -522,6 +522,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::put('/branches-management/{id}', [App\Http\Controllers\BranchManagementController::class, 'update'])->name('branches.update');
     Route::post('/branches-management', [App\Http\Controllers\BranchManagementController::class, 'store'])->name('branches.store');
 
+    // --- RESET PASSWORD (ManRisk) ---
+    Route::post('/admin/users/{user}/reset-password', [AdminUserController::class, 'resetPassword'])->name('admin.users.reset_password');
+
     // --- DEKLARASI NIHIL RISIKO (ManRisk) ---
     Route::post('/deklarasi-nihil/{id}/reject', [RiskFreeDeclarationController::class, 'reject'])->name('risk_free_declarations.reject');
 });

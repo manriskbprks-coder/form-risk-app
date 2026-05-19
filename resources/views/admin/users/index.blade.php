@@ -154,6 +154,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                             <button @click="openEditModalFromAlpine(user)" class="inline-block text-indigo-600 hover:text-indigo-900 font-bold uppercase text-[10px]">Edit</button>
+                                            <button @click="openResetModal(user)" class="inline-block text-amber-600 hover:text-amber-900 font-bold uppercase text-[10px]">Reset</button>
                                             <form :action="`/admin/users/${user.id}/toggle`" method="POST" class="inline">
                                                 @csrf
                                                 <button type="submit" class="font-bold uppercase text-[10px]"
@@ -265,12 +266,6 @@
                         </div>
                     </div>
 
-                    <div class="border-t border-gray-200 pt-4 mt-4">
-                        <label class="block text-xs font-bold text-red-600 mb-1">Reset Password (Opsional)</label>
-                        <input type="password" name="password" placeholder="Kosongkan jika tidak ingin diubah" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500">
-                        <input type="password" name="password_confirmation" placeholder="Ketik ulang password baru" class="mt-2 block w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500">
-                    </div>
-
                     <div class="mt-6 flex justify-end">
                         <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded text-sm w-full shadow">Update Data User</button>
                     </div>
@@ -278,32 +273,249 @@
             </div>
         </div>
 
+        <!-- ================================================================ -->
+        <!-- MODAL RESET PASSWORD (2-STEP VERIFICATION)                       -->
+        <!-- ================================================================ -->
+        <div id="modalReset" class="fixed inset-0 z-50 hidden bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full">
+            <div class="relative top-6 sm:top-20 mx-auto p-4 sm:p-5 border w-full max-w-md shadow-lg rounded-md bg-white border-t-4 border-t-amber-500">
+
+                <!-- STEP 1: Konfirmasi Awal -->
+                <div id="resetStep1">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-gray-900 uppercase">🔒 Reset Password</h3>
+                        <button onclick="closeResetModal()" class="text-gray-400 hover:text-red-500 font-bold text-xl">&times;</button>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded">
+                            <p class="text-sm text-amber-800 font-semibold">STEP 1/2 — Konfirmasi Awal</p>
+                        </div>
+                        <p class="text-sm text-gray-700">
+                            Apakah Anda yakin ingin mereset password untuk:
+                        </p>
+                        <div class="bg-gray-50 p-3 rounded border text-center">
+                            <p id="resetUserName" class="font-bold text-gray-900 text-lg"></p>
+                            <p id="resetUserInfo" class="text-xs text-gray-500 mt-1"></p>
+                        </div>
+                        <div class="bg-yellow-50 border border-yellow-200 p-3 rounded text-xs text-yellow-800">
+                            ⚠️ Password saat ini akan diganti dengan <strong>password sementara</strong> yang baru.
+                            User akan diminta mengganti password saat login pertama kali.
+                        </div>
+                        <div class="flex justify-end gap-2 mt-4">
+                            <button onclick="closeResetModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-sm font-bold">Batal</button>
+                            <button onclick="goToStep2()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded text-sm font-bold">Lanjut →</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Konfirmasi Akhir (Ketik "RESET") -->
+                <div id="resetStep2" class="hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-gray-900 uppercase">⚠️ Konfirmasi Terakhir</h3>
+                        <button onclick="closeResetModal()" class="text-gray-400 hover:text-red-500 font-bold text-xl">&times;</button>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded">
+                            <p class="text-sm text-red-800 font-semibold">STEP 2/2 — Konfirmasi Terakhir</p>
+                        </div>
+                        <div class="bg-red-50 border border-red-200 p-3 rounded text-xs text-red-800 space-y-1">
+                            <p>🔴 Reset password akan:</p>
+                            <p>• Mengganti password <strong id="resetUserName2" class="text-red-900"></strong> saat ini</p>
+                            <p>• Membuat user harus ganti password saat login pertama kali</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Ketik <strong>"RESET"</strong> untuk konfirmasi:
+                            </label>
+                            <input type="text" id="resetConfirmInput"
+                                   oninput="checkResetConfirm()"
+                                   placeholder="Ketik RESET di sini..."
+                                   class="w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-red-500 focus:border-red-500 uppercase">
+                            <p id="resetConfirmError" class="text-xs text-red-600 mt-1 hidden">Anda harus mengetik "RESET" untuk melanjutkan.</p>
+                        </div>
+                        <div class="flex justify-end gap-2 mt-4">
+                            <button onclick="goToStep1()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-sm font-bold">Kembali</button>
+                            <button id="resetConfirmBtn" disabled
+                                    onclick="executeReset()"
+                                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-bold opacity-50 cursor-not-allowed">
+                                🔄 Reset Sekarang
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3: Loading -->
+                <div id="resetLoading" class="hidden">
+                    <div class="text-center py-8">
+                        <svg class="animate-spin h-10 w-10 text-amber-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p class="text-gray-700 font-semibold">Memproses reset password...</p>
+                    </div>
+                </div>
+
+                <!-- STEP 4: Hasil (Password Sementara) -->
+                <div id="resetResult" class="hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-green-700 uppercase">✅ Berhasil!</h3>
+                        <button onclick="closeResetModal()" class="text-gray-400 hover:text-red-500 font-bold text-xl">&times;</button>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-green-50 border border-green-200 p-4 rounded text-center">
+                            <p class="text-sm text-green-800 font-semibold mb-2">Password sementara untuk:</p>
+                            <p id="resultUserName" class="font-bold text-gray-900 text-lg"></p>
+                        </div>
+                        <div class="bg-gray-900 p-4 rounded text-center">
+                            <p class="text-xs text-gray-400 mb-1">Password Sementara:</p>
+                            <p id="resultTempPassword" class="font-mono text-2xl text-green-400 font-bold tracking-wider select-all"></p>
+                        </div>
+                        <div class="bg-blue-50 border border-blue-200 p-3 rounded text-xs text-blue-800 space-y-1">
+                            <p>📋 <strong>Password ini hanya muncul SEKARANG!</strong></p>
+                            <p>Silakan salin dan kirimkan ke user via email/chat internal.</p>
+                            <p>🔑 User akan diminta mengganti password saat login pertama kali.</p>
+                        </div>
+                        <div class="flex justify-end gap-2 mt-4">
+                            <button onclick="copyTempPassword()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-bold">📋 Salin Password</button>
+                            <button onclick="closeResetModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-sm font-bold">Tutup</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
         <script>
-            function openEditModal(user) {
-                // 1. Munculin modalnya
-                document.getElementById('modalEdit').classList.remove('hidden');
+            // ================================================================
+            // RESET PASSWORD — 2-STEP VERIFICATION
+            // ================================================================
+            let resetUserId = null;
+            let resetUserName = '';
+            let resetUserUsername = '';
+            let resetUserEmail = '';
 
-                // 2. Isi nilai form-nya
-                document.getElementById('edit_name').value = user.name;
-                document.getElementById('edit_branch').value = user.branch_id;
+            function openResetModal(user) {
+                resetUserId = user.id;
+                resetUserName = user.name;
+                resetUserUsername = user.username;
+                resetUserEmail = user.email;
 
-                // Set role (karena relasi, kita ambil dari array roles pertama)
-                if (user.roles && user.roles.length > 0) {
-                    document.getElementById('edit_role').value = user.roles[0].name;
+                // Reset state
+                document.getElementById('resetStep1').classList.remove('hidden');
+                document.getElementById('resetStep2').classList.add('hidden');
+                document.getElementById('resetLoading').classList.add('hidden');
+                document.getElementById('resetResult').classList.add('hidden');
+                document.getElementById('resetConfirmInput').value = '';
+                document.getElementById('resetConfirmError').classList.add('hidden');
+                document.getElementById('resetConfirmBtn').disabled = true;
+                document.getElementById('resetConfirmBtn').classList.add('opacity-50', 'cursor-not-allowed');
+
+                // Isi data user
+                document.getElementById('resetUserName').textContent = user.name;
+                document.getElementById('resetUserInfo').textContent = user.username + ' | ' + user.email;
+                document.getElementById('resetUserName2').textContent = user.name;
+
+                // Tampilkan modal
+                document.getElementById('modalReset').classList.remove('hidden');
+            }
+
+            function closeResetModal() {
+                document.getElementById('modalReset').classList.add('hidden');
+                resetUserId = null;
+            }
+
+            function goToStep2() {
+                document.getElementById('resetStep1').classList.add('hidden');
+                document.getElementById('resetStep2').classList.remove('hidden');
+                document.getElementById('resetConfirmInput').focus();
+            }
+
+            function goToStep1() {
+                document.getElementById('resetStep2').classList.add('hidden');
+                document.getElementById('resetStep1').classList.remove('hidden');
+            }
+
+            function checkResetConfirm() {
+                const input = document.getElementById('resetConfirmInput').value.trim();
+                const btn = document.getElementById('resetConfirmBtn');
+                const error = document.getElementById('resetConfirmError');
+
+                if (input === 'RESET') {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    error.classList.add('hidden');
+                } else {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    if (input.length > 0) {
+                        error.classList.remove('hidden');
+                    } else {
+                        error.classList.add('hidden');
+                    }
                 }
-
-                // 3. Ubah tujuan action formnya dinamis ke ID user yang diklik
-                document.getElementById('editForm').action = `/admin/users/${user.id}`;
             }
 
-            // Alpine.js version: receives simplified user object from x-for template
-            function openEditModalFromAlpine(user) {
-                document.getElementById('modalEdit').classList.remove('hidden');
-                document.getElementById('edit_name').value = user.name;
-                document.getElementById('edit_branch').value = user.branch_id;
-                document.getElementById('edit_role').value = user.role_name;
-                document.getElementById('editForm').action = `/admin/users/${user.id}`;
+            function executeReset() {
+                if (!resetUserId) return;
+
+                // Sembunyikan step 2, tampilkan loading
+                document.getElementById('resetStep2').classList.add('hidden');
+                document.getElementById('resetLoading').classList.remove('hidden');
+
+                // Kirim request AJAX
+                fetch(`/admin/users/${resetUserId}/reset-password`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('resetLoading').classList.add('hidden');
+
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                        closeResetModal();
+                        return;
+                    }
+
+                    if (data.success) {
+                        // Tampilkan hasil
+                        document.getElementById('resultUserName').textContent = data.user_name;
+                        document.getElementById('resultTempPassword').textContent = data.temp_password;
+                        document.getElementById('resetResult').classList.remove('hidden');
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('resetLoading').classList.add('hidden');
+                    alert('Terjadi kesalahan saat mereset password. Silakan coba lagi.');
+                    closeResetModal();
+                });
             }
+
+            function copyTempPassword() {
+                const password = document.getElementById('resultTempPassword').textContent;
+                navigator.clipboard.writeText(password).then(() => {
+                    alert('Password sementara berhasil disalin!');
+                }).catch(() => {
+                    // Fallback: select text
+                    const range = document.createRange();
+                    const el = document.getElementById('resultTempPassword');
+                    range.selectNode(el);
+                    window.getSelection().removeAllRanges();
+                    window.getSelection().addRange(range);
+                    document.execCommand('copy');
+                    alert('Password sementara berhasil disalin!');
+                });
+            }
+
+            // Tutup modal jika klik di luar
+            document.getElementById('modalReset').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeResetModal();
+                }
+            });
         </script>
     </div>
 </x-app-layout>
