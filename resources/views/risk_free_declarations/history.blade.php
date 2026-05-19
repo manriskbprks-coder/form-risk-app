@@ -45,7 +45,7 @@
                                         $periodeLabel = $dec->periode === '1' ? '1-14' : '15-' . now()->setMonth($dec->bulan)->daysInMonth;
                                         $statusBadge = match($dec->status) {
                                             'active' => ['bg-green-100 text-green-800', 'Aktif'],
-                                            'violated' => ['bg-red-100 text-red-800', 'Violated'],
+                                            'rejected' => ['bg-red-100 text-red-800', 'Rejected'],
                                             'cancelled' => ['bg-gray-100 text-gray-800', 'Dibatalkan'],
                                             default => ['bg-gray-100 text-gray-800', $dec->status],
                                         };
@@ -71,11 +71,11 @@
                                         @role('manrisk')
                                         <td class="px-4 py-3 text-center">
                                             @if ($dec->status === 'active')
-                                            <form method="POST" action="{{ route('risk_free_declarations.violate', $dec->id) }}" 
-                                                onsubmit="return confirm('Yakin ingin menandai deklarasi ini sebagai violated?')">
+                                            <form method="POST" action="{{ route('risk_free_declarations.reject', $dec->id) }}" 
+                                                onsubmit="return confirm('Yakin ingin menolak deklarasi ini?')">
                                                 @csrf
                                                 <button type="submit" class="text-xs text-red-600 hover:text-red-800 underline">
-                                                    Tandai Violated
+                                                    Tolak (Reject)
                                                 </button>
                                             </form>
                                             @else
@@ -116,11 +116,11 @@
                                                     </tbody>
                                                 </table>
 
-                                                @if ($dec->violated_at)
+                                                @if ($dec->rejected_at)
                                                 <div class="mt-3 p-2 bg-red-50 border border-red-200 rounded text-xs">
-                                                    <span class="font-medium text-red-700">Violated pada:</span> 
-                                                    {{ $dec->violated_at->format('d/m/Y H:i') }} 
-                                                    oleh {{ $dec->violator->name ?? 'Unknown' }}
+                                                    <span class="font-medium text-red-700">Ditolak pada:</span> 
+                                                    {{ $dec->rejected_at->format('d/m/Y H:i') }} 
+                                                    oleh {{ $dec->rejecter->name ?? 'Unknown' }}
                                                 </div>
                                                 @endif
                                             </div>

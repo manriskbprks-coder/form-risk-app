@@ -475,8 +475,8 @@
                             </td>
                             <td class="table-td text-center font-bold text-slate-700">{{ $d['total'] }}</td>
                             <td class="table-td text-center">
-                                @if($d['violate'])
-                                    <span class="badge bg-rose-100 text-rose-700 border-rose-200 text-[10px]">⚠️ Violate</span>
+                                @if($d['rejected'])
+                                    <span class="badge bg-rose-100 text-rose-700 border-rose-200 text-[10px]">⚠️ Rejected</span>
                                 @else
                                     <span class="badge bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px]">✅ Compliant</span>
                                 @endif

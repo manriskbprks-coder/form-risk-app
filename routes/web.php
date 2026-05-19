@@ -341,21 +341,21 @@ Route::get('/dashboard', function () {
                 ->where('tahun', $tahunIni)
                 ->count();
 
-            // Violate = ada laporan risiko approved di cabang ini bulan ini, tapi kacab deklarasi nihil
+            // Rejected = ada laporan risiko approved di cabang ini bulan ini, tapi kacab deklarasi nihil
             $adaLaporanApproved = RiskReport::where('branch_id', $branch->id)
                 ->where('approval_status', 'approved')
                 ->whereMonth('created_at', $bulanIni)
                 ->whereYear('created_at', $tahunIni)
                 ->exists();
 
-            $violate = $adaLaporanApproved && $total > 0;
+            $rejected = $adaLaporanApproved && $total > 0;
 
             $deklarasiSummaries[] = [
                 'nama' => $branch->nama_cabang,
                 'periode1' => $periode1,
                 'periode2' => $periode2,
                 'total' => $total,
-                'violate' => $violate,
+                'rejected' => $rejected,
             ];
         }
     }
@@ -523,7 +523,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/branches-management', [App\Http\Controllers\BranchManagementController::class, 'store'])->name('branches.store');
 
     // --- DEKLARASI NIHIL RISIKO (ManRisk) ---
-    Route::post('/deklarasi-nihil/{id}/violate', [RiskFreeDeclarationController::class, 'violate'])->name('risk_free_declarations.violate');
+    Route::post('/deklarasi-nihil/{id}/reject', [RiskFreeDeclarationController::class, 'reject'])->name('risk_free_declarations.reject');
 });
 
 require __DIR__ . '/auth.php';

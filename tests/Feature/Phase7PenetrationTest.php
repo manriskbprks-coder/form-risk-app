@@ -163,7 +163,7 @@ class Phase7PenetrationTest extends TestCase
     }
 
     #[Test]
-    public function staff_biasa_tidak_bisa_violate_deklarasi_cabang_lain()
+    public function staff_biasa_tidak_bisa_reject_deklarasi_cabang_lain()
     {
         // Kacab B buat deklarasi
         $this->actingAs($this->kacabB);
@@ -177,9 +177,9 @@ class Phase7PenetrationTest extends TestCase
 
         $declaration = RiskFreeDeclaration::where('branch_id', $this->branchB->id)->first();
 
-        // Staff biasa coba violate
+        // Staff biasa coba reject
         $this->actingAs($this->staffBiasa);
-        $response = $this->post(route('risk_free_declarations.violate', $declaration->id));
+        $response = $this->post(route('risk_free_declarations.reject', $declaration->id));
 
         $response->assertStatus(403);
     }
@@ -393,7 +393,7 @@ class Phase7PenetrationTest extends TestCase
     }
 
     #[Test]
-    public function violate_deklarasi_yang_sudah_diviolate_ditolak()
+    public function reject_deklarasi_yang_sudah_direject_ditolak()
     {
         // Kacab A buat deklarasi
         $this->actingAs($this->kacabA);
@@ -407,13 +407,13 @@ class Phase7PenetrationTest extends TestCase
 
         $declaration = RiskFreeDeclaration::where('branch_id', $this->branchA->id)->first();
 
-        // ManRisk violate pertama kali
+        // ManRisk reject pertama kali
         $this->actingAs($this->manrisk);
-        $response = $this->post(route('risk_free_declarations.violate', $declaration->id));
+        $response = $this->post(route('risk_free_declarations.reject', $declaration->id));
         $response->assertSessionHas('success');
 
-        // ManRisk coba violate lagi — harus ditolak karena status sudah 'violated'
-        $response2 = $this->post(route('risk_free_declarations.violate', $declaration->id));
+        // ManRisk coba reject lagi — harus ditolak karena status sudah 'rejected'
+        $response2 = $this->post(route('risk_free_declarations.reject', $declaration->id));
         $response2->assertSessionHas('error');
     }
 

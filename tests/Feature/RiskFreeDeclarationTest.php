@@ -375,11 +375,11 @@ class RiskFreeDeclarationTest extends TestCase
     }
 
     // =======================================================================
-    //  VIOLATE
+    //  REJECT
     // =======================================================================
 
     #[Test]
-    public function manrisk_can_violate_declaration()
+    public function manrisk_can_reject_declaration()
     {
         $declaration = RiskFreeDeclaration::create([
             'branch_id' => $this->branch->id,
@@ -392,22 +392,22 @@ class RiskFreeDeclarationTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->manrisk)
-            ->post(route('risk_free_declarations.violate', $declaration->id));
+            ->post(route('risk_free_declarations.reject', $declaration->id));
 
         $response->assertRedirect();
         $response->assertSessionHas('success');
 
         $this->assertDatabaseHas('risk_free_declarations', [
             'id' => $declaration->id,
-            'status' => 'violated',
-            'violated_by' => $this->manrisk->id,
+            'status' => 'rejected',
+            'rejected_by' => $this->manrisk->id,
         ]);
 
-        $this->assertNotNull($declaration->fresh()->violated_at);
+        $this->assertNotNull($declaration->fresh()->rejected_at);
     }
 
     #[Test]
-    public function non_manrisk_cannot_violate_declaration()
+    public function non_manrisk_cannot_reject_declaration()
     {
         $declaration = RiskFreeDeclaration::create([
             'branch_id' => $this->branch->id,
@@ -421,17 +421,17 @@ class RiskFreeDeclarationTest extends TestCase
 
         // Kacab
         $response = $this->actingAs($this->kacab)
-            ->post(route('risk_free_declarations.violate', $declaration->id));
+            ->post(route('risk_free_declarations.reject', $declaration->id));
         $response->assertStatus(403);
 
         // Korwil
         $response = $this->actingAs($this->korwil)
-            ->post(route('risk_free_declarations.violate', $declaration->id));
+            ->post(route('risk_free_declarations.reject', $declaration->id));
         $response->assertStatus(403);
 
         // Teller
         $response = $this->actingAs($this->teller)
-            ->post(route('risk_free_declarations.violate', $declaration->id));
+            ->post(route('risk_free_declarations.reject', $declaration->id));
         $response->assertStatus(403);
 
         // Status masih active
@@ -442,7 +442,7 @@ class RiskFreeDeclarationTest extends TestCase
     }
 
     #[Test]
-    public function cannot_violate_already_violated_declaration()
+    public function cannot_reject_already_rejected_declaration()
     {
         $declaration = RiskFreeDeclaration::create([
             'branch_id' => $this->branch->id,
@@ -451,20 +451,20 @@ class RiskFreeDeclarationTest extends TestCase
             'bulan' => now()->month,
             'tahun' => now()->year,
             'statement_text' => 'Test statement',
-            'status' => 'violated',
-            'violated_at' => now(),
-            'violated_by' => $this->manrisk->id,
+            'status' => 'rejected',
+            'rejected_at' => now(),
+            'rejected_by' => $this->manrisk->id,
         ]);
 
         $response = $this->actingAs($this->manrisk)
-            ->post(route('risk_free_declarations.violate', $declaration->id));
+            ->post(route('risk_free_declarations.reject', $declaration->id));
 
         $response->assertRedirect();
         $response->assertSessionHas('error');
     }
 
     #[Test]
-    public function violate_creates_notification_for_kacab()
+    public function reject_creates_notification_for_kacab()
     {
         $declaration = RiskFreeDeclaration::create([
             'branch_id' => $this->branch->id,
@@ -477,12 +477,12 @@ class RiskFreeDeclarationTest extends TestCase
         ]);
 
         $this->actingAs($this->manrisk)
-            ->post(route('risk_free_declarations.violate', $declaration->id));
+            ->post(route('risk_free_declarations.reject', $declaration->id));
 
         // Cek notifikasi untuk Kacab
         $this->assertDatabaseHas('notifications', [
             'user_id' => $this->kacab->id,
-            'type' => 'declaration_violated',
+            'type' => 'declaration_rejected',
         ]);
     }
 
@@ -548,7 +548,7 @@ class RiskFreeDeclarationTest extends TestCase
     }
 
     #[Test]
-    public function manrisk_dashboard_shows_violate_flag()
+    public function manrisk_dashboard_shows_rejected_flag()
     {
         // Buat deklarasi untuk cabang A
         RiskFreeDeclaration::create([

@@ -34,7 +34,7 @@
                                     <p class="text-sm font-medium text-yellow-800">Perhatian!</p>
                                     <p class="text-sm text-yellow-700 mt-1">
                                         Terdapat laporan risiko yang sudah dibuat di periode ini. Jika Anda tetap melakukan deklarasi nihil, 
-                                        maka deklarasi ini berpotensi ditandai sebagai <strong>violated</strong> oleh ManRisk jika laporan tersebut terbukti valid.
+                                        maka deklarasi ini berpotensi ditandai sebagai <strong>Rejected</strong> oleh ManRisk jika laporan tersebut terbukti valid.
                                     </p>
                                 </div>
                             </div>

@@ -17,12 +17,12 @@ class RiskFreeDeclaration extends Model
         'tahun',
         'statement_text',
         'status',
-        'violated_at',
-        'violated_by',
+        'rejected_at',
+        'rejected_by',
     ];
 
     protected $casts = [
-        'violated_at' => 'datetime',
+        'rejected_at' => 'datetime',
     ];
 
     public function branch()
@@ -35,9 +35,9 @@ class RiskFreeDeclaration extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function violator()
+    public function rejecter()
     {
-        return $this->belongsTo(User::class, 'violated_by');
+        return $this->belongsTo(User::class, 'rejected_by');
     }
 
     public function details()

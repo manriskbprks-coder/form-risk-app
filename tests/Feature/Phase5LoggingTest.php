@@ -345,7 +345,7 @@ class Phase5LoggingTest extends TestCase
     }
 
     #[Test]
-    public function violate_declaration_mencatat_log_audit()
+    public function reject_declaration_mencatat_log_audit()
     {
         // Buat deklarasi oleh Kacab
         $this->actingAs($this->kacab);
@@ -366,16 +366,16 @@ class Phase5LoggingTest extends TestCase
             ->andReturnSelf()
             ->shouldReceive('info')
             ->withArgs(function ($message, $context) use ($declaration) {
-                return str_contains($message, '[AUDIT] Declaration violated by ManRisk')
+                return str_contains($message, '[AUDIT] Declaration rejected by ManRisk')
                     && isset($context['declaration_id'])
                     && $context['declaration_id'] === $declaration->id
                     && isset($context['branch_id'])
                     && isset($context['periode']);
             });
 
-        // ManRisk violate
+        // ManRisk reject
         $this->actingAs($this->manrisk);
-        $response = $this->post(route('risk_free_declarations.violate', $declaration->id));
+        $response = $this->post(route('risk_free_declarations.reject', $declaration->id));
 
         $response->assertSessionHas('success');
     }
@@ -499,7 +499,7 @@ class Phase5LoggingTest extends TestCase
     }
 
     #[Test]
-    public function violate_declaration_log_mengandung_detail_context_lengkap()
+    public function reject_declaration_log_mengandung_detail_context_lengkap()
     {
         // Buat deklarasi
         $this->actingAs($this->kacab);
@@ -528,7 +528,7 @@ class Phase5LoggingTest extends TestCase
             });
 
         $this->actingAs($this->manrisk);
-        $response = $this->post(route('risk_free_declarations.violate', $declaration->id));
+        $response = $this->post(route('risk_free_declarations.reject', $declaration->id));
         $response->assertSessionHas('success');
     }
 

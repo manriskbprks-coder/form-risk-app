@@ -655,7 +655,7 @@ class Phase3AuthorizationTest extends TestCase
     }
 
     #[Test]
-    public function non_manrisk_cannot_violate_declaration()
+    public function non_manrisk_cannot_reject_declaration()
     {
         $declaration = \App\Models\RiskFreeDeclaration::create([
             'branch_id' => $this->branchA->id,
@@ -672,13 +672,13 @@ class Phase3AuthorizationTest extends TestCase
         foreach ($roles as $user) {
             $this->actingAs($user);
 
-            $response = $this->post(route('risk_free_declarations.violate', $declaration->id));
+            $response = $this->post(route('risk_free_declarations.reject', $declaration->id));
             $response->assertStatus(403);
         }
     }
 
     #[Test]
-    public function manrisk_can_violate_declaration()
+    public function manrisk_can_reject_declaration()
     {
         $declaration = \App\Models\RiskFreeDeclaration::create([
             'branch_id' => $this->branchA->id,
@@ -692,11 +692,11 @@ class Phase3AuthorizationTest extends TestCase
 
         $this->actingAs($this->manrisk);
 
-        $response = $this->post(route('risk_free_declarations.violate', $declaration->id));
+        $response = $this->post(route('risk_free_declarations.reject', $declaration->id));
 
         $response->assertStatus(302);
         $declaration->refresh();
-        $this->assertEquals('violated', $declaration->status);
+        $this->assertEquals('rejected', $declaration->status);
     }
 
     // ========================================================================

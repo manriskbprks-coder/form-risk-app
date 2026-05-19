@@ -160,9 +160,9 @@ class RiskFreeDeclarationController extends Controller
     }
 
     /**
-     * Tandai deklarasi sebagai violated (ManRisk).
+     * Tolak deklarasi nihil risiko (ManRisk).
      */
-    public function violate($id)
+    public function reject($id)
     {
         $user = Auth::user();
         if (!$user->isAdmin()) {
@@ -176,13 +176,13 @@ class RiskFreeDeclarationController extends Controller
         }
 
         $declaration->update([
-            'status' => 'violated',
-            'violated_at' => now(),
-            'violated_by' => $user->id,
+            'status' => 'rejected',
+            'rejected_at' => now(),
+            'rejected_by' => $user->id,
         ]);
 
-        // Catat aktivitas violate ke log harian
-        Log::channel('daily')->info('[AUDIT] Declaration violated by ManRisk', [
+        // Catat aktivitas reject ke log harian
+        Log::channel('daily')->info('[AUDIT] Declaration rejected by ManRisk', [
             'user_id' => $user->id,
             'user_name' => $user->name,
             'declaration_id' => $declaration->id,
@@ -200,12 +200,12 @@ class RiskFreeDeclarationController extends Controller
         foreach ($kacabUsers as $kacab) {
             Notification::create([
                 'user_id' => $kacab->id,
-                'type' => 'declaration_violated',
-                'message' => "Deklarasi nihil risiko cabang Anda untuk periode {$declaration->periode} bulan " . now()->setMonth($declaration->bulan)->translatedFormat('F Y') . " telah dibatalkan karena ditemukan laporan risiko.",
+                'type' => 'declaration_rejected',
+                'message' => "Deklarasi nihil risiko cabang Anda untuk periode {$declaration->periode} bulan " . now()->setMonth($declaration->bulan)->translatedFormat('F Y') . " telah ditolak karena ditemukan laporan risiko.",
             ]);
         }
 
-        return back()->with('success', 'Deklarasi ditandai sebagai violated.');
+        return back()->with('success', 'Deklarasi ditolak (rejected).');
     }
 
     /**
