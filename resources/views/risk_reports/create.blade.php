@@ -43,7 +43,7 @@
 
                     <input type="hidden" name="kategori" value="{{ $kategori }}">
 
-                    <h3 class="text-lg font-bold border-b pb-2 mb-4 text-blue-700">1. Identitas Kejadian</h3>
+                    <h3 class="text-lg font-bold border-b pb-2 mb-4 text-blue-700">1. Tanggal Kejadian</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Tanggal Kejadian <span class="text-red-500">*</span></label>
