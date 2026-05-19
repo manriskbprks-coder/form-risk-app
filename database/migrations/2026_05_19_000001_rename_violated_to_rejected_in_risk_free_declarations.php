@@ -10,7 +10,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      * Rename violated → rejected columns and update enum values.
-     * Uses raw SQL for SQLite compatibility (SQLite cannot drop columns with FK constraints).
+     * Handles MySQL, PostgreSQL, and SQLite differences.
      */
     public function up(): void
     {
@@ -18,13 +18,15 @@ return new class extends Migration
 
         if ($driver === 'sqlite') {
             $this->upSqlite();
+        } elseif ($driver === 'pgsql') {
+            $this->upPgsql();
         } else {
             $this->upMysql();
         }
     }
 
     /**
-     * MySQL/MariaDB/PostgreSQL: Standard ALTER TABLE approach
+     * MySQL/MariaDB: Standard ALTER TABLE approach
      */
     protected function upMysql(): void
     {
@@ -51,6 +53,43 @@ return new class extends Migration
 
         // Update enum values
         DB::statement("ALTER TABLE risk_free_declarations MODIFY COLUMN status ENUM('active', 'rejected', 'cancelled') DEFAULT 'active'");
+        DB::statement("UPDATE risk_free_declarations SET status = 'rejected' WHERE status = 'violated'");
+    }
+
+    /**
+     * PostgreSQL: Uses dropUnique() instead of dropIndex(), and CHECK constraints instead of ENUM.
+     */
+    protected function upPgsql(): void
+    {
+        // Step 1: Drop the unique constraint (PostgreSQL creates a constraint, not just an index)
+        Schema::table('risk_free_declarations', function (Blueprint $table) {
+            $table->dropUnique('unique_declaration_per_period');
+        });
+
+        // Step 2: Drop the CHECK constraint on status column
+        // PostgreSQL auto-names CHECK constraints as {table}_{column}_check
+        DB::statement('ALTER TABLE risk_free_declarations DROP CONSTRAINT IF EXISTS risk_free_declarations_status_check');
+
+        // Step 3: Drop old columns
+        Schema::table('risk_free_declarations', function (Blueprint $table) {
+            $table->dropColumn(['violated_at', 'violated_by']);
+        });
+
+        // Step 4: Add new columns (PostgreSQL doesn't support ->after())
+        Schema::table('risk_free_declarations', function (Blueprint $table) {
+            $table->timestamp('rejected_at')->nullable();
+            $table->foreignId('rejected_by')->nullable()->constrained('users')->onDelete('set null');
+        });
+
+        // Step 5: Recreate unique constraint
+        Schema::table('risk_free_declarations', function (Blueprint $table) {
+            $table->unique(['branch_id', 'periode', 'bulan', 'tahun'], 'unique_declaration_per_period');
+        });
+
+        // Step 6: Add new CHECK constraint for status with updated values
+        DB::statement("ALTER TABLE risk_free_declarations ADD CONSTRAINT risk_free_declarations_status_check CHECK (status IN ('active', 'rejected', 'cancelled'))");
+
+        // Step 7: Update data
         DB::statement("UPDATE risk_free_declarations SET status = 'rejected' WHERE status = 'violated'");
     }
 
@@ -103,13 +142,15 @@ return new class extends Migration
 
         if ($driver === 'sqlite') {
             $this->downSqlite();
+        } elseif ($driver === 'pgsql') {
+            $this->downPgsql();
         } else {
             $this->downMysql();
         }
     }
 
     /**
-     * MySQL/MariaDB/PostgreSQL: Reverse
+     * MySQL/MariaDB: Reverse
      */
     protected function downMysql(): void
     {
@@ -131,6 +172,42 @@ return new class extends Migration
         });
 
         DB::statement("ALTER TABLE risk_free_declarations MODIFY COLUMN status ENUM('active', 'violated', 'cancelled') DEFAULT 'active'");
+        DB::statement("UPDATE risk_free_declarations SET status = 'violated' WHERE status = 'rejected'");
+    }
+
+    /**
+     * PostgreSQL: Reverse
+     */
+    protected function downPgsql(): void
+    {
+        // Drop unique constraint
+        Schema::table('risk_free_declarations', function (Blueprint $table) {
+            $table->dropUnique('unique_declaration_per_period');
+        });
+
+        // Drop CHECK constraint
+        DB::statement('ALTER TABLE risk_free_declarations DROP CONSTRAINT IF EXISTS risk_free_declarations_status_check');
+
+        // Drop new columns
+        Schema::table('risk_free_declarations', function (Blueprint $table) {
+            $table->dropColumn(['rejected_at', 'rejected_by']);
+        });
+
+        // Add old columns back
+        Schema::table('risk_free_declarations', function (Blueprint $table) {
+            $table->timestamp('violated_at')->nullable();
+            $table->foreignId('violated_by')->nullable()->constrained('users')->onDelete('set null');
+        });
+
+        // Recreate unique constraint
+        Schema::table('risk_free_declarations', function (Blueprint $table) {
+            $table->unique(['branch_id', 'periode', 'bulan', 'tahun'], 'unique_declaration_per_period');
+        });
+
+        // Recreate CHECK constraint with old values
+        DB::statement("ALTER TABLE risk_free_declarations ADD CONSTRAINT risk_free_declarations_status_check CHECK (status IN ('active', 'violated', 'cancelled'))");
+
+        // Update data back
         DB::statement("UPDATE risk_free_declarations SET status = 'violated' WHERE status = 'rejected'");
     }
 
