@@ -2,37 +2,41 @@
 
 namespace App\Policies;
 
+use App\Domain\Enums\ApprovalStatus;
+use App\Domain\Enums\RoleCategory;
+use App\Domain\Rules\ApprovalRule;
 use App\Models\RiskReport;
 use App\Models\User;
-use App\Models\Branch;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class RiskReportPolicy
 {
     use HandlesAuthorization;
 
+    public function __construct(
+        protected ApprovalRule $approvalRule,
+    ) {}
+
     /**
      * Siapa aja yang bisa lihat laporan tertentu.
      */
     public function view(User $user, RiskReport $report): bool
     {
-        $category = $user->roleCategory();
+        $category = RoleCategory::tryFrom($user->roleCategory() ?? '');
 
         // Admin (ManRisk) — bisa lihat semua laporan
-        if ($category === 'admin') {
+        if ($category === RoleCategory::Admin) {
             return true;
         }
 
         // Viewer (Korwil) — hanya cabang yang diawasi
-        if ($category === 'viewer') {
-            // Korwil — hanya cabang yang diawasi
+        if ($category === RoleCategory::Viewer) {
             $branch = $report->branch;
             return $branch && (int) $branch->korwil_id === (int) $user->id;
         }
 
-
         // Checker — lihat laporan cabang sendiri
-        if ($category === 'checker') {
+        if ($category === RoleCategory::Checker) {
             return (int) $report->branch_id === (int) $user->branch_id;
         }
 
@@ -46,7 +50,7 @@ class RiskReportPolicy
     public function approve(User $user, RiskReport $report): bool
     {
         // Hanya checker yang bisa approve
-        if ($user->roleCategory() !== 'checker') {
+        if (!RoleCategory::tryFrom($user->roleCategory() ?? '')?->canApprove()) {
             return false;
         }
 
@@ -56,7 +60,8 @@ class RiskReportPolicy
         }
 
         // Cuma laporan yang pending_kacab atau need_revision yang bisa diapprove
-        return in_array($report->approval_status, ['pending_kacab', 'need_revision']);
+        $currentStatus = ApprovalStatus::tryFrom($report->approval_status) ?? ApprovalStatus::PendingKacab;
+        return $this->approvalRule->canApprove($currentStatus);
     }
 
     /**
@@ -65,7 +70,8 @@ class RiskReportPolicy
     public function updateProgress(User $user, RiskReport $report): bool
     {
         // Admin (manrisk) & Viewer (korwil) hanya pantau
-        if ($user->isAdmin() || $user->isViewer()) {
+        $category = RoleCategory::tryFrom($user->roleCategory() ?? '');
+        if ($category === RoleCategory::Admin || $category === RoleCategory::Viewer) {
             return false;
         }
 
@@ -73,14 +79,13 @@ class RiskReportPolicy
         return $this->view($user, $report);
     }
 
-
     /**
      * Siapa yang bisa close laporan (Kacab).
      */
     public function close(User $user, RiskReport $report): bool
     {
         // Hanya checker yang bisa close
-        if ($user->roleCategory() !== 'checker') {
+        if (!RoleCategory::tryFrom($user->roleCategory() ?? '')?->isChecker()) {
             return false;
         }
 
@@ -92,7 +97,9 @@ class RiskReportPolicy
      */
     public function requestRevision(User $user, RiskReport $report): bool
     {
-        return $user->isAdmin() && $report->approval_status === 'approved';
+        $currentStatus = ApprovalStatus::tryFrom($report->approval_status) ?? ApprovalStatus::Approved;
+        return RoleCategory::tryFrom($user->roleCategory() ?? '')?->canRequestRevision()
+            && $this->approvalRule->canRequestRevision($currentStatus);
     }
 
     /**
@@ -101,12 +108,12 @@ class RiskReportPolicy
     public function submitRevision(User $user, RiskReport $report): bool
     {
         // Cuma laporan yang need_revision
-        if ($report->approval_status !== 'need_revision') {
+        if ($report->approval_status !== ApprovalStatus::NeedRevision->value) {
             return false;
         }
 
         // Checker (kacab) bisa submit revisi untuk laporan cabangnya
-        if ($user->roleCategory() === 'checker') {
+        if (RoleCategory::tryFrom($user->roleCategory() ?? '')?->isChecker()) {
             return (int) $report->branch_id === (int) $user->branch_id;
         }
 
@@ -119,7 +126,9 @@ class RiskReportPolicy
      */
     public function approveRevision(User $user, RiskReport $report): bool
     {
-        return $user->isAdmin() && $report->approval_status === 'pending_revision';
+        $currentStatus = ApprovalStatus::tryFrom($report->approval_status) ?? ApprovalStatus::PendingRevision;
+        return RoleCategory::tryFrom($user->roleCategory() ?? '')?->canApproveRevision()
+            && $this->approvalRule->canApproveRevision($currentStatus);
     }
 
     /**
@@ -130,3 +139,5 @@ class RiskReportPolicy
         return true; // Semua role bisa export, data discope sesuai role di controller
     }
 }
+
+

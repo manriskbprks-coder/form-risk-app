@@ -8,9 +8,14 @@ use App\Models\Branch;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use App\Services\RiskReportQueryService;
 
 class ExportRiskReportController extends Controller
 {
+    public function __construct(
+        protected RiskReportQueryService $riskReportQueryService,
+    ) {}
+
     public function export(Request $request)
     {
         $user = Auth::user();
@@ -19,72 +24,9 @@ class ExportRiskReportController extends Controller
             abort(403, 'Akses ditolak.');
         }
 
-        $query = RiskReport::with(['user', 'item', 'cause.mitigations', 'branch']);
-
-        // Filter by role_category
-        if ($user->roleCategory() === 'checker') {
-            $query->where('branch_id', $user->branch_id);
-        } elseif ($user->roleCategory() === 'viewer') {
-            // Viewer: hanya melihat cabang yang diawasi
-            $branchIds = Branch::where('korwil_id', $user->id)->pluck('id');
-            $query->whereIn('branch_id', $branchIds);
-        } elseif ($user->roleCategory() === 'maker') {
-            $query->where('user_id', $user->id);
-        }
-
-        // Apply filters from request
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('kode_laporan', 'like', "%{$search}%")
-                  ->orWhere('other_item_description', 'like', "%{$search}%")
-                  ->orWhere('other_cause_description', 'like', "%{$search}%")
-                  ->orWhere('kronologis_kejadian', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($uq) use ($search) {
-                      $uq->where('name', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('item', function ($iq) use ($search) {
-                      $iq->where('nama_risiko', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('cause', function ($cq) use ($search) {
-                      $cq->where('penyebab', 'like', "%{$search}%");
-                  });
-            });
-        }
-
-        if ($request->filled('branch_id') && $user->roleCategory() === 'viewer') {
-            $query->where('branch_id', $request->branch_id);
-        }
-
-        if ($request->filled('kategori')) {
-            $query->where('kategori', $request->kategori);
-        }
-
-        if ($request->filled('jabatan')) {
-            $query->whereHas('item', function ($q) use ($request) {
-                $q->where('role_target', $request->jabatan);
-            });
-        }
-
-        // Terima date_from/date_to (dari form) ATAU start_date/end_date (backward compatible)
-        $dateFrom = $request->date_from ?? $request->start_date;
-        $dateTo = $request->date_to ?? $request->end_date;
-
-        if ($request->filled('date_from') || $request->filled('start_date')) {
-            $query->where('tanggal_kejadian', '>=', $dateFrom);
-        }
-
-        if ($request->filled('date_to') || $request->filled('end_date')) {
-            $query->where('tanggal_kejadian', '<=', $dateTo);
-        }
-
-        if ($request->filled('resolution_status')) {
-            $query->where('resolution_status', $request->resolution_status);
-        }
-
-        if ($request->filled('approval_status')) {
-            $query->where('approval_status', $request->approval_status);
-        }
+        $query = $this->riskReportQueryService->baseQuery();
+        $query = $this->riskReportQueryService->applyRoleScope($query, $user);
+        $query = $this->riskReportQueryService->applyFilters($query, $request, $user);
 
         $reports = $query->orderBy('created_at', 'desc')->get();
 

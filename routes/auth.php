@@ -20,9 +20,9 @@ Route::middleware('guest')->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
-    // Rate limit: max 5 percobaan per 1 menit untuk brute force protection
+    // Rate limit: max 10 percobaan per 1 menit untuk brute force protection
     Route::post('login', [AuthenticatedSessionController::class, 'store'])
-        ->middleware('throttle:5,1');
+        ->middleware('throttle:login');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');

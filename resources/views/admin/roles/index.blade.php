@@ -75,12 +75,8 @@
                                     {{ $role->guard_name ?? 'web' }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
-                                    <button onclick="openEditModal({{ $role->id }}, '{{ $role->name }}', '{{ $role->role_category }}', {{ json_encode($role->permissions->pluck('name')) }})" class="inline-block text-indigo-600 hover:text-indigo-900 font-bold uppercase text-[10px]">Edit</button>
-                                    <form action="{{ route('admin.roles.destroy', $role->id) }}" method="POST" class="inline" onsubmit="return confirm('Yakin hapus role {{ $role->name }}?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-900 font-bold uppercase text-[10px]">Hapus</button>
-                                    </form>
+                                    <button onclick="openEditModal({{ $role->id }}, '{{ $role->name }}', '{{ $role->role_category }}', {{ json_encode($role->permissions->pluck('name')) }})" class="inline-flex items-center justify-center min-w-[84px] text-blue-600 hover:text-white hover:bg-blue-500 border border-blue-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">Edit</button>
+                                    <button onclick="openDeleteModal({{ $role->id }}, '{{ $role->name }}')" class="inline-flex items-center justify-center min-w-[84px] text-rose-600 hover:text-white hover:bg-rose-500 border border-rose-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">Hapus</button>
                                 </td>
                             </tr>
                             @endforeach
@@ -174,7 +170,195 @@
         </div>
     </div>
 
+    {{-- MODAL DELETE ROLE (2-STEP VERIFICATION) --}}
+    <div id="modalDelete" class="fixed inset-0 z-50 hidden bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full">
+        <div class="relative top-6 sm:top-20 mx-auto p-4 sm:p-5 border w-full max-w-md shadow-lg rounded-md bg-white border-t-4 border-t-red-500">
+
+            <!-- STEP 1: Konfirmasi Awal -->
+            <div id="deleteStep1">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-900 uppercase">⚠️ Hapus Role</h3>
+                    <button onclick="closeDeleteModal()" class="text-gray-400 hover:text-red-500 font-bold text-xl">&times;</button>
+                </div>
+                <div class="space-y-4">
+                    <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded">
+                        <p class="text-sm text-red-800 font-semibold">STEP 1/2 — Konfirmasi Awal</p>
+                    </div>
+                    <p class="text-sm text-gray-700">
+                        Apakah Anda yakin ingin menghapus role berikut:
+                    </p>
+                    <div class="bg-gray-50 p-3 rounded border text-center">
+                        <p id="deleteRoleName" class="font-bold text-gray-900 text-lg uppercase"></p>
+                        <p id="deleteRoleInfo" class="text-xs text-gray-500 mt-1"></p>
+                    </div>
+                    <div class="bg-red-50 border border-red-200 p-3 rounded text-xs text-red-800 space-y-1">
+                        <p>🔴 <strong>Dampak menghapus role:</strong></p>
+                        <p>• Role tidak bisa digunakan lagi oleh user manapun</p>
+                        <p>• Role harus TIDAK dipakai oleh user aktif</p>
+                        <p>• Aksi ini <strong>TIDAK</strong> bisa dibatalkan</p>
+                    </div>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-sm font-bold">Batal</button>
+                        <button onclick="goToDeleteStep2()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded text-sm font-bold">Lanjut →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: Konfirmasi Akhir (Ketik "HAPUS") -->
+            <div id="deleteStep2" class="hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-900 uppercase">🔴 Hapus Role (Final)</h3>
+                    <button onclick="closeDeleteModal()" class="text-gray-400 hover:text-red-500 font-bold text-xl">&times;</button>
+                </div>
+                <div class="space-y-4">
+                    <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded">
+                        <p class="text-sm text-red-800 font-semibold">STEP 2/2 — Konfirmasi Akhir</p>
+                    </div>
+                    <div class="bg-red-50 border border-red-200 p-3 rounded text-xs text-red-800 space-y-1">
+                        <p>🔴 Role <strong id="deleteRoleName2" class="text-red-900"></strong> akan dihapus secara permanen!</p>
+                        <p>• Semua permission yang terkait akan dilepas</p>
+                        <p>• Aksi ini tidak bisa dibatalkan</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Ketik <strong>"HAPUS"</strong> untuk konfirmasi:
+                        </label>
+                        <input type="text" id="deleteConfirmInput"
+                               oninput="checkDeleteConfirm()"
+                               placeholder="Ketik HAPUS di sini..."
+                               class="w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-red-500 focus:border-red-500 uppercase">
+                        <p id="deleteConfirmError" class="text-xs text-red-600 mt-1 hidden">Anda harus mengetik "HAPUS" untuk melanjutkan.</p>
+                    </div>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button onclick="goToDeleteStep1()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-sm font-bold">Kembali</button>
+                        <button id="deleteConfirmBtn" disabled
+                                onclick="executeDelete()"
+                                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-bold opacity-50 cursor-not-allowed">
+                            🔴 Hapus Role
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 3: Loading -->
+            <div id="deleteLoading" class="hidden">
+                <div class="text-center py-8">
+                    <svg class="animate-spin h-10 w-10 text-red-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="text-gray-700 font-semibold">Menghapus role...</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
     <script>
+        // ================================================================
+        // DELETE ROLE — 2-STEP VERIFICATION
+        // ================================================================
+        let deleteRoleId = null;
+        let deleteRoleName = '';
+
+        function openDeleteModal(id, name) {
+            deleteRoleId = id;
+            deleteRoleName = name;
+
+            // Reset state
+            document.getElementById('deleteStep1').classList.remove('hidden');
+            document.getElementById('deleteStep2').classList.add('hidden');
+            document.getElementById('deleteLoading').classList.add('hidden');
+            document.getElementById('deleteConfirmInput').value = '';
+            document.getElementById('deleteConfirmError').classList.add('hidden');
+            document.getElementById('deleteConfirmBtn').disabled = true;
+            document.getElementById('deleteConfirmBtn').classList.add('opacity-50', 'cursor-not-allowed');
+
+            // Isi data role
+            document.getElementById('deleteRoleName').textContent = name;
+            document.getElementById('deleteRoleInfo').textContent = 'Role ID: ' + id;
+            document.getElementById('deleteRoleName2').textContent = name;
+
+            // Tampilkan modal
+            document.getElementById('modalDelete').classList.remove('hidden');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('modalDelete').classList.add('hidden');
+            deleteRoleId = null;
+            deleteRoleName = '';
+        }
+
+        function goToDeleteStep2() {
+            document.getElementById('deleteStep1').classList.add('hidden');
+            document.getElementById('deleteStep2').classList.remove('hidden');
+            document.getElementById('deleteConfirmInput').focus();
+        }
+
+        function goToDeleteStep1() {
+            document.getElementById('deleteStep2').classList.add('hidden');
+            document.getElementById('deleteStep1').classList.remove('hidden');
+        }
+
+        function checkDeleteConfirm() {
+            const input = document.getElementById('deleteConfirmInput').value.trim();
+            const btn = document.getElementById('deleteConfirmBtn');
+            const error = document.getElementById('deleteConfirmError');
+
+            if (input === 'HAPUS') {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                error.classList.add('hidden');
+            } else {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                if (input.length > 0) {
+                    error.classList.remove('hidden');
+                } else {
+                    error.classList.add('hidden');
+                }
+            }
+        }
+
+        function executeDelete() {
+            if (!deleteRoleId) return;
+
+            // Sembunyikan step 2, tampilkan loading
+            document.getElementById('deleteStep2').classList.add('hidden');
+            document.getElementById('deleteLoading').classList.remove('hidden');
+
+            // Kirim POST request via form submit
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/roles/${deleteRoleId}`;
+            form.style.display = 'none';
+
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = '{{ csrf_token() }}';
+            form.appendChild(csrfInput);
+
+            const methodInput = document.createElement('input');
+            methodInput.type = 'hidden';
+            methodInput.name = '_method';
+            methodInput.value = 'DELETE';
+            form.appendChild(methodInput);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        // Tutup modal delete jika klik di luar
+        document.getElementById('modalDelete').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
+
+        // ================================================================
+        // EDIT ROLE — OPEN MODAL
+        // ================================================================
         function openEditModal(id, name, roleCategory, permissions) {
             document.getElementById('modalEdit').classList.remove('hidden');
             document.getElementById('edit_name').value = name;

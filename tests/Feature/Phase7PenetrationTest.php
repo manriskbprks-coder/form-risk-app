@@ -282,10 +282,10 @@ class Phase7PenetrationTest extends TestCase
     // ========================================================================
 
     #[Test]
-    public function brute_force_login_kena_throttle_setelah_5_percobaan()
+    public function brute_force_login_kena_throttle_setelah_10_percobaan()
     {
-        // 5 percobaan login gagal — harusnya masih bisa
-        for ($i = 0; $i < 5; $i++) {
+        // 10 percobaan login gagal — harusnya masih bisa
+        for ($i = 0; $i < 10; $i++) {
             $response = $this->post(route('login'), [
                 'username' => $this->tellerA->username,
                 'password' => 'wrong-password-' . $i,
@@ -295,22 +295,22 @@ class Phase7PenetrationTest extends TestCase
             $response->assertSessionHasErrors('email');
         }
 
-        // Percobaan ke-6 — harus kena throttle 429
+        // Percobaan ke-11 — harus kena throttle 429
         $response = $this->post(route('login'), [
             'username' => $this->tellerA->username,
-            'password' => 'wrong-password-6',
+            'password' => 'wrong-password-11',
         ]);
 
         $response->assertStatus(429);
     }
 
     #[Test]
-    public function store_report_kena_throttle_setelah_10_percobaan()
+    public function store_report_kena_throttle_setelah_15_percobaan()
     {
         $this->actingAs($this->tellerA);
 
-        // 10 percobaan store — harusnya masih bisa
-        for ($i = 0; $i < 10; $i++) {
+        // 15 percobaan store — harusnya masih bisa
+        for ($i = 0; $i < 15; $i++) {
             $response = $this->post(route('form.risiko.store'), [
                 'kategori' => 'finansial',
                 'tanggal_kejadian' => now()->subDays(1)->format('Y-m-d'),
@@ -326,7 +326,7 @@ class Phase7PenetrationTest extends TestCase
             ]);
         }
 
-        // Percobaan ke-11 — harus kena throttle 429
+        // Percobaan ke-16 — harus kena throttle 429
         $response = $this->post(route('form.risiko.store'), [
             'kategori' => 'finansial',
             'tanggal_kejadian' => now()->subDays(1)->format('Y-m-d'),

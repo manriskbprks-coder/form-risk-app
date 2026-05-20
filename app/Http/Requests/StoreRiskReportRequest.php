@@ -18,45 +18,9 @@ class StoreRiskReportRequest extends FormRequest
             $this->merge(['risk_cause_id' => null]);
         }
 
-        // Sanitasi input teks — strip tags untuk cegah XSS
-        if ($this->has('kronologis_kejadian')) {
-            $this->merge([
-                'kronologis_kejadian' => strip_tags($this->input('kronologis_kejadian')),
-            ]);
-        }
-        if ($this->has('mitigasi_tambahan')) {
-            $this->merge([
-                'mitigasi_tambahan' => strip_tags($this->input('mitigasi_tambahan')),
-            ]);
-        }
-        if ($this->has('tindakan_awal')) {
-            $this->merge([
-                'tindakan_awal' => strip_tags($this->input('tindakan_awal')),
-            ]);
-        }
-        if ($this->has('other_item_description')) {
-            $this->merge([
-                'other_item_description' => strip_tags($this->input('other_item_description')),
-            ]);
-        }
-        if ($this->has('other_cause_description')) {
-            $this->merge([
-                'other_cause_description' => strip_tags($this->input('other_cause_description')),
-            ]);
-        }
-        if ($this->has('dampak_non_finansial')) {
-            $this->merge([
-                'dampak_non_finansial' => strip_tags($this->input('dampak_non_finansial')),
-            ]);
-        }
         // Sumber risiko: kalo empty string (hidden field), konversi ke null biar validasi lolos
         if ($this->has('sumber_risiko') && $this->input('sumber_risiko') === '') {
             $this->merge(['sumber_risiko' => null]);
-        }
-        if ($this->has('sumber_risiko') && $this->input('sumber_risiko') !== null) {
-            $this->merge([
-                'sumber_risiko' => strip_tags($this->input('sumber_risiko')),
-            ]);
         }
     }
 

@@ -3,11 +3,13 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Domain\Enums\RoleCategory;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+
 
 class User extends Authenticatable
 {
@@ -89,6 +91,7 @@ class User extends Authenticatable
 
     /**
      * Ambil role_category dari role pertama user.
+
      */
     public function roleCategory(): ?string
     {
@@ -97,12 +100,19 @@ class User extends Authenticatable
     }
 
     /**
+     * Dapatkan RoleCategory enum dari user.
+     */
+    public function roleCategoryEnum(): ?RoleCategory
+    {
+        return RoleCategory::tryFrom($this->roleCategory() ?? '');
+    }
+
+    /**
      * Cek apakah user termasuk kategori Maker (bisa bikin laporan).
      */
     public function isMaker(): bool
     {
-        $cat = $this->roleCategory();
-        return $cat === 'maker' || $cat === 'checker';
+        return $this->roleCategoryEnum()?->isMaker() ?? false;
     }
 
     /**
@@ -110,7 +120,7 @@ class User extends Authenticatable
      */
     public function isChecker(): bool
     {
-        return $this->roleCategory() === 'checker';
+        return $this->roleCategoryEnum()?->isChecker() ?? false;
     }
 
     /**
@@ -118,7 +128,7 @@ class User extends Authenticatable
      */
     public function isViewer(): bool
     {
-        return $this->roleCategory() === 'viewer';
+        return $this->roleCategoryEnum()?->isViewer() ?? false;
     }
 
     /**
@@ -126,7 +136,7 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->roleCategory() === 'admin';
+        return $this->roleCategoryEnum()?->isAdmin() ?? false;
     }
 
     /**
@@ -134,6 +144,7 @@ class User extends Authenticatable
      */
     public function canCreateReport(): bool
     {
-        return in_array($this->roleCategory(), ['maker', 'checker']);
+        return $this->roleCategoryEnum()?->canCreateReport() ?? false;
     }
+
 }

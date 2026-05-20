@@ -95,35 +95,35 @@ class Phase2AuthTest extends TestCase
     // ========================================================================
 
     #[Test]
-    public function login_rate_limit_blocks_after_5_attempts()
+    public function login_rate_limit_blocks_after_10_attempts()
     {
-        // Coba login 5x dengan password salah — harusnya masih bisa (belum limit)
-        for ($i = 0; $i < 5; $i++) {
+        // Coba login 10x dengan password salah — harusnya masih bisa (belum limit)
+        for ($i = 0; $i < 10; $i++) {
             $response = $this->post(route('login'), [
                 'username' => 'testuser',
                 'password' => 'wrongpassword',
             ]);
-            // 5 percobaan pertama: validasi error (bukan rate limit)
+            // 10 percobaan pertama: validasi error (bukan rate limit)
             $response->assertSessionHasErrors('email');
         }
 
-        // Percobaan ke-6: harus kena throttle (429 Too Many Requests)
+        // Percobaan ke-11: harus kena throttle (429 Too Many Requests)
         $response = $this->post(route('login'), [
             'username' => 'testuser',
             'password' => 'wrongpassword',
         ]);
 
-        // RateLimiter::tooManyAttempts dengan max 5 — ke-6 harus 429
+        // RateLimiter::tooManyAttempts dengan max 10 — ke-11 harus 429
         $response->assertStatus(429);
     }
 
     #[Test]
-    public function form_submit_rate_limit_blocks_after_10_attempts()
+    public function form_submit_rate_limit_blocks_after_15_attempts()
     {
         $this->actingAs($this->teller);
 
-        // Coba submit form 10x — harusnya masih bisa
-        for ($i = 0; $i < 10; $i++) {
+        // Coba submit form 15x — harusnya masih bisa
+        for ($i = 0; $i < 15; $i++) {
             $response = $this->post(route('form.risiko.store'), [
                 'kategori' => 'finansial',
                 'tanggal_kejadian' => now()->subDays(1)->format('Y-m-d'),
@@ -135,13 +135,13 @@ class Phase2AuthTest extends TestCase
                 'dampak_finansial' => 1000000,
             ]);
 
-            // 10 percobaan pertama: harusnya sukses atau validation error (bukan rate limit)
+            // 15 percobaan pertama: harusnya sukses atau validation error (bukan rate limit)
             if ($response->status() !== 429) {
                 // OK — masih dalam batas
             }
         }
 
-        // Percobaan ke-11: harus kena throttle
+        // Percobaan ke-16: harus kena throttle
         $response = $this->post(route('form.risiko.store'), [
             'kategori' => 'finansial',
             'tanggal_kejadian' => now()->subDays(1)->format('Y-m-d'),
@@ -157,7 +157,7 @@ class Phase2AuthTest extends TestCase
     }
 
     #[Test]
-    public function approval_rate_limit_blocks_after_10_attempts()
+    public function approval_rate_limit_blocks_after_15_attempts()
     {
         $report = RiskReport::factory()->create([
             'user_id' => $this->teller->id,
@@ -172,8 +172,8 @@ class Phase2AuthTest extends TestCase
 
         $this->actingAs($this->kacab);
 
-        // Coba approve 10x — harusnya masih bisa
-        for ($i = 0; $i < 10; $i++) {
+        // Coba approve 15x — harusnya masih bisa
+        for ($i = 0; $i < 15; $i++) {
             $response = $this->post(route('risk_reports.update_status', $report->id), [
                 'status' => 'approved',
             ]);
@@ -184,7 +184,7 @@ class Phase2AuthTest extends TestCase
             }
         }
 
-        // Percobaan ke-11: harus kena throttle
+        // Percobaan ke-16: harus kena throttle
         $response = $this->post(route('risk_reports.update_status', $report->id), [
             'status' => 'approved',
         ]);
@@ -303,17 +303,17 @@ class Phase2AuthTest extends TestCase
     // ========================================================================
 
     #[Test]
-    public function account_lockout_after_5_failed_attempts()
+    public function account_lockout_after_10_failed_attempts()
     {
-        // Coba login 5x dengan password salah
-        for ($i = 0; $i < 5; $i++) {
+        // Coba login 10x dengan password salah
+        for ($i = 0; $i < 10; $i++) {
             $response = $this->post(route('login'), [
                 'username' => 'testuser',
                 'password' => 'wrongpassword',
             ]);
         }
 
-        // Percobaan ke-6: harus kena lockout (429)
+        // Percobaan ke-11: harus kena lockout (429)
         $response = $this->post(route('login'), [
             'username' => 'testuser',
             'password' => 'wrongpassword',
@@ -325,15 +325,15 @@ class Phase2AuthTest extends TestCase
     #[Test]
     public function lockout_message_informs_user()
     {
-        // Coba login 5x dengan password salah
-        for ($i = 0; $i < 5; $i++) {
+        // Coba login 10x dengan password salah
+        for ($i = 0; $i < 10; $i++) {
             $this->post(route('login'), [
                 'username' => 'testuser',
                 'password' => 'wrongpassword',
             ]);
         }
 
-        // Percobaan ke-6: harus kena lockout
+        // Percobaan ke-11: harus kena lockout
         $response = $this->post(route('login'), [
             'username' => 'testuser',
             'password' => 'wrongpassword',

@@ -16,13 +16,20 @@ use App\Http\Requests\StoreRiskReportRequest;
 use App\Http\Requests\UpdateRiskApprovalStatusRequest;
 use App\Http\Requests\UpdateRiskResolutionRequest;
 use App\Http\Requests\AddRiskProgressRequest;
+use App\Domain\Enums\ApprovalStatus;
+use App\Domain\Enums\ResolutionStatus;
+use App\Domain\Enums\RoleCategory;
+use App\Services\KodeLaporanService;
+use App\Services\RiskReportQueryService;
+use App\Services\RiskReportService;
 
 class RiskReportController extends Controller
 {
-    private function primaryRoleName(): ?string
-    {
-        return Auth::user()?->primaryRoleName();
-    }
+    public function __construct(
+        protected KodeLaporanService $kodeLaporanService,
+        protected RiskReportQueryService $riskReportQueryService,
+        protected RiskReportService $riskReportService,
+    ) {}
 
     public function create($kategori)
     {
@@ -48,98 +55,13 @@ class RiskReportController extends Controller
         return view('risk_reports.create', compact('riskItems', 'kategori'));
     }
 
-    private function generateKodeLaporan($user): string
-    {
-        // Ambil kode cabang, fallback ke 'HQ'
-        $kodeCabang = $user->branch->kode_cabang ?? 'HQ';
-        
-        // Mapping role ke kode singkat
-        $roleMap = [
-            'teller' => 'TL',
-            'ca' => 'CA',
-            'csr' => 'CS',
-            'security' => 'SC',
-            'kacab' => 'KC',
-        ];
-        $role = $user->primaryRoleName();
-        $kodeRole = $roleMap[$role] ?? 'XX';
-        
-        // TahunBulan
-        $tahunBulan = now()->format('Ym');
-        
-        // Hitung nomor urut di bulan ini
-        $count = RiskReport::whereYear('created_at', now()->year)
-            ->whereMonth('created_at', now()->month)
-            ->count();
-        
-        $nomorUrut = str_pad($count + 1, 4, '0', STR_PAD_LEFT);
-        
-        return "RISK-{$kodeCabang}{$kodeRole}-{$tahunBulan}-{$nomorUrut}";
-    }
-
     public function store(StoreRiskReportRequest $request)
     {
         try {
             $user = Auth::user();
-            $targetApproval = $user->roleCategory() === 'checker' ? 'approved' : 'pending_kacab';
+            $report = $this->riskReportService->create($request->validated(), $user);
 
-            $report = RiskReport::create([
-                'kode_laporan' => $this->generateKodeLaporan($user),
-                'user_id' => $user->id,
-                'branch_id' => $user->branch_id,
-                'kategori' => $request->kategori,
-                'tanggal_kejadian' => $request->tanggal_kejadian,
-                'tanggal_diketahui' => $request->tanggal_diketahui,
-                'risk_item_id' => $request->risk_item_id,
-                'other_item_description' => $request->other_item_description,
-                'risk_cause_id' => $request->risk_cause_id,
-                'other_cause_description' => $request->other_cause_description,
-                'kronologis_kejadian' => $request->kronologis_kejadian,
-                'mitigasi_tambahan' => $request->mitigasi_tambahan,
-                'durasi_penyelesaian' => $request->durasi_penyelesaian,
-                'durasi_satuan' => $request->durasi_satuan,
-                'dampak_finansial' => $request->dampak_finansial ?? 0,
-                'dampak_non_finansial' => $request->dampak_non_finansial,
-                'skala_dampak' => $request->skala_dampak,
-                'sumber_risiko' => $request->sumber_risiko,
-                'approval_status' => $targetApproval,
-                'resolution_status' => $request->status_awal,
-            ]);
-
-        // Log pertama: laporan dibuat — tanpa old_data (biar ga muncul diff di UI)
-        $report->logs()->create([
-            'user_id' => $user->id,
-            'note' => 'Laporan dibuat',
-            'status_after_note' => $targetApproval,
-            'old_data' => null,
-        ]);
-
-        if ($request->filled('tindakan_awal')) {
-            $report->logs()->create([
-                'user_id' => $user->id,
-                'note' => 'Penanganan Awal: ' . $request->tindakan_awal,
-                'status_after_note' => $request->status_awal
-            ]);
-        }
-
-        // === NOTIFIKASI: Beri tahu Kacab cabang ini ===
-        if ($targetApproval === 'pending_kacab') {
-            $kacabUsers = User::whereHas('roles', function ($q) {
-                $q->where('role_category', 'checker');
-            })->where('branch_id', $user->branch_id)
-                ->get();
-
-            foreach ($kacabUsers as $kacab) {
-                Notification::create([
-                    'user_id' => $kacab->id,
-                    'risk_report_id' => $report->id,
-                    'type' => 'new_report',
-                    'message' => "Laporan baru dari {$user->name}: {$report->kode_laporan}",
-                ]);
-            }
-        }
-
-        return redirect()->route('dashboard')->with('success', 'Laporan berhasil dikirim!');
+            return redirect()->route('dashboard')->with('success', 'Laporan berhasil dikirim!');
         } catch (\Exception $e) {
             Log::channel('daily')->error('[ERROR] Gagal menyimpan laporan', [
                 'user_id' => Auth::user()?->id,
@@ -161,17 +83,17 @@ class RiskReportController extends Controller
         $reports = collect();
         $tindakLanjut = collect();
 
-        if ($user->roleCategory() === 'checker') {
+        if ($user->roleCategoryEnum()?->isChecker()) {
             $reports = RiskReport::with(['user.roles', 'item', 'cause.mitigations', 'branch'])
                 ->where('branch_id', $user->branch_id)
-                ->whereIn('approval_status', ['pending_kacab', 'need_revision'])
+                ->whereIn('approval_status', [ApprovalStatus::PendingKacab->value, ApprovalStatus::NeedRevision->value])
                 ->orderBy('created_at', 'desc')
                 ->get();
 
             $tindakLanjut = RiskReport::with(['user.roles', 'item', 'cause.mitigations', 'branch'])
                 ->where('branch_id', $user->branch_id)
-                ->where('approval_status', 'approved')
-                ->whereIn('resolution_status', ['open', 'in_progress'])
+                ->where('approval_status', ApprovalStatus::Approved->value)
+                ->whereIn('resolution_status', [ResolutionStatus::Open->value, ResolutionStatus::InProgress->value])
                 ->orderBy('updated_at', 'desc')
                 ->get();
         }
@@ -188,50 +110,11 @@ class RiskReportController extends Controller
         $user = Auth::user();
 
         if ($request->status === 'rejected') {
-            // Kacab reject → jangan rejected beneran, tapi need_revision + catatan
-            $report->update([
-                'approval_status' => 'need_revision',
-                'revision_note' => $request->alasan_reject,
-            ]);
-
-            // Snapshot data lama ke log
-            $report->logs()->create([
-                'user_id' => $user->id,
-                'note' => 'Revisi diminta oleh Kacab: ' . $request->alasan_reject,
-                'status_after_note' => 'need_revision',
-                'old_data' => null,
-            ]);
-
-            // Notif maker
-            Notification::create([
-                'user_id' => $report->user_id,
-                'risk_report_id' => $report->id,
-                'type' => 'rejected',
-                'message' => "Laporan {$report->kode_laporan} perlu direvisi. Alasan: {$request->alasan_reject}",
-            ]);
-
+            $this->riskReportService->requestRevisionFromKacab($report, $user, $request->alasan_reject);
             return redirect()->back()->with('success', 'Laporan dikembalikan untuk direvisi. Alasan sudah dicatat.');
         }
 
-        // Approved
-        $report->update(['approval_status' => 'approved', 'revision_note' => null]);
-
-        // Catat log approval
-        \App\Models\RiskReportLog::create([
-            'risk_report_id' => $report->id,
-            'user_id' => $user->id,
-            'note' => 'Laporan disetujui oleh Kacab',
-            'status_after_note' => 'approved',
-            'old_data' => null,
-        ]);
-
-        Notification::create([
-            'user_id' => $report->user_id,
-            'risk_report_id' => $report->id,
-            'type' => 'approved',
-            'message' => "Laporan {$report->kode_laporan} telah disetujui oleh {$user->name}.",
-        ]);
-
+        $this->riskReportService->approve($report, $user);
         return redirect()->back()->with('success', 'Status persetujuan diperbarui!');
     }
 
@@ -243,76 +126,15 @@ class RiskReportController extends Controller
             abort(Response::HTTP_FORBIDDEN, 'Akses ditolak.');
         }
 
-        $roleCategory = $user->roleCategory();
         $role = $user->primaryRoleName();
 
-        $query = RiskReport::with(['user', 'item', 'cause.mitigations', 'branch']);
+        $query = $this->riskReportQueryService->baseQuery();
+        $query = $this->riskReportQueryService->applyRoleScope($query, $user);
+        $query = $this->riskReportQueryService->applyFilters($query, $request, $user);
 
-        if ($roleCategory === 'checker') {
-            $query->where('branch_id', $user->branch_id);
-            $branches = collect();
-        } elseif (in_array($roleCategory, ['viewer', 'admin'])) {
-            // Viewer & Admin: Viewer lihat cabang diawasi, Admin lihat semua
-            if ($roleCategory === 'viewer') {
-                $branchIds = Branch::where('korwil_id', $user->id)->pluck('id');
-                $query->whereIn('branch_id', $branchIds);
-                $branches = Branch::whereIn('id', $branchIds)->get();
-            } else {
-                $branches = Branch::all();
-            }
-        } else {
-            // Maker: hanya lihat laporan sendiri
-            $query->where('user_id', $user->id);
-            $branches = collect();
-        }
+        $branches = $this->riskReportQueryService->getBranchesForUser($user);
 
-        // === SEARCH ===
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('kode_laporan', 'like', "%{$search}%")
-                  ->orWhere('other_item_description', 'like', "%{$search}%")
-                  ->orWhere('other_cause_description', 'like', "%{$search}%")
-                  ->orWhere('kronologis_kejadian', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($uq) use ($search) {
-                      $uq->where('name', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('item', function ($iq) use ($search) {
-                      $iq->where('nama_risiko', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('cause', function ($cq) use ($search) {
-                      $cq->where('penyebab', 'like', "%{$search}%");
-                  });
-            });
-        }
-
-        if ($request->filled('branch_id') && in_array($roleCategory, ['admin', 'viewer'])) {
-            $query->where('branch_id', $request->branch_id);
-        }
-
-        if ($request->filled('kategori')) {
-            $query->where('kategori', $request->kategori);
-        }
-
-        if ($request->filled('jabatan')) {
-            $query->whereHas('item', function ($q) use ($request) {
-                $q->where('role_target', $request->jabatan);
-            });
-        }
-
-        if ($request->filled('date_from') && $request->filled('date_to')) {
-            $query->whereBetween('tanggal_kejadian', [$request->date_from, $request->date_to]);
-        }
-
-        if ($request->filled('resolution_status')) {
-            $query->where('resolution_status', $request->resolution_status);
-        }
-
-        if ($request->filled('approval_status')) {
-            $query->where('approval_status', $request->approval_status);
-        }
-
-        $totalLoss = (clone $query)->where('approval_status', 'approved')->sum('dampak_finansial');
+        $totalLoss = (clone $query)->where('approval_status', ApprovalStatus::Approved->value)->sum('dampak_finansial');
         $totalKejadian = (clone $query)->count();
         $totalRejected = (clone $query)->where('approval_status', 'rejected')->count();
 
@@ -354,18 +176,7 @@ class RiskReportController extends Controller
         $report = RiskReport::findOrFail($id);
         Gate::authorize('updateProgress', $report);
 
-        $oldStatus = $report->resolution_status;
-        $report->update(['resolution_status' => $request->resolution_status]);
-
-        // Catat perubahan resolution status ke log harian
-        Log::channel('daily')->info('[AUDIT] Resolution status updated', [
-            'user_id' => $user->id,
-            'user_name' => $user->name,
-            'report_id' => $report->id,
-            'kode_laporan' => $report->kode_laporan,
-            'old_status' => $oldStatus,
-            'new_status' => $request->resolution_status,
-        ]);
+        $this->riskReportService->updateResolution($report, $user, $request->resolution_status);
 
         return redirect()->back()->with('success', 'Status tindak lanjut diperbarui!');
     }
@@ -377,8 +188,8 @@ class RiskReportController extends Controller
         $report = RiskReport::findOrFail($id);
         Gate::authorize('updateProgress', $report);
 
-        if ($request->new_status === 'closed') {
-            if ($user->roleCategory() !== 'checker') {
+        if ($request->new_status === ResolutionStatus::Closed->value) {
+            if (!$user->roleCategoryEnum()?->isChecker()) {
                 return back()->with('error', 'Hanya Checker (Kacab) yang berwenang menutup laporan.');
             }
 
@@ -387,23 +198,7 @@ class RiskReportController extends Controller
             }
         }
 
-        $report->logs()->create([
-            'user_id' => $user->id,
-            'note' => $request->note,
-            'status_after_note' => $request->new_status
-        ]);
-
-        $report->update(['resolution_status' => $request->new_status]);
-
-        // === NOTIFIKASI: Beri tahu Maker jika laporan di-closed ===
-        if ($request->new_status === 'closed') {
-            Notification::create([
-                'user_id' => $report->user_id,
-                'risk_report_id' => $report->id,
-                'type' => 'closed',
-                'message' => "Laporan {$report->kode_laporan} telah ditutup oleh {$user->name}.",
-            ]);
-        }
+        $this->riskReportService->addProgress($report, $user, $request->note, $request->new_status);
 
         return back()->with('success', 'Progress berhasil dicatat!');
     }
@@ -435,29 +230,9 @@ class RiskReportController extends Controller
             'revision_note' => 'required|string|min:10|max:2000',
         ]);
 
-        // Sanitasi XSS
         $revisionNote = strip_tags($request->input('revision_note'));
 
-        $report->update([
-            'approval_status' => 'need_revision',
-            'revision_note' => $revisionNote,
-        ]);
-
-        // Snapshot data lama
-        $report->logs()->create([
-            'user_id' => $user->id,
-            'note' => 'Revisi diminta oleh ManRisk: ' . $request->revision_note,
-            'status_after_note' => 'need_revision',
-            'old_data' => null,
-        ]);
-
-        // Notif ke pembuat laporan
-        Notification::create([
-            'user_id' => $report->user_id,
-            'risk_report_id' => $report->id,
-            'type' => 'revision_requested',
-            'message' => "Laporan {$report->kode_laporan} perlu direvisi. Catatan: {$request->revision_note}",
-        ]);
+        $this->riskReportService->requestRevisionFromManRisk($report, $user, $revisionNote);
 
         return back()->with('success', 'Permintaan revisi telah dikirim.');
     }
@@ -470,14 +245,12 @@ class RiskReportController extends Controller
         $user = Auth::user();
         $report = RiskReport::findOrFail($id);
 
-        // Pastikan user berhak merevisi
         Gate::authorize('submitRevision', $report);
 
-        if ($report->approval_status !== 'need_revision') {
+        if ($report->approval_status !== ApprovalStatus::NeedRevision->value) {
             return back()->with('error', 'Laporan ini tidak dalam status perlu revisi.');
         }
 
-        // Validasi field yang bisa direvisi
         $request->validate([
             'kronologis_kejadian' => 'required|string|min:20',
             'dampak_finansial' => 'nullable|numeric|min:0',
@@ -489,7 +262,6 @@ class RiskReportController extends Controller
             'sumber_risiko' => 'nullable|string|in:manusia,sistem_teknologi,proses_internal,faktor_eksternal',
         ]);
 
-        // Snapshot data lama SEBELUM diupdate
         $oldData = $report->only([
             'kronologis_kejadian', 'dampak_finansial', 'skala_dampak',
             'dampak_non_finansial', 'mitigasi_tambahan',
@@ -497,64 +269,7 @@ class RiskReportController extends Controller
             'sumber_risiko',
         ]);
 
-        // Tentukan status baru berdasarkan siapa yang minta revisi
-        // Kalo sebelumnya reject dari Kacab → pending_kacab
-        // Kalo dari ManRisk → pending_revision
-        $lastLog = $report->logs()->latest()->first();
-        $newStatus = 'pending_revision'; // default: ManRisk yang review
-
-        if ($lastLog && str_contains($lastLog->note ?? '', 'Kacab')) {
-            $newStatus = 'pending_kacab';
-        }
-
-        $report->update([
-            'kronologis_kejadian' => $request->kronologis_kejadian,
-            'dampak_finansial' => $request->dampak_finansial ?? 0,
-            'skala_dampak' => $request->skala_dampak,
-            'dampak_non_finansial' => $request->dampak_non_finansial,
-            'mitigasi_tambahan' => $request->mitigasi_tambahan,
-            'durasi_penyelesaian' => $request->durasi_penyelesaian,
-            'durasi_satuan' => $request->durasi_satuan,
-            'sumber_risiko' => $request->sumber_risiko ?? $report->sumber_risiko,
-            'approval_status' => $newStatus,
-            'revision_note' => null, // bersihin catatan revisi
-        ]);
-
-        // Simpan snapshot old_data ke log (encode array ke JSON string)
-        $report->logs()->create([
-            'user_id' => $user->id,
-            'note' => 'Revisi laporan telah dikirim',
-            'status_after_note' => $newStatus,
-            'old_data' => json_encode($oldData),
-        ]);
-
-        // Notif ke reviewer
-        if ($newStatus === 'pending_kacab') {
-            $kacabUsers = User::whereHas('roles', function ($q) {
-                $q->where('role_category', 'checker');
-            })->where('branch_id', $report->branch_id)
-                ->get();
-            foreach ($kacabUsers as $kacab) {
-                Notification::create([
-                    'user_id' => $kacab->id,
-                    'risk_report_id' => $report->id,
-                    'type' => 'revision_submitted',
-                    'message' => "Revisi laporan {$report->kode_laporan} telah dikirim oleh {$user->name}.",
-                ]);
-            }
-        } else {
-            $manriskUsers = User::whereHas('roles', function ($q) {
-                $q->where('role_category', 'admin');
-            })->get();
-            foreach ($manriskUsers as $mr) {
-                Notification::create([
-                    'user_id' => $mr->id,
-                    'risk_report_id' => $report->id,
-                    'type' => 'revision_submitted',
-                    'message' => "Revisi laporan {$report->kode_laporan} telah dikirim oleh {$user->name}.",
-                ]);
-            }
-        }
+        $this->riskReportService->submitRevision($report, $user, $request->all(), $oldData);
 
         return redirect()->route('dashboard')->with('success', 'Revisi laporan berhasil dikirim!');
     }
@@ -569,24 +284,7 @@ class RiskReportController extends Controller
 
         Gate::authorize('approveRevision', $report);
 
-        $report->update([
-            'approval_status' => 'approved',
-            'revision_note' => null,
-        ]);
-
-        $report->logs()->create([
-            'user_id' => $user->id,
-            'note' => 'Revisi disetujui oleh ManRisk',
-            'status_after_note' => 'approved',
-            'old_data' => null,
-        ]);
-
-        Notification::create([
-            'user_id' => $report->user_id,
-            'risk_report_id' => $report->id,
-            'type' => 'approved',
-            'message' => "Revisi laporan {$report->kode_laporan} telah disetujui oleh ManRisk.",
-        ]);
+        $this->riskReportService->approveRevision($report, $user);
 
         return back()->with('success', 'Revisi laporan disetujui!');
     }

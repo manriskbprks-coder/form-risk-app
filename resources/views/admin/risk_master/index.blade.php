@@ -140,10 +140,12 @@
                             </div>
 
                             <div class="flex shrink-0 items-start gap-3 ml-auto">
-                                <span class="hidden md:inline text-xs font-semibold text-slate-400 opacity-0 group-hover:opacity-100 transition pt-2">Lihat Detail</span>
-                                <form action="{{ route('admin.risk_master.destroy_item', $item->id) }}" method="POST" class="relative z-10" @click.stop="if(!confirm('Hapus pertanyaan ini?')) $event.preventDefault()">
+                                <button type="button" class="hidden md:inline-flex items-center justify-center min-w-[84px] text-blue-600 hover:text-white hover:bg-blue-500 border border-blue-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">
+                                    Lihat Detail
+                                </button>
+                                <form id="deleteItemForm_{{ $item->id }}" action="{{ route('admin.risk_master.destroy_item', $item->id) }}" method="POST" class="relative z-10" @click.stop>
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="inline-flex items-center justify-center min-w-[84px] text-rose-600 hover:text-white hover:bg-rose-500 border border-rose-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">
+                                    <button type="button" onclick="openDeleteItem({{ $item->id }}, '{{ addslashes($item->nama_risiko) }}')" class="inline-flex items-center justify-center min-w-[84px] text-rose-600 hover:text-white hover:bg-rose-500 border border-rose-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">
                                         Hapus
                                     </button>
                                 </form>
@@ -284,4 +286,83 @@
         </div>
 
     </div>
+
+    <!-- ================================================================ -->
+    <!-- MODAL HAPUS PERTANYAAN RISIKO (KONFIRMASI 1-STEP)                -->
+    <!-- ================================================================ -->
+    <div id="modalDeleteItem" class="fixed inset-0 z-50 hidden bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full">
+        <div id="deleteItemContainer" class="relative top-6 sm:top-20 mx-auto p-4 sm:p-5 border w-full max-w-md shadow-lg rounded-md bg-white border-t-4 border-t-red-500">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="deleteItemTitle" class="text-lg font-bold text-gray-900 uppercase">🗑️ Hapus Pertanyaan Risiko</h3>
+                <button onclick="closeDeleteItem()" class="text-gray-400 hover:text-red-500 font-bold text-xl">&times;</button>
+            </div>
+            <div class="space-y-4">
+                <div class="bg-gray-50 border-l-4 border-gray-400 p-4 rounded">
+                    <p class="text-sm text-gray-800 font-semibold">Konfirmasi Aksi</p>
+                </div>
+                <p class="text-sm text-gray-700">
+                    Apakah Anda yakin ingin menghapus pertanyaan risiko berikut:
+                </p>
+                <div class="bg-gray-50 p-3 rounded border text-center">
+                    <p id="deleteItemName" class="font-bold text-gray-900 text-lg"></p>
+                </div>
+
+                <!-- Warning dampak -->
+                <div id="deleteItemWarningBlock" class="bg-red-50 border border-red-200 p-3 rounded text-xs text-red-800 space-y-1">
+                    <p>🔴 <strong>Dampak menghapus pertanyaan:</strong></p>
+                    <p>• Semua penyebab & mitigasi terkait akan ikut terhapus</p>
+                    <p>• Laporan yang sudah menggunakan pertanyaan ini <strong>tidak terpengaruh</strong></p>
+                    <p>• Data tetap tersimpan di histori laporan</p>
+                </div>
+
+                <div class="flex justify-end gap-2 mt-4">
+                    <button onclick="closeDeleteItem()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-sm font-bold">Batal</button>
+                    <button id="deleteItemConfirmBtn"
+                            onclick="executeDeleteItem()"
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-bold shadow">🗑️ Hapus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================================================================
+        // HAPUS PERTANYAAN RISIKO — KONFIRMASI 1-STEP
+        // ================================================================
+        let deleteItemId = null;
+
+        function openDeleteItem(id, namaRisiko) {
+            deleteItemId = id;
+
+            // Isi data pertanyaan di modal
+            document.getElementById('deleteItemName').textContent = namaRisiko;
+
+            // Tampilkan modal
+            document.getElementById('modalDeleteItem').classList.remove('hidden');
+        }
+
+        function closeDeleteItem() {
+            document.getElementById('modalDeleteItem').classList.add('hidden');
+            deleteItemId = null;
+        }
+
+        function executeDeleteItem() {
+            if (!deleteItemId) return;
+
+            // Disable button biar ga double-click
+            const btn = document.getElementById('deleteItemConfirmBtn');
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            // Submit form
+            document.getElementById('deleteItemForm_' + deleteItemId).submit();
+        }
+
+        // Tutup modal jika klik di luar
+        document.getElementById('modalDeleteItem').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteItem();
+            }
+        });
+    </script>
 </x-app-layout>

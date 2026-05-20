@@ -2,64 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Branch;
-use App\Models\RiskFreeDeclaration;
-use App\Models\RiskFreeDeclarationDetail;
-use App\Models\RiskReport;
-use App\Models\Notification;
-use App\Models\User;
+use App\Services\DeklarasiNihilService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class RiskFreeDeclarationController extends Controller
 {
-    /**
-     * Tentukan periode saat ini berdasarkan tanggal.
-     * Periode 1: tgl 1-14, Periode 2: tgl 15-akhir
-     */
-    private function getCurrentPeriode(): string
-    {
-        $day = now()->day;
-        return $day <= 14 ? '1' : '2';
-    }
-
-    /**
-     * Daftar jabatan yang wajib dideklarasikan.
-     */
-    private function getJabatanList(): array
-    {
-        return ['Teller', 'CA', 'CS', 'Security', 'Kacab'];
-    }
-
-    /**
-     * Cek apakah Kacab sudah pernah deklarasi untuk periode ini.
-     */
-    private function sudahDeklarasi($branchId, $periode, $bulan, $tahun): bool
-    {
-        return RiskFreeDeclaration::where('branch_id', $branchId)
-            ->where('periode', $periode)
-            ->where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->exists();
-    }
-
-    /**
-     * Cek apakah ada laporan risiko yang dibuat di periode ini oleh cabang tersebut.
-     */
-    private function adaLaporanDiPeriode($branchId, $periode, $bulan, $tahun): bool
-    {
-        $startDay = $periode === '1' ? 1 : 15;
-        $endDay = $periode === '1' ? 14 : now()->daysInMonth;
-
-        $startDate = "{$tahun}-{$bulan}-{$startDay}";
-        $endDate = "{$tahun}-{$bulan}-{$endDay}";
-
-        return RiskReport::where('branch_id', $branchId)
-            ->whereBetween('tanggal_kejadian', [$startDate, $endDate])
-            ->exists();
-    }
+    public function __construct(
+        protected DeklarasiNihilService $deklarasiNihilService,
+    ) {}
 
     /**
      * Tampilkan form deklarasi nihil risiko (Kacab).
@@ -72,18 +24,18 @@ class RiskFreeDeclarationController extends Controller
             abort(Response::HTTP_FORBIDDEN, 'Hanya Checker (Kacab) yang bisa mengakses halaman ini.');
         }
 
-        $periode = $this->getCurrentPeriode();
+        $periode = $this->deklarasiNihilService->getCurrentPeriode();
         $bulan = now()->month;
         $tahun = now()->year;
 
         // Cek apakah sudah deklarasi
-        if ($this->sudahDeklarasi($user->branch_id, $periode, $bulan, $tahun)) {
+        if ($this->deklarasiNihilService->sudahDeklarasi($user->branch_id, $periode, $bulan, $tahun)) {
             return redirect()->route('dashboard')
                 ->with('info', 'Deklarasi nihil risiko untuk periode ini sudah dilakukan.');
         }
 
-        $jabatanList = $this->getJabatanList();
-        $adaLaporan = $this->adaLaporanDiPeriode($user->branch_id, $periode, $bulan, $tahun);
+        $jabatanList = $this->deklarasiNihilService->getJabatanList();
+        $adaLaporan = $this->deklarasiNihilService->adaLaporanDiPeriode($user->branch_id, $periode, $bulan, $tahun);
 
         return view('risk_free_declarations.create', compact(
             'jabatanList',
@@ -105,12 +57,12 @@ class RiskFreeDeclarationController extends Controller
             abort(Response::HTTP_FORBIDDEN, 'Hanya Checker (Kacab) yang bisa melakukan deklarasi.');
         }
 
-        $periode = $this->getCurrentPeriode();
+        $periode = $this->deklarasiNihilService->getCurrentPeriode();
         $bulan = now()->month;
         $tahun = now()->year;
 
         // Cek duplikasi
-        if ($this->sudahDeklarasi($user->branch_id, $periode, $bulan, $tahun)) {
+        if ($this->deklarasiNihilService->sudahDeklarasi($user->branch_id, $periode, $bulan, $tahun)) {
             return redirect()->route('dashboard')
                 ->with('error', 'Deklarasi untuk periode ini sudah ada.');
         }
@@ -122,38 +74,7 @@ class RiskFreeDeclarationController extends Controller
             'statement_text' => 'required|string|min:10',
         ]);
 
-        // Buat deklarasi header
-        $declaration = RiskFreeDeclaration::create([
-            'branch_id' => $user->branch_id,
-            'user_id' => $user->id,
-            'periode' => $periode,
-            'bulan' => $bulan,
-            'tahun' => $tahun,
-            'statement_text' => $request->statement_text,
-            'status' => 'active',
-        ]);
-
-        // Simpan detail per jabatan
-        foreach ($request->jabatan as $jabatan => $data) {
-            RiskFreeDeclarationDetail::create([
-                'risk_free_declaration_id' => $declaration->id,
-                'jabatan' => $jabatan,
-                'is_clean' => $data['is_clean'],
-                'keterangan' => $data['keterangan'] ?? null,
-            ]);
-        }
-
-        // Notifikasi ke Admin (ManRisk)
-        $manriskUsers = User::whereHas('roles', function ($q) {
-            $q->where('role_category', 'admin');
-        })->get();
-        foreach ($manriskUsers as $mr) {
-            Notification::create([
-                'user_id' => $mr->id,
-                'type' => 'declaration',
-                'message' => "Cabang {$user->branch->nama_cabang} telah melakukan deklarasi nihil risiko periode {$periode} bulan " . now()->translatedFormat('F Y') . ".",
-            ]);
-        }
+        $this->deklarasiNihilService->store($user, $request->all());
 
         return redirect()->route('dashboard')
             ->with('success', 'Deklarasi nihil risiko berhasil disimpan.');
@@ -169,43 +90,12 @@ class RiskFreeDeclarationController extends Controller
             abort(Response::HTTP_FORBIDDEN, 'Hanya Admin (ManRisk) yang bisa melakukan ini.');
         }
 
-        $declaration = RiskFreeDeclaration::findOrFail($id);
-
-        if ($declaration->status !== 'active') {
-            return back()->with('error', 'Deklarasi ini sudah tidak aktif.');
+        try {
+            $this->deklarasiNihilService->reject((int) $id, $user);
+            return back()->with('success', 'Deklarasi ditolak (rejected).');
+        } catch (\RuntimeException | \DomainException $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        $declaration->update([
-            'status' => 'rejected',
-            'rejected_at' => now(),
-            'rejected_by' => $user->id,
-        ]);
-
-        // Catat aktivitas reject ke log harian
-        Log::channel('daily')->info('[AUDIT] Declaration rejected by ManRisk', [
-            'user_id' => $user->id,
-            'user_name' => $user->name,
-            'declaration_id' => $declaration->id,
-            'branch_id' => $declaration->branch_id,
-            'periode' => $declaration->periode,
-            'bulan' => $declaration->bulan,
-            'tahun' => $declaration->tahun,
-        ]);
-
-        // Notifikasi ke Kacab
-        $kacabUsers = User::whereHas('roles', function ($q) {
-            $q->where('role_category', 'checker');
-        })->where('branch_id', $declaration->branch_id)
-            ->get();
-        foreach ($kacabUsers as $kacab) {
-            Notification::create([
-                'user_id' => $kacab->id,
-                'type' => 'declaration_rejected',
-                'message' => "Deklarasi nihil risiko cabang Anda untuk periode {$declaration->periode} bulan " . now()->setMonth($declaration->bulan)->translatedFormat('F Y') . " telah ditolak karena ditemukan laporan risiko.",
-            ]);
-        }
-
-        return back()->with('success', 'Deklarasi ditolak (rejected).');
     }
 
     /**
@@ -216,20 +106,10 @@ class RiskFreeDeclarationController extends Controller
         $user = Auth::user();
 
         if (!$user || !in_array($user->roleCategory(), ['checker', 'viewer', 'admin'])) {
-
             abort(Response::HTTP_FORBIDDEN, 'Akses ditolak.');
         }
 
-        $query = RiskFreeDeclaration::with(['branch', 'user', 'details']);
-
-        if ($user->roleCategory() === 'checker') {
-            $query->where('branch_id', $user->branch_id);
-        }
-
-        $declarations = $query->orderBy('tahun', 'desc')
-            ->orderBy('bulan', 'desc')
-            ->orderBy('periode', 'desc')
-            ->paginate(20);
+        $declarations = $this->deklarasiNihilService->getHistory($user);
 
         return view('risk_free_declarations.history', compact('declarations'));
     }
