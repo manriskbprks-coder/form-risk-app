@@ -15,6 +15,9 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+// =========================================================================
+// DASHBOARD — throttle 30 per menit (refresh halaman wajar, cegah DoS)
+// =========================================================================
 Route::get('/dashboard', function () {
     $user = auth()->user();
     $userBranchId = $user->branch_id;
@@ -414,7 +417,7 @@ Route::get('/dashboard', function () {
         'allBranches',
         'deklarasiSummaries'
     ));
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth', 'verified', 'throttle:30,1'])->name('dashboard');
 
 
 // =========================================================================
@@ -423,9 +426,11 @@ Route::get('/dashboard', function () {
 // =========================================================================
 Route::middleware('auth')->group(function () {
 
-    // --- Profile (Ganti Password) ---
+    // --- Profile (Ganti Password) — throttle 5 per menit ---
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::match(['post', 'patch'], '/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::match(['post', 'patch'], '/profile', [ProfileController::class, 'update'])
+        ->middleware('throttle:5,1')
+        ->name('profile.update');
 
     // --- MENU 1: INPUT LAPORAN (MAKER) — throttle 10 per menit ---
     Route::get('/form-risiko/{kategori}', [RiskReportController::class, 'create'])->name('form.risiko');
@@ -474,8 +479,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread_count');
 
-    // --- EXPORT CSV ---
-    Route::get('/export-risiko', [ExportRiskReportController::class, 'export'])->name('risk.export');
+    // --- EXPORT CSV — throttle 5 per menit (berat, cegah abuse) ---
+    Route::get('/export-risiko', [ExportRiskReportController::class, 'export'])
+        ->middleware('throttle:5,1')
+        ->name('risk.export');
 
     // --- DEKLARASI NIHIL RISIKO (Kacab) — throttle 10 per menit ---
     Route::get('/deklarasi-nihil', [RiskFreeDeclarationController::class, 'create'])->name('risk_free_declarations.create');
@@ -487,9 +494,9 @@ Route::middleware('auth')->group(function () {
 
 
 // =========================================================================
-// AREA KHUSUS DEWA APLIKASI (MANAJEMEN RISIKO)
+// AREA KHUSUS DEWA APLIKASI (MANAJEMEN RISIKO) — throttle 20 per menit
 // =========================================================================
-Route::middleware(['auth', 'admin'])->group(function () {
+Route::middleware(['auth', 'admin', 'throttle:20,1'])->group(function () {
     Route::get('/admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');
     Route::post('/admin/users/{user}/toggle-status', [AdminUserController::class, 'toggleStatus'])->name('admin.users.toggle');
 
