@@ -2,8 +2,7 @@
 
 namespace App\Services;
 
-use App\Domain\Enums\ApprovalStatus;
-use App\Domain\Enums\ResolutionStatus;
+use App\Domain\Enums\RiskReportStatus;
 use App\Domain\Enums\RoleCategory;
 use App\Domain\Rules\ApprovalRule;
 use App\Models\RiskReport;
@@ -31,7 +30,7 @@ class RiskReportService
     public function create(array $data, User $user): RiskReport
     {
         $roleCategory = RoleCategory::tryFrom($user->roleCategory() ?? '');
-        $targetApproval = $this->approvalRule->determineInitialStatus($roleCategory ?? RoleCategory::Maker);
+        $targetStatus = $this->approvalRule->determineInitialStatus($roleCategory ?? RoleCategory::Maker);
 
         // XSS Sanitization: strip_tags() dilakukan di sini (setelah validasi lolos)
         // sehingga validasi min_words:20 tetap berjalan di data asli
@@ -62,17 +61,14 @@ class RiskReportService
             'dampak_non_finansial' => $sanitized['dampak_non_finansial'],
             'skala_dampak' => $data['skala_dampak'] ?? null,
             'sumber_risiko' => $data['sumber_risiko'] ?? null,
-            'approval_status' => $targetApproval,
-            'resolution_status' => $data['status_awal'],
+            'status' => $targetStatus->value,
         ]);
-
-
 
         // Log pertama: laporan dibuat
         $report->logs()->create([
             'user_id' => $user->id,
             'note' => 'Laporan dibuat',
-            'status_after_note' => $targetApproval,
+            'status_after_note' => $targetStatus->value,
             'old_data' => null,
         ]);
 
@@ -81,18 +77,16 @@ class RiskReportService
             $report->logs()->create([
                 'user_id' => $user->id,
                 'note' => 'Penanganan Awal: ' . strip_tags($data['tindakan_awal']),
-                'status_after_note' => $data['status_awal'],
+                'status_after_note' => $targetStatus->value,
             ]);
         }
 
-
         // Notifikasi ke Kacab jika perlu approval
-        if ($targetApproval === ApprovalStatus::PendingKacab->value) {
+        if ($targetStatus === RiskReportStatus::PendingKacab) {
             $this->notifyKacabBranch($report, $user, 'new_report',
                 "Laporan baru dari {$user->name}: {$report->kode_laporan}"
             );
         }
-
 
         return $report;
     }
@@ -103,12 +97,12 @@ class RiskReportService
     public function approve(RiskReport $report, User $user): void
     {
         $this->approvalRule->validateTransition(
-            ApprovalStatus::tryFrom($report->approval_status) ?? ApprovalStatus::PendingKacab,
-            ApprovalStatus::Approved
+            RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::PendingKacab,
+            RiskReportStatus::ApprovedStatus
         );
 
         $report->update([
-            'approval_status' => ApprovalStatus::Approved->value,
+            'status' => RiskReportStatus::ApprovedStatus->value,
             'revision_note' => null,
         ]);
 
@@ -116,7 +110,7 @@ class RiskReportService
             'risk_report_id' => $report->id,
             'user_id' => $user->id,
             'note' => 'Laporan disetujui oleh Kacab',
-            'status_after_note' => ApprovalStatus::Approved->value,
+            'status_after_note' => RiskReportStatus::ApprovedStatus->value,
             'old_data' => null,
         ]);
 
@@ -132,19 +126,19 @@ class RiskReportService
     public function requestRevisionFromKacab(RiskReport $report, User $user, string $alasan): void
     {
         $this->approvalRule->validateTransition(
-            ApprovalStatus::tryFrom($report->approval_status) ?? ApprovalStatus::PendingKacab,
-            ApprovalStatus::NeedRevision
+            RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::PendingKacab,
+            RiskReportStatus::NeedRevision
         );
 
         $report->update([
-            'approval_status' => ApprovalStatus::NeedRevision->value,
+            'status' => RiskReportStatus::NeedRevision->value,
             'revision_note' => $alasan,
         ]);
 
         $report->logs()->create([
             'user_id' => $user->id,
             'note' => 'Revisi diminta oleh Kacab: ' . $alasan,
-            'status_after_note' => ApprovalStatus::NeedRevision->value,
+            'status_after_note' => RiskReportStatus::NeedRevision->value,
             'old_data' => null,
         ]);
 
@@ -160,19 +154,19 @@ class RiskReportService
     public function requestRevisionFromManRisk(RiskReport $report, User $user, string $revisionNote): void
     {
         $this->approvalRule->validateTransition(
-            ApprovalStatus::tryFrom($report->approval_status) ?? ApprovalStatus::Approved,
-            ApprovalStatus::NeedRevision
+            RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::ApprovedStatus,
+            RiskReportStatus::NeedRevision
         );
 
         $report->update([
-            'approval_status' => ApprovalStatus::NeedRevision->value,
+            'status' => RiskReportStatus::NeedRevision->value,
             'revision_note' => $revisionNote,
         ]);
 
         $report->logs()->create([
             'user_id' => $user->id,
             'note' => 'Revisi diminta oleh ManRisk: ' . $revisionNote,
-            'status_after_note' => ApprovalStatus::NeedRevision->value,
+            'status_after_note' => RiskReportStatus::NeedRevision->value,
             'old_data' => null,
         ]);
 
@@ -192,7 +186,7 @@ class RiskReportService
         $newStatus = $this->approvalRule->determineRevisionTarget($lastLog?->note);
 
         $this->approvalRule->validateTransition(
-            ApprovalStatus::NeedRevision,
+            RiskReportStatus::NeedRevision,
             $newStatus
         );
 
@@ -205,10 +199,9 @@ class RiskReportService
             'durasi_penyelesaian' => $data['durasi_penyelesaian'] ?? null,
             'durasi_satuan' => $data['durasi_satuan'] ?? null,
             'sumber_risiko' => $data['sumber_risiko'] ?? $report->sumber_risiko,
-            'approval_status' => $newStatus->value,
+            'status' => $newStatus->value,
             'revision_note' => null,
         ]);
-
 
         // Simpan snapshot old_data ke log
         $report->logs()->create([
@@ -219,7 +212,7 @@ class RiskReportService
         ]);
 
         // Notif ke reviewer
-        if ($newStatus === ApprovalStatus::PendingKacab) {
+        if ($newStatus === RiskReportStatus::PendingKacab) {
             $this->notifyKacabBranch($report, $user, 'revision_submitted',
                 "Revisi laporan {$report->kode_laporan} telah dikirim oleh {$user->name}."
             );
@@ -236,48 +229,48 @@ class RiskReportService
     public function approveRevision(RiskReport $report, User $user): void
     {
         $this->approvalRule->validateTransition(
-            ApprovalStatus::tryFrom($report->approval_status) ?? ApprovalStatus::PendingRevision,
-            ApprovalStatus::Approved
+            RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::PendingRevision,
+            RiskReportStatus::ApprovedStatus
         );
 
         $report->update([
-            'approval_status' => ApprovalStatus::Approved->value,
+            'status' => RiskReportStatus::ApprovedStatus->value,
             'revision_note' => null,
         ]);
 
         $report->logs()->create([
             'user_id' => $user->id,
             'note' => 'Revisi disetujui oleh ManRisk',
-            'status_after_note' => ApprovalStatus::Approved->value,
+            'status_after_note' => RiskReportStatus::ApprovedStatus->value,
             'old_data' => null,
         ]);
 
         $this->notificationService->notifyMaker($report, 'approved',
             "Revisi laporan {$report->kode_laporan} telah disetujui oleh ManRisk."
         );
-
     }
 
     /**
-     * Update resolution status (tindak lanjut).
+     * Update status laporan (tindak lanjut / progress).
+     * Transisi: approved → in_progress, in_progress → closed
      */
     public function updateResolution(RiskReport $report, User $user, string $newStatus): void
     {
-        $oldStatus = $report->resolution_status;
+        $oldStatus = $report->status;
 
-        // Validasi transisi resolution status
-        $fromStatus = ResolutionStatus::tryFrom($oldStatus) ?? ResolutionStatus::Open;
-        $toStatus = ResolutionStatus::tryFrom($newStatus) ?? ResolutionStatus::Open;
+        // Validasi transisi status
+        $fromStatus = RiskReportStatus::tryFrom($oldStatus) ?? RiskReportStatus::ApprovedStatus;
+        $toStatus = RiskReportStatus::tryFrom($newStatus) ?? RiskReportStatus::ApprovedStatus;
 
         if (!$fromStatus->canTransitionTo($toStatus)) {
             throw new \DomainException(
-                "Transisi resolution status tidak valid: dari '{$oldStatus}' ke '{$newStatus}'."
+                "Transisi status tidak valid: dari '{$oldStatus}' ke '{$newStatus}'."
             );
         }
 
-        $report->update(['resolution_status' => $newStatus]);
+        $report->update(['status' => $newStatus]);
 
-        Log::channel('daily')->info('[AUDIT] Resolution status updated', [
+        Log::channel('daily')->info('[AUDIT] Status updated', [
             'user_id' => $user->id,
             'user_name' => $user->name,
             'report_id' => $report->id,
@@ -298,15 +291,14 @@ class RiskReportService
             'status_after_note' => $newStatus,
         ]);
 
-        $report->update(['resolution_status' => $newStatus]);
+        $report->update(['status' => $newStatus]);
 
         // Notifikasi ke Maker jika laporan di-closed
-        if ($newStatus === ResolutionStatus::Closed->value) {
+        if ($newStatus === RiskReportStatus::Closed->value) {
             $this->notificationService->notifyMaker($report, 'closed',
                 "Laporan {$report->kode_laporan} telah ditutup oleh {$user->name}."
             );
         }
-
     }
 
 

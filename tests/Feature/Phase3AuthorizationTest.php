@@ -185,8 +185,7 @@ class Phase3AuthorizationTest extends TestCase
             'risk_item_id' => $this->riskItem->id,
             'risk_cause_id' => $this->cause->id,
             'kategori' => 'finansial',
-            'approval_status' => 'pending_kacab',
-            'resolution_status' => 'open',
+            'status' => 'pending_kacab',
             'kode_laporan' => 'RISK-CBATL-202605-0001',
         ]);
 
@@ -197,8 +196,7 @@ class Phase3AuthorizationTest extends TestCase
             'risk_item_id' => $this->riskItem->id,
             'risk_cause_id' => $this->cause->id,
             'kategori' => 'finansial',
-            'approval_status' => 'pending_kacab',
-            'resolution_status' => 'open',
+            'status' => 'pending_kacab',
             'kode_laporan' => 'RISK-CBBTL-202605-0001',
         ]);
     }
@@ -272,8 +270,8 @@ class Phase3AuthorizationTest extends TestCase
             'risk_item_id' => $this->riskItem->id,
             'risk_cause_id' => $this->cause->id,
             'kategori' => 'finansial',
-            'approval_status' => 'pending_kacab',
-            'resolution_status' => 'open',
+            'status' => 'pending_kacab',
+            'status' => 'open',
             'kode_laporan' => 'RISK-CBCTL-202605-0001',
         ]);
 
@@ -337,14 +335,14 @@ class Phase3AuthorizationTest extends TestCase
 
         $response->assertStatus(302);
         $this->reportBranchA->refresh();
-        $this->assertEquals('approved', $this->reportBranchA->approval_status);
+        $this->assertEquals('approved', $this->reportBranchA->status);
     }
 
     #[Test]
     public function kacab_cannot_double_approve_report()
     {
         // Approve dulu
-        $this->reportBranchA->update(['approval_status' => 'approved']);
+        $this->reportBranchA->update(['status' => 'approved']);
 
         $this->actingAs($this->kacabA);
 
@@ -376,7 +374,7 @@ class Phase3AuthorizationTest extends TestCase
     #[Test]
     public function teller_cannot_close_report()
     {
-        $this->reportBranchA->update(['approval_status' => 'approved']);
+        $this->reportBranchA->update(['status' => 'approved']);
 
         $this->actingAs($this->tellerA);
 
@@ -392,7 +390,7 @@ class Phase3AuthorizationTest extends TestCase
     #[Test]
     public function kacab_cannot_close_report_from_other_branch()
     {
-        $this->reportBranchB->update(['approval_status' => 'approved']);
+        $this->reportBranchB->update(['status' => 'approved']);
 
         $this->actingAs($this->kacabA);
 
@@ -408,7 +406,7 @@ class Phase3AuthorizationTest extends TestCase
     #[Test]
     public function kacab_can_close_report_from_own_branch()
     {
-        $this->reportBranchA->update(['approval_status' => 'approved']);
+        $this->reportBranchA->update(['status' => 'approved']);
 
         $this->actingAs($this->kacabA);
 
@@ -419,7 +417,7 @@ class Phase3AuthorizationTest extends TestCase
 
         $response->assertStatus(302);
         $this->reportBranchA->refresh();
-        $this->assertEquals('closed', $this->reportBranchA->resolution_status);
+        $this->assertEquals('closed', $this->reportBranchA->status);
     }
 
     // ========================================================================
@@ -429,7 +427,7 @@ class Phase3AuthorizationTest extends TestCase
     #[Test]
     public function only_manrisk_can_request_revision()
     {
-        $this->reportBranchA->update(['approval_status' => 'approved']);
+        $this->reportBranchA->update(['status' => 'approved']);
 
         // Teller coba minta revisi → harus 403
         $this->actingAs($this->tellerA);
@@ -444,7 +442,7 @@ class Phase3AuthorizationTest extends TestCase
     #[Test]
     public function manrisk_can_request_revision()
     {
-        $this->reportBranchA->update(['approval_status' => 'approved']);
+        $this->reportBranchA->update(['status' => 'approved']);
 
         $this->actingAs($this->manrisk);
 
@@ -454,13 +452,13 @@ class Phase3AuthorizationTest extends TestCase
 
         $response->assertStatus(302);
         $this->reportBranchA->refresh();
-        $this->assertEquals('need_revision', $this->reportBranchA->approval_status);
+        $this->assertEquals('need_revision', $this->reportBranchA->status);
     }
 
     #[Test]
     public function only_manrisk_can_approve_revision()
     {
-        $this->reportBranchA->update(['approval_status' => 'pending_revision']);
+        $this->reportBranchA->update(['status' => 'pending_revision']);
 
         // Kacab coba approve revisi → harus 403
         $this->actingAs($this->kacabA);
@@ -473,7 +471,7 @@ class Phase3AuthorizationTest extends TestCase
     #[Test]
     public function manrisk_can_approve_revision()
     {
-        $this->reportBranchA->update(['approval_status' => 'pending_revision']);
+        $this->reportBranchA->update(['status' => 'pending_revision']);
 
         $this->actingAs($this->manrisk);
 
@@ -481,7 +479,7 @@ class Phase3AuthorizationTest extends TestCase
 
         $response->assertStatus(302);
         $this->reportBranchA->refresh();
-        $this->assertEquals('approved', $this->reportBranchA->approval_status);
+        $this->assertEquals('approved', $this->reportBranchA->status);
     }
 
     // ========================================================================
@@ -706,7 +704,7 @@ class Phase3AuthorizationTest extends TestCase
     #[Test]
     public function cannot_approve_already_approved_report()
     {
-        $this->reportBranchA->update(['approval_status' => 'approved']);
+        $this->reportBranchA->update(['status' => 'approved']);
 
         $this->actingAs($this->kacabA);
 
@@ -720,7 +718,7 @@ class Phase3AuthorizationTest extends TestCase
     #[Test]
     public function cannot_submit_revision_on_non_revision_status()
     {
-        $this->reportBranchA->update(['approval_status' => 'approved']);
+        $this->reportBranchA->update(['status' => 'approved']);
 
         $this->actingAs($this->tellerA);
 
@@ -743,8 +741,8 @@ class Phase3AuthorizationTest extends TestCase
             'risk_item_id' => $this->riskItem->id,
             'risk_cause_id' => $this->cause->id,
             'kategori' => 'finansial',
-            'approval_status' => 'pending_kacab',
-            'resolution_status' => 'open',
+            'status' => 'pending_kacab',
+            'status' => 'open',
             'kode_laporan' => 'RISK-CBAKC-202605-0001',
         ]);
 
@@ -758,7 +756,7 @@ class Phase3AuthorizationTest extends TestCase
         // Ini sesuai policy: kacab bisa approve laporan cabangnya
         $response->assertStatus(302);
         $ownReport->refresh();
-        $this->assertEquals('approved', $ownReport->approval_status);
+        $this->assertEquals('approved', $ownReport->status);
     }
 
     #[Test]
@@ -767,7 +765,7 @@ class Phase3AuthorizationTest extends TestCase
         $this->actingAs($this->korwil);
 
         $response = $this->post(route('risk_reports.update_resolution', $this->reportBranchA->id), [
-            'resolution_status' => 'in_progress',
+            'status' => 'in_progress',
         ]);
 
         // Korwil hanya pantau — harus 403
@@ -780,7 +778,7 @@ class Phase3AuthorizationTest extends TestCase
         $this->actingAs($this->manrisk);
 
         $response = $this->post(route('risk_reports.update_resolution', $this->reportBranchA->id), [
-            'resolution_status' => 'in_progress',
+            'status' => 'in_progress',
         ]);
 
         // ManRisk hanya pantau — harus 403

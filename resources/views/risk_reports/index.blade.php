@@ -45,7 +45,7 @@
                             </svg>
                             Cari
                         </button>
-                        @if(request()->anyFilled(['search', 'kategori', 'resolution_status', 'approval_status', 'branch_id', 'jabatan', 'start_date', 'end_date']))
+                        @if(request()->anyFilled(['search', 'kategori', 'status', 'branch_id', 'jabatan', 'start_date', 'end_date']))
                         <a href="{{ route('risk.history') }}" class="w-full sm:w-auto inline-flex items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg text-sm transition">
                             Reset
                         </a>
@@ -93,13 +93,14 @@
                         @endif
 
                         <div>
-                            <select name="approval_status" class="w-full rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                <option value="">Semua Status Approval</option>
-                                <option value="pending_kacab" {{ request('approval_status') == 'pending_kacab' ? 'selected' : '' }}>Pending Kacab</option>
-                                <option value="approved" {{ request('approval_status') == 'approved' ? 'selected' : '' }}>Approved</option>
-                                <option value="rejected" {{ request('approval_status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
-                                <option value="need_revision" {{ request('approval_status') == 'need_revision' ? 'selected' : '' }}>Need Revision</option>
-                                <option value="pending_revision" {{ request('approval_status') == 'pending_revision' ? 'selected' : '' }}>Pending Revision</option>
+                            <select name="status" class="w-full rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">Semua Status</option>
+                                <option value="pending_kacab" {{ request('status') == 'pending_kacab' ? 'selected' : '' }}>Pending Kacab</option>
+                                <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                                <option value="need_revision" {{ request('status') == 'need_revision' ? 'selected' : '' }}>Need Revision</option>
+                                <option value="pending_revision" {{ request('status') == 'pending_revision' ? 'selected' : '' }}>Pending Revision</option>
+                                <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                                <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed</option>
                             </select>
                         </div>
                     </div>
@@ -146,7 +147,7 @@
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="sumber">Sumber / Kategori</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider">Risiko & Penyebab</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="dampak">Dampak</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="approval">Status</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="status">Status</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Aksi</th>
                             </tr>
                         </thead>
@@ -162,21 +163,15 @@
                             ];
                             $sumber = $sumberLabels[$sumberRisiko] ?? $sumberLabels['manusia'];
 
-                            $approvalColors = [
+                            $statusColors = [
                                 'pending_kacab' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
                                 'approved' => 'bg-green-100 text-green-800 border-green-200',
-                                'rejected' => 'bg-red-100 text-red-800 border-red-200',
                                 'need_revision' => 'bg-orange-100 text-orange-800 border-orange-200',
                                 'pending_revision' => 'bg-blue-100 text-blue-800 border-blue-200',
-                            ];
-                            $approvalClass = $approvalColors[$report->approval_status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
-
-                            $resolutionColors = [
-                                'open' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                                'in_progress' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                'in_progress' => 'bg-indigo-100 text-indigo-800 border-indigo-200',
                                 'closed' => 'bg-green-100 text-green-800 border-green-200',
                             ];
-                            $resolutionClass = $resolutionColors[$report->resolution_status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
+                            $statusClass = $statusColors[$report->status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
                             @endphp
                             <tr class="hover:bg-gray-50 align-middle">
                                 <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->kode_laporan ?? '' }}">
@@ -239,12 +234,9 @@
                                     </div>
                                     @endif
                                 </td>
-                                {{-- Status (Approval + Resolusi) --}}
-                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->approval_status }}">
-                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $approvalClass }}">{{ str_replace('_', ' ', $report->approval_status) }}</span>
-                                    <div class="mt-1">
-                                        <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $resolutionClass }}">{{ str_replace('_', ' ', $report->resolution_status) }}</span>
-                                    </div>
+                                {{-- Status --}}
+                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->status }}">
+                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $statusClass }}">{{ str_replace('_', ' ', $report->status) }}</span>
                                 </td>
                                 {{-- Aksi --}}
                                 <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
@@ -297,7 +289,7 @@
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="sumber">Sumber / Kategori</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider">Risiko & Penyebab</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="dampak">Dampak</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="approval">Status</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="status">Status</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Aksi</th>
                             </tr>
                         </thead>
@@ -313,21 +305,15 @@
                             ];
                             $sumber = $sumberLabels[$sumberRisiko] ?? $sumberLabels['manusia'];
 
-                            $approvalColors = [
+                            $statusColors = [
                                 'pending_kacab' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
                                 'approved' => 'bg-green-100 text-green-800 border-green-200',
-                                'rejected' => 'bg-red-100 text-red-800 border-red-200',
                                 'need_revision' => 'bg-orange-100 text-orange-800 border-orange-200',
                                 'pending_revision' => 'bg-blue-100 text-blue-800 border-blue-200',
-                            ];
-                            $approvalClass = $approvalColors[$report->approval_status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
-
-                            $resolutionColors = [
-                                'open' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                                'in_progress' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                'in_progress' => 'bg-indigo-100 text-indigo-800 border-indigo-200',
                                 'closed' => 'bg-green-100 text-green-800 border-green-200',
                             ];
-                            $resolutionClass = $resolutionColors[$report->resolution_status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
+                            $statusClass = $statusColors[$report->status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
                             @endphp
                             <tr class="hover:bg-gray-50 align-middle">
                                 <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->kode_laporan ?? '' }}">
@@ -390,12 +376,9 @@
                                     </div>
                                     @endif
                                 </td>
-                                {{-- Status (Approval + Resolusi) --}}
-                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->approval_status }}">
-                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $approvalClass }}">{{ str_replace('_', ' ', $report->approval_status) }}</span>
-                                    <div class="mt-1">
-                                        <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $resolutionClass }}">{{ str_replace('_', ' ', $report->resolution_status) }}</span>
-                                    </div>
+                                {{-- Status --}}
+                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->status }}">
+                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $statusClass }}">{{ str_replace('_', ' ', $report->status) }}</span>
                                 </td>
                                 {{-- Aksi --}}
                                 <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
@@ -486,62 +469,51 @@
                         const dataRows = rows.filter(function(row) {
                             return row.querySelector('td[data-sort-value]');
                         });
+
                         dataRows.sort(function(a, b) {
-                            const valA = a.querySelector('td[data-sort-value]').getAttribute('data-sort-value') || '';
-                            const valB = b.querySelector('td[data-sort-value]').getAttribute('data-sort-value') || '';
-                            return valB.localeCompare(valA); // descending
+                            const tdIndex = Array.from(defaultSortHeader.parentElement.children).indexOf(defaultSortHeader);
+                            const aTd = a.children[tdIndex];
+                            const bTd = b.children[tdIndex];
+                            let aVal = aTd?.dataset.sortValue || '';
+                            let bVal = bTd?.dataset.sortValue || '';
+
+                            // Descending: terbaru di atas
+                            return bVal.localeCompare(aVal);
                         });
-                        dataRows.forEach(function(row) {
-                            tbody.appendChild(row);
-                        });
-                    }, 100);
+
+                        dataRows.forEach(row => tbody.appendChild(row));
+                    }, 50);
                 }
 
                 headers.forEach(function(header) {
                     header.addEventListener('click', function() {
-                        const sortKey = header.getAttribute('data-sort');
-                        if (!sortKey || !tbody) return;
+                        const isAsc = this.classList.contains('asc');
 
-                        const isAsc = header.classList.contains('asc');
-                        const isDesc = header.classList.contains('desc');
+                        // Reset all headers
+                        headers.forEach(h => h.classList.remove('asc', 'desc'));
 
-                        headers.forEach(function(h) {
-                            h.classList.remove('asc', 'desc');
-                        });
+                        // Toggle
+                        this.classList.add(isAsc ? 'desc' : 'asc');
 
-                        if (!isAsc && !isDesc) {
-                            header.classList.add('asc');
-                        } else if (isAsc) {
-                            header.classList.add('desc');
-                        } else {
-                            header.classList.add('asc');
-                        }
-
-                        const sortAsc = header.classList.contains('asc');
                         const rows = Array.from(tbody.querySelectorAll('tr'));
-                        const dataRows = rows.filter(function(row) {
-                            return row.querySelector('td[data-sort-value]');
-                        });
+                        const dataRows = rows.filter(row => row.querySelector('td[data-sort-value]'));
 
                         dataRows.sort(function(a, b) {
-                            const cellA = a.querySelector('td[data-sort-value]');
-                            const cellB = b.querySelector('td[data-sort-value]');
-                            if (!cellA || !cellB) return 0;
-                            const valA = cellA.getAttribute('data-sort-value') || '';
-                            const valB = cellB.getAttribute('data-sort-value') || '';
+                            const tdIndex = Array.from(header.parentElement.children).indexOf(header);
+                            const aTd = a.children[tdIndex];
+                            const bTd = b.children[tdIndex];
+                            let aVal = aTd?.dataset.sortValue || '';
+                            let bVal = bTd?.dataset.sortValue || '';
 
-                            if (sortKey === 'dampak') {
-                                const numA = parseFloat(valA.replace(/[^0-9.-]/g, '')) || 0;
-                                const numB = parseFloat(valB.replace(/[^0-9.-]/g, '')) || 0;
-                                return sortAsc ? numA - numB : numB - numA;
+                            if (!isNaN(aVal) && !isNaN(bVal)) {
+                                return isAsc ? bVal - aVal : aVal - bVal;
                             }
-
-                            return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                            return isAsc
+                                ? bVal.localeCompare(aVal)
+                                : aVal.localeCompare(bVal);
                         });
 
-                        dataRows.forEach(function(row) {
-                            tbody.appendChild(row);
-                        });
+                        dataRows.forEach(row => tbody.appendChild(row));
                     });
                 });
             });

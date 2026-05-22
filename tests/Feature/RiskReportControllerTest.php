@@ -194,8 +194,7 @@ class RiskReportControllerTest extends TestCase
             'risk_item_id' => $this->riskItemFinansial->id,
             'risk_cause_id' => $this->cause->id,
             'dampak_finansial' => 5000000,
-            'approval_status' => 'pending_kacab',
-            'resolution_status' => 'open',
+            'status' => 'pending_kacab',
         ]);
     }
 
@@ -223,7 +222,7 @@ class RiskReportControllerTest extends TestCase
             'user_id' => $this->teller->id,
             'kategori' => 'non-finansial',
             'skala_dampak' => 'sedang',
-            'approval_status' => 'pending_kacab',
+            'status' => 'pending_kacab',
         ]);
     }
 
@@ -313,7 +312,7 @@ class RiskReportControllerTest extends TestCase
 
         $this->assertDatabaseHas('risk_reports', [
             'user_id' => $this->kacab->id,
-            'approval_status' => 'approved',
+            'status' => 'approved',
         ]);
     }
 
@@ -416,7 +415,7 @@ class RiskReportControllerTest extends TestCase
             'risk_report_id' => $report->id,
             'user_id' => $this->teller->id,
             'note' => 'Penanganan Awal: Melakukan pengecekan ulang',
-            'status_after_note' => 'open',
+            'status_after_note' => 'pending_kacab',
         ]);
     }
 
@@ -451,14 +450,14 @@ class RiskReportControllerTest extends TestCase
         RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'pending_kacab',
+            'status' => 'pending_kacab',
         ]);
 
         // Buat laporan di cabang B
         RiskReport::factory()->create([
             'branch_id' => $this->branchLain->id,
             'user_id' => User::factory()->create(['branch_id' => $this->branchLain->id])->id,
-            'approval_status' => 'pending_kacab',
+            'status' => 'pending_kacab',
         ]);
 
         $response = $this->actingAs($this->kacab)
@@ -475,7 +474,7 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'pending_kacab',
+            'status' => 'pending_kacab',
         ]);
 
         $this->actingAs($this->kacab)
@@ -487,7 +486,7 @@ class RiskReportControllerTest extends TestCase
 
         $this->assertDatabaseHas('risk_reports', [
             'id' => $report->id,
-            'approval_status' => 'approved',
+            'status' => 'approved',
         ]);
     }
 
@@ -497,12 +496,12 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'pending_kacab',
+            'status' => 'pending_kacab',
         ]);
 
         $this->actingAs($this->kacab)
             ->post(route('risk_reports.update_status', $report->id), [
-                'status' => 'rejected',
+                'status' => 'need_revision',
                 'alasan_reject' => 'Data kronologis tidak lengkap dan perlu diperbaiki.',
             ])
             ->assertRedirect()
@@ -510,7 +509,7 @@ class RiskReportControllerTest extends TestCase
 
         $this->assertDatabaseHas('risk_reports', [
             'id' => $report->id,
-            'approval_status' => 'need_revision',
+            'status' => 'need_revision',
         ]);
     }
 
@@ -520,7 +519,7 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branchLain->id,
             'user_id' => User::factory()->create(['branch_id' => $this->branchLain->id])->id,
-            'approval_status' => 'pending_kacab',
+            'status' => 'pending_kacab',
         ]);
 
         $this->actingAs($this->kacab)
@@ -536,7 +535,7 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'approved',
+            'status' => 'approved',
         ]);
 
         $this->actingAs($this->kacab)
@@ -553,16 +552,14 @@ class RiskReportControllerTest extends TestCase
         RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'approved',
-            'resolution_status' => 'open',
+            'status' => 'approved',
         ]);
 
         // Laporan approved & closed — ga muncul
         RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'approved',
-            'resolution_status' => 'closed',
+            'status' => 'closed',
         ]);
 
         $response = $this->actingAs($this->kacab)
@@ -582,20 +579,19 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'approved',
-            'resolution_status' => 'open',
+            'status' => 'approved',
         ]);
 
         $this->actingAs($this->kacab)
             ->post(route('risk_reports.update_resolution', $report->id), [
-                'resolution_status' => 'in_progress',
+                'status' => 'in_progress',
             ])
             ->assertRedirect()
             ->assertSessionHas('success');
 
         $this->assertDatabaseHas('risk_reports', [
             'id' => $report->id,
-            'resolution_status' => 'in_progress',
+            'status' => 'in_progress',
         ]);
     }
 
@@ -609,8 +605,7 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'approved',
-            'resolution_status' => 'open',
+            'status' => 'approved',
         ]);
 
         $this->actingAs($this->teller)
@@ -630,7 +625,7 @@ class RiskReportControllerTest extends TestCase
 
         $this->assertDatabaseHas('risk_reports', [
             'id' => $report->id,
-            'resolution_status' => 'in_progress',
+            'status' => 'in_progress',
         ]);
     }
 
@@ -640,8 +635,7 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'approved',
-            'resolution_status' => 'in_progress',
+            'status' => 'in_progress',
         ]);
 
         $this->actingAs($this->teller)
@@ -654,7 +648,7 @@ class RiskReportControllerTest extends TestCase
 
         $this->assertDatabaseMissing('risk_reports', [
             'id' => $report->id,
-            'resolution_status' => 'closed',
+            'status' => 'closed',
         ]);
     }
 
@@ -664,8 +658,7 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'approved',
-            'resolution_status' => 'in_progress',
+            'status' => 'in_progress',
         ]);
 
         $this->actingAs($this->kacab)
@@ -678,7 +671,7 @@ class RiskReportControllerTest extends TestCase
 
         $this->assertDatabaseHas('risk_reports', [
             'id' => $report->id,
-            'resolution_status' => 'closed',
+            'status' => 'closed',
         ]);
     }
 
@@ -688,8 +681,7 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branchLain->id,
             'user_id' => User::factory()->create(['branch_id' => $this->branchLain->id])->id,
-            'approval_status' => 'approved',
-            'resolution_status' => 'in_progress',
+            'status' => 'in_progress',
         ]);
 
         $this->actingAs($this->kacab)
@@ -706,8 +698,7 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'approved',
-            'resolution_status' => 'open',
+            'status' => 'approved',
         ]);
 
         $this->actingAs($this->manrisk)
@@ -724,8 +715,7 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'approved',
-            'resolution_status' => 'open',
+            'status' => 'approved',
         ]);
 
         $this->actingAs($this->korwil)
@@ -742,8 +732,7 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'approved',
-            'resolution_status' => 'open',
+            'status' => 'approved',
         ]);
 
         $this->actingAs($this->teller)
@@ -911,13 +900,13 @@ class RiskReportControllerTest extends TestCase
     }
 
     #[Test]
-    public function history_can_filter_by_resolution_status()
+    public function history_can_filter_by_status()
     {
-        RiskReport::factory()->create(['user_id' => $this->teller->id, 'branch_id' => $this->branch->id, 'resolution_status' => 'open']);
-        RiskReport::factory()->create(['user_id' => $this->teller->id, 'branch_id' => $this->branch->id, 'resolution_status' => 'closed']);
+        RiskReport::factory()->create(['user_id' => $this->teller->id, 'branch_id' => $this->branch->id, 'status' => 'open']);
+        RiskReport::factory()->create(['user_id' => $this->teller->id, 'branch_id' => $this->branch->id, 'status' => 'closed']);
 
         $response = $this->actingAs($this->manrisk)
-            ->get(route('risk.history', ['resolution_status' => 'open']));
+            ->get(route('risk.history', ['status' => 'open']));
 
         $response->assertOk();
         $this->assertCount(1, $response->viewData('activeReports'));
@@ -955,21 +944,21 @@ class RiskReportControllerTest extends TestCase
             'branch_id' => $this->branch->id,
             'kategori' => 'finansial',
             'dampak_finansial' => 1000000,
-            'approval_status' => 'approved',
+            'status' => 'approved',
         ]);
         RiskReport::factory()->create([
             'user_id' => $this->teller->id,
             'branch_id' => $this->branch->id,
             'kategori' => 'finansial',
             'dampak_finansial' => 2000000,
-            'approval_status' => 'approved',
+            'status' => 'approved',
         ]);
         RiskReport::factory()->create([
             'user_id' => $this->teller->id,
             'branch_id' => $this->branch->id,
             'kategori' => 'finansial',
             'dampak_finansial' => 500000,
-            'approval_status' => 'pending_kacab', // not approved, not counted
+            'status' => 'pending_kacab', // not approved, not counted
         ]);
 
         $response = $this->actingAs($this->manrisk)
@@ -989,13 +978,13 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'approved',
-            'resolution_status' => 'open',
+            'status' => 'approved',
+            'status' => 'open',
         ]);
 
         $this->actingAs($this->manrisk)
             ->post(route('risk_reports.update_resolution', $report->id), [
-                'resolution_status' => 'in_progress',
+                'status' => 'in_progress',
             ])
             ->assertForbidden();
     }
@@ -1006,13 +995,13 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'approved',
-            'resolution_status' => 'open',
+            'status' => 'approved',
+            'status' => 'open',
         ]);
 
         $this->actingAs($this->korwil)
             ->post(route('risk_reports.update_resolution', $report->id), [
-                'resolution_status' => 'in_progress',
+                'status' => 'in_progress',
             ])
             ->assertForbidden();
     }
@@ -1027,7 +1016,7 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'pending_kacab',
+            'status' => 'pending_kacab',
         ]);
 
         $this->actingAs($this->kacab)
@@ -1045,7 +1034,7 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'pending_kacab',
+            'status' => 'pending_kacab',
         ]);
 
         $this->actingAs($this->kacab)
@@ -1067,17 +1056,17 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'approved',
-            'resolution_status' => 'open',
+            'status' => 'approved',
+            'status' => 'open',
         ]);
 
         $this->actingAs($this->kacab)
             ->from(route('review.laporan'))
             ->post(route('risk_reports.update_resolution', $report->id), [
-                'resolution_status' => '',
+                'status' => '',
             ])
             ->assertRedirect(route('review.laporan'))
-            ->assertSessionHasErrors('resolution_status');
+            ->assertSessionHasErrors('status');
     }
 
     // =======================================================================
@@ -1090,8 +1079,8 @@ class RiskReportControllerTest extends TestCase
         $report = RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'approved',
-            'resolution_status' => 'open',
+            'status' => 'approved',
+            'status' => 'open',
         ]);
 
         $this->actingAs($this->teller)

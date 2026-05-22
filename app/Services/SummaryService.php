@@ -2,8 +2,7 @@
 
 namespace App\Services;
 
-use App\Domain\Enums\ApprovalStatus;
-use App\Domain\Enums\ResolutionStatus;
+use App\Domain\Enums\RiskReportStatus;
 use App\Domain\Enums\RoleCategory;
 use App\Models\Branch;
 use App\Models\RiskFreeDeclaration;
@@ -18,42 +17,46 @@ class SummaryService
      * @param User $user
      * @param string $roleCategory
      * @param array $branchIds
+     * @param \Carbon\Carbon|null $dateFilter
+     * @param \Carbon\Carbon|null $dateFilterEnd
      * @return array ['totalClosed', 'totalPending', 'totalLossApproved', 'totalInProgress', 'labelTotalLaporan']
      */
-    public function getStatCards(User $user, string $roleCategory, array $branchIds): array
+    public function getStatCards(User $user, string $roleCategory, array $branchIds, $dateFilter = null, $dateFilterEnd = null): array
     {
         $reportQuery = RiskReport::query();
 
         if (in_array($roleCategory, [RoleCategory::Viewer->value, RoleCategory::Admin->value])) {
-            if ($roleCategory === RoleCategory::Viewer->value) {
-                $reportQuery->whereIn('branch_id', $branchIds);
-            }
-            // admin ga perlu filter (lihat semua)
+            // Viewer & Admin: apply branch filter
+            $reportQuery->whereIn('branch_id', $branchIds);
         } elseif ($roleCategory === RoleCategory::Checker->value) {
             $reportQuery->where('branch_id', $user->branch_id);
         } elseif ($roleCategory === RoleCategory::Maker->value) {
             $reportQuery->where('user_id', $user->id);
         }
 
+        // Apply date filter jika ada
+        if ($dateFilter && $dateFilterEnd) {
+            $reportQuery->whereBetween('created_at', [$dateFilter, $dateFilterEnd]);
+        }
+
         $totalClosed = (clone $reportQuery)
-            ->where('resolution_status', ResolutionStatus::Closed->value)
+            ->where('status', RiskReportStatus::Closed->value)
             ->count();
 
         $totalPending = (clone $reportQuery)
             ->where(function ($q) {
-                $q->where('approval_status', ApprovalStatus::PendingKacab->value)
-                  ->orWhere('approval_status', ApprovalStatus::PendingKacab->value)
-                  ->orWhere('approval_status', 'pending_korwil');
+                $q->where('status', RiskReportStatus::PendingKacab->value)
+                  ->orWhere('status', 'pending_korwil');
             })
             ->count();
 
         $totalLossApproved = (clone $reportQuery)
-            ->where('approval_status', ApprovalStatus::Approved->value)
+            ->where('status', RiskReportStatus::ApprovedStatus->value)
             ->where('kategori', 'finansial')
             ->sum('dampak_finansial');
 
         $totalInProgress = (clone $reportQuery)
-            ->where('resolution_status', ResolutionStatus::InProgress->value)
+            ->where('status', RiskReportStatus::InProgress->value)
             ->count();
 
         $labelTotalLaporan = match($roleCategory) {
@@ -81,11 +84,11 @@ class SummaryService
     {
         if ($roleCategory === RoleCategory::Checker->value) {
             return RiskReport::where('branch_id', $user->branch_id)
-                ->where('approval_status', ApprovalStatus::PendingKacab->value)
+                ->where('status', RiskReportStatus::PendingKacab->value)
                 ->count();
         } elseif ($roleCategory === RoleCategory::Viewer->value) {
             return RiskReport::whereIn('branch_id', $branchIds)
-                ->where('approval_status', 'pending_korwil')
+                ->where('status', 'pending_korwil')
                 ->count();
         }
 
@@ -122,27 +125,43 @@ class SummaryService
      * Dapatkan ringkasan per cabang (khusus ManRisk).
      *
      * @param \Illuminate\Support\Collection $allBranches
-     * @param int $periode
+     * @param array $bulanFilters Array format "Y-m", contoh ["2026-05", "2026-04"]. Kosong = semua waktu (10 tahun).
+     * @param array $branchIds Filter cabang tertentu. Kosong = semua cabang dari $allBranches.
      * @return array ['branchSummaries' => [], 'branchChartLabels' => [], 'branchChartData' => [], 'branchChartColors' => []]
      */
-    public function getBranchSummaries($allBranches, int $periode): array
+    public function getBranchSummaries($allBranches, array $bulanFilters = [], array $branchIds = []): array
     {
         $branchSummaries = [];
         $branchChartLabels = [];
         $branchChartData = [];
         $branchChartColors = [];
 
-        $dateFilter = $periode > 0 ? now()->subMonths($periode) : now()->subYears(10);
+        // Filter cabang: jika $branchIds tidak kosong, filter $allBranches
+        if (!empty($branchIds)) {
+            $allBranches = $allBranches->whereIn('id', $branchIds);
+        }
+
+        // Parse bulan filter — ambil range dari bulan paling awal ke paling akhir
+        if (!empty($bulanFilters)) {
+            $sortedMonths = collect($bulanFilters)->sort();
+            $dateStart = \Carbon\Carbon::parse($sortedMonths->first() . '-01')->startOfMonth();
+            $dateEnd = \Carbon\Carbon::parse($sortedMonths->last() . '-01')->endOfMonth();
+        } else {
+            $dateStart = now()->subYears(10);
+            $dateEnd = now();
+        }
+
         $maxTotal = 0;
 
         foreach ($allBranches as $branch) {
             $query = RiskReport::where('branch_id', $branch->id)
-                ->where('created_at', '>=', $dateFilter);
+                ->whereBetween('created_at', [$dateStart, $dateEnd]);
             $total = (clone $query)->count();
-            $pending = (clone $query)->whereIn('approval_status', [ApprovalStatus::PendingKacab->value, 'pending_korwil'])->count();
-            $approved = (clone $query)->where('approval_status', ApprovalStatus::Approved->value)->count();
-            $kerugian = (clone $query)->where('approval_status', ApprovalStatus::Approved->value)->where('kategori', 'finansial')->sum('dampak_finansial');
-            $inProgress = (clone $query)->where('resolution_status', ResolutionStatus::InProgress->value)->count();
+            $pending = (clone $query)->whereIn('status', [RiskReportStatus::PendingKacab->value, 'pending_korwil'])->count();
+            $approved = (clone $query)->where('status', RiskReportStatus::ApprovedStatus->value)->count();
+            $closed = (clone $query)->where('status', RiskReportStatus::Closed->value)->count();
+            $kerugian = (clone $query)->where('status', RiskReportStatus::ApprovedStatus->value)->where('kategori', 'finansial')->sum('dampak_finansial');
+            $inProgress = (clone $query)->where('status', RiskReportStatus::InProgress->value)->count();
 
             if ($total > $maxTotal) $maxTotal = $total;
 
@@ -151,8 +170,9 @@ class SummaryService
                 'total' => $total,
                 'pending' => $pending,
                 'approved' => $approved,
-                'kerugian' => $kerugian,
                 'in_progress' => $inProgress,
+                'closed' => $closed,
+                'kerugian' => $kerugian,
             ];
 
             $branchChartLabels[] = $branch->nickname_cabang ?? $branch->nama_cabang;
@@ -174,13 +194,30 @@ class SummaryService
      * Dapatkan ringkasan deklarasi nihil risiko per cabang (khusus ManRisk).
      *
      * @param \Illuminate\Support\Collection $allBranches
+     * @param array $bulanFilters Array format "Y-m", contoh ["2026-05", "2026-04"]. Kosong = bulan saat ini.
+     * @param array $branchIds Filter cabang tertentu. Kosong = semua cabang dari $allBranches.
      * @return array ['deklarasiSummaries' => []]
      */
-    public function getDeklarasiSummaries($allBranches): array
+    public function getDeklarasiSummaries($allBranches, array $bulanFilters = [], array $branchIds = []): array
     {
         $deklarasiSummaries = [];
-        $bulanIni = now()->month;
-        $tahunIni = now()->year;
+
+        // Filter cabang: jika $branchIds tidak kosong, filter $allBranches
+        if (!empty($branchIds)) {
+            $allBranches = $allBranches->whereIn('id', $branchIds);
+        }
+
+        // Parse bulan filter — ambil bulan terakhir dari array (default ke bulan saat ini)
+        if (!empty($bulanFilters)) {
+            $sortedMonths = collect($bulanFilters)->sort();
+            $lastMonth = $sortedMonths->last();
+            $bulanCarbon = \Carbon\Carbon::parse($lastMonth . '-01');
+            $bulanIni = (int) $bulanCarbon->month;
+            $tahunIni = (int) $bulanCarbon->year;
+        } else {
+            $bulanIni = now()->month;
+            $tahunIni = now()->year;
+        }
 
         foreach ($allBranches as $branch) {
             $periode1 = RiskFreeDeclaration::where('branch_id', $branch->id)
@@ -202,7 +239,7 @@ class SummaryService
 
             // Rejected = ada laporan risiko approved di cabang ini bulan ini, tapi kacab deklarasi nihil
             $adaLaporanApproved = RiskReport::where('branch_id', $branch->id)
-                ->where('approval_status', ApprovalStatus::Approved->value)
+                ->where('status', RiskReportStatus::ApprovedStatus->value)
                 ->whereMonth('created_at', $bulanIni)
                 ->whereYear('created_at', $tahunIni)
                 ->exists();

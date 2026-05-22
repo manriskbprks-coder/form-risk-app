@@ -2,7 +2,7 @@
 
 namespace App\Domain\Rules;
 
-use App\Domain\Enums\ApprovalStatus;
+use App\Domain\Enums\RiskReportStatus;
 use App\Domain\Enums\RoleCategory;
 
 /**
@@ -13,23 +13,25 @@ use App\Domain\Enums\RoleCategory;
  *
  * Analogi: Ini kayak "buku resep" yang ngatur langkah-langkah approval.
  * Service Layer (RiskReportService) tinggal "ngikutin resep" ini.
+ *
+ * NOTE: Sekarang pake RiskReportStatus (single status) bukan ApprovalStatus lagi.
  */
 class ApprovalRule
 {
     /**
-     * Tentukan status awal approval saat laporan dibuat.
+     * Tentukan status awal laporan saat dibuat.
      *
      * - Jika user adalah Checker (Kacab), laporan langsung approved
      * - Jika user adalah Maker, laporan perlu persetujuan Kacab
      *
      * @param RoleCategory $roleCategory Kategori role pembuat laporan
-     * @return ApprovalStatus Status awal yang sesuai
+     * @return RiskReportStatus Status awal yang sesuai
      */
-    public function determineInitialStatus(RoleCategory $roleCategory): ApprovalStatus
+    public function determineInitialStatus(RoleCategory $roleCategory): RiskReportStatus
     {
         return $roleCategory->isChecker()
-            ? ApprovalStatus::Approved
-            : ApprovalStatus::PendingKacab;
+            ? RiskReportStatus::ApprovedStatus
+            : RiskReportStatus::PendingKacab;
     }
 
     /**
@@ -39,51 +41,51 @@ class ApprovalRule
      * - Jika revisi diminta oleh ManRisk → submit ke ManRisk (pending_revision)
      *
      * @param string|null $lastLogNote Isi note dari log terakhir (untuk deteksi siapa yang minta revisi)
-     * @return ApprovalStatus Status tujuan setelah revisi
+     * @return RiskReportStatus Status tujuan setelah revisi
      */
-    public function determineRevisionTarget(?string $lastLogNote): ApprovalStatus
+    public function determineRevisionTarget(?string $lastLogNote): RiskReportStatus
     {
         if ($lastLogNote && str_contains($lastLogNote, 'Kacab')) {
-            return ApprovalStatus::PendingKacab;
+            return RiskReportStatus::PendingKacab;
         }
 
-        return ApprovalStatus::PendingRevision;
+        return RiskReportStatus::PendingRevision;
     }
 
     /**
      * Cek apakah user bisa approve laporan berdasarkan status saat ini.
      *
-     * @param ApprovalStatus $currentStatus Status approval saat ini
+     * @param RiskReportStatus $currentStatus Status laporan saat ini
      * @return bool
      */
-    public function canApprove(ApprovalStatus $currentStatus): bool
+    public function canApprove(RiskReportStatus $currentStatus): bool
     {
         return in_array($currentStatus, [
-            ApprovalStatus::PendingKacab,
-            ApprovalStatus::NeedRevision,
+            RiskReportStatus::PendingKacab,
+            RiskReportStatus::NeedRevision,
         ]);
     }
 
     /**
      * Cek apakah user bisa minta revisi berdasarkan status saat ini.
      *
-     * @param ApprovalStatus $currentStatus Status approval saat ini
+     * @param RiskReportStatus $currentStatus Status laporan saat ini
      * @return bool
      */
-    public function canRequestRevision(ApprovalStatus $currentStatus): bool
+    public function canRequestRevision(RiskReportStatus $currentStatus): bool
     {
-        return $currentStatus === ApprovalStatus::Approved;
+        return $currentStatus === RiskReportStatus::ApprovedStatus;
     }
 
     /**
      * Cek apakah user bisa approve revisi berdasarkan status saat ini.
      *
-     * @param ApprovalStatus $currentStatus Status approval saat ini
+     * @param RiskReportStatus $currentStatus Status laporan saat ini
      * @return bool
      */
-    public function canApproveRevision(ApprovalStatus $currentStatus): bool
+    public function canApproveRevision(RiskReportStatus $currentStatus): bool
     {
-        return $currentStatus === ApprovalStatus::PendingRevision;
+        return $currentStatus === RiskReportStatus::PendingRevision;
     }
 
     /**
@@ -91,14 +93,14 @@ class ApprovalRule
      *
      * @throws \DomainException Jika transisi tidak valid
      */
-    public function validateTransition(ApprovalStatus $from, ApprovalStatus $to): void
+    public function validateTransition(RiskReportStatus $from, RiskReportStatus $to): void
     {
         if (!$from->canTransitionTo($to)) {
             throw new \DomainException(
                 "Transisi status tidak valid: dari '{$from->value}' ke '{$to->value}'. " .
                 "Transisi yang diizinkan: " . implode(', ', array_map(
-                    fn(ApprovalStatus $s) => $s->value,
-                    ApprovalStatus::allowedTransitions()[$from->value] ?? []
+                    fn(RiskReportStatus $s) => $s->value,
+                    RiskReportStatus::allowedTransitions()[$from->value] ?? []
                 ))
             );
         }

@@ -252,14 +252,17 @@
                                 <td class="px-4 py-3 border-b text-sm text-center align-middle whitespace-nowrap">
                                     @php
                                         $resolutionColors = [
-                                            'open' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                                            'pending_kacab' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                                            'need_revision' => 'bg-orange-100 text-orange-800 border-orange-200',
+                                            'pending_revision' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                            'approved' => 'bg-green-100 text-green-800 border-green-200',
                                             'in_progress' => 'bg-blue-100 text-blue-800 border-blue-200',
                                             'closed' => 'bg-green-100 text-green-800 border-green-200',
                                         ];
-                                        $resolutionClass = $resolutionColors[$tl->resolution_status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
+                                        $resolutionClass = $resolutionColors[$tl->status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
                                     @endphp
                                     <span class="px-2 py-1 {{ $resolutionClass }} rounded font-bold text-xs uppercase border">
-                                        {{ $tl->resolution_status }}
+                                        {{ $tl->status }}
                                     </span>
                                 </td>
 
@@ -282,7 +285,7 @@
                                             @endphp
 
                                             <select name="new_status" class="w-full max-w-[150px] text-xs border-gray-300 rounded shadow-sm focus:ring-blue-500">
-                                                <option value="in_progress" {{ $tl->resolution_status == 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                                                <option value="in_progress" {{ $tl->status == 'in_progress' ? 'selected' : '' }}>In Progress</option>
 
                                                 @if($canClose)
                                                 <option value="closed">Selesai (Closed)</option>
@@ -338,7 +341,7 @@
             </div>
             <form id="rejectForm" method="POST">
                 @csrf
-                <input type="hidden" name="status" value="rejected">
+                <input type="hidden" name="status" value="need_revision">
 
                 <div class="mb-4">
                     <p class="text-sm text-gray-600 mb-2">
@@ -544,8 +547,8 @@
             var badgesHtml = '';
             badgesHtml += '<span class="px-2 py-1 text-[10px] font-bold uppercase rounded border ' + sumber.color + '">' + sumber.label + '</span>';
             badgesHtml += '<span class="px-2 py-1 text-[10px] font-bold uppercase rounded ' + (r.kategori === 'finansial' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800') + '">' + (r.kategori || '—') + '</span>';
-            var sc = statusColors[r.approval_status] || 'bg-gray-100 text-gray-800';
-            var sl = statusLabels[r.approval_status] || r.approval_status || '—';
+            var sc = statusColors[r.status] || 'bg-gray-100 text-gray-800';
+            var sl = statusLabels[r.status] || r.status || '—';
             badgesHtml += '<span class="px-2 py-1 text-[10px] font-bold uppercase rounded ' + sc + '">' + sl + '</span>';
             document.getElementById('detailBadges').innerHTML = badgesHtml;
 

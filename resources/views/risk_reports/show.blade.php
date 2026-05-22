@@ -21,7 +21,7 @@
             <div class="space-y-6">
 
                 {{-- BANNER REVISI — kalo status need_revision --}}
-                @if($report->approval_status === 'need_revision')
+                @if($report->status === 'need_revision')
                 <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
                     <div class="flex items-start gap-3">
                         <span class="text-2xl">⚠️</span>
@@ -39,7 +39,7 @@
                 @endif
 
                 {{-- BANNER PENDING REVISION — kalo status pending_revision --}}
-                @if($report->approval_status === 'pending_revision')
+                @if($report->status === 'pending_revision')
                 <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg shadow-sm">
                     <div class="flex items-start gap-3">
                         <span class="text-2xl">⏳</span>
@@ -96,8 +96,8 @@
                                     'need_revision' => 'Perlu Revisi',
                                     'pending_revision' => 'Menunggu Review Revisi',
                                 ];
-                                $statusColor = $statusColors[$report->approval_status] ?? 'bg-gray-100 text-gray-800';
-                                $statusLabel = $statusLabels[$report->approval_status] ?? $report->approval_status;
+                                $statusColor = $statusColors[$report->status] ?? 'bg-gray-100 text-gray-800';
+                                $statusLabel = $statusLabels[$report->status] ?? $report->status;
                                 @endphp
                                 <span class="px-3 py-1 text-xs font-bold uppercase rounded-full {{ $statusColor }}">
                                     {{ $statusLabel }}
@@ -169,7 +169,7 @@
                         @endif
 
                         {{-- FORM REVISI — kalo status need_revision --}}
-                        @if($report->approval_status === 'need_revision')
+                        @if($report->status === 'need_revision')
                         @php
                             $isOwner = (int) $report->user_id === (int) auth()->id();
                             $isCheckerOwner = auth()->user()->roleCategory() === 'checker' && (int) $report->branch_id === (int) auth()->user()->branch_id;
@@ -269,20 +269,23 @@
                                 <h4 class="text-sm font-bold text-gray-700 uppercase tracking-wider">Status Resolusi</h4>
                                 @php
                                 $resColors = [
-                                'open' => 'bg-gray-100 text-gray-800',
+                                'pending_kacab' => 'bg-yellow-100 text-yellow-800',
+                                'need_revision' => 'bg-orange-100 text-orange-800',
+                                'pending_revision' => 'bg-blue-100 text-blue-800',
+                                'approved' => 'bg-green-100 text-green-800',
                                 'in_progress' => 'bg-blue-100 text-blue-800',
                                 'closed' => 'bg-green-100 text-green-800',
                                 ];
-                                $resClass = $resColors[$report->resolution_status] ?? 'bg-gray-100 text-gray-800';
+                                $resClass = $resColors[$report->status] ?? 'bg-gray-100 text-gray-800';
                                 @endphp
                                 <span class="px-3 py-1 text-xs font-bold uppercase rounded-full {{ $resClass }}">
-                                    {{ str_replace('_', ' ', $report->resolution_status) }}
+                                    {{ str_replace('_', ' ', $report->status) }}
                                 </span>
                             </div>
 
                             @php
                                 $isOwner = (int) $report->user_id === (int) auth()->id();
-                                $canUpdate = $report->approval_status === 'approved' && $report->resolution_status !== 'closed';
+                                $canUpdate = $report->status === 'approved' && $report->status !== 'closed';
 
                                 // Maker bisa update kalo laporan milik mereka sendiri
                                 // Checker bisa update kalo laporan dari cabangnya
@@ -302,7 +305,7 @@
 
                                     <label class="block text-xs font-bold text-blue-800 uppercase mb-1">Set Status Menjadi:</label>
                                     <select name="new_status" class="w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500 mb-3">
-                                        <option value="in_progress" {{ $report->resolution_status == 'in_progress' ? 'selected' : '' }}>In Progress (Sedang dikerjakan)</option>
+                                        <option value="in_progress" {{ $report->status == 'in_progress' ? 'selected' : '' }}>In Progress (Sedang dikerjakan)</option>
                                         @if(auth()->user()->roleCategory() === 'checker')
                                         <option value="closed" class="font-bold text-green-600">Closed (Selesai Tuntas)</option>
                                         @endif
@@ -316,7 +319,7 @@
                             @endif
 
                             {{-- TOMBOL MANRISK: Request Revision --}}
-                            @if(auth()->user()?->hasRole('manrisk') && $report->approval_status === 'approved')
+                            @if(auth()->user()?->hasRole('manrisk') && $report->status === 'approved')
                             <div class="mb-6 bg-purple-50 p-4 rounded-lg border border-purple-200">
                                 <h4 class="text-sm font-bold text-purple-800 uppercase mb-3">🔁 Minta Revisi (ManRisk)</h4>
                                 <form action="{{ route('risk_reports.request_revision', $report->id) }}" method="POST">
@@ -333,7 +336,7 @@
                             @endif
 
                             {{-- TOMBOL MANRISK: Approve Revision --}}
-                            @if(auth()->user()?->hasRole('manrisk') && $report->approval_status === 'pending_revision')
+                            @if(auth()->user()?->hasRole('manrisk') && $report->status === 'pending_revision')
                             <div class="mb-6 bg-green-50 p-4 rounded-lg border border-green-200">
                                 <form action="{{ route('risk_reports.approve_revision', $report->id) }}" method="POST">
                                     @csrf

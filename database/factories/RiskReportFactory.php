@@ -36,8 +36,7 @@ class RiskReportFactory extends Factory
             'sumber_risiko' => fake()->randomElement(['manusia', 'sistem_teknologi', 'proses_internal', 'faktor_eksternal']),
             'dampak_finansial' => fake()->optional(0.7)->numberBetween(100000, 10000000),
             'skala_dampak' => $kategori === 'non-finansial' ? fake()->randomElement(['Sangat Tinggi', 'Tinggi', 'Sedang', 'Rendah', 'Sangat Rendah']) : null,
-            'approval_status' => 'pending_kacab',
-            'resolution_status' => 'open',
+            'status' => 'pending_kacab',
             'revision_note' => null,
         ];
     }

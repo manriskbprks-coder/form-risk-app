@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Enums\RiskReportStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -20,7 +21,7 @@ class RiskReport extends Model
         'skala_dampak',
         'kategori',
         'sumber_risiko',
-        'approval_status', 'resolution_status',
+        'status',
         'revision_note'
     ];
 
@@ -39,7 +40,64 @@ class RiskReport extends Model
     public function cause() {
         return $this->belongsTo(RiskCause::class, 'risk_cause_id');
     }
+
     public function logs() {
-    return $this->hasMany(RiskReportLog::class)->latest();
+        return $this->hasMany(RiskReportLog::class)->latest();
+    }
+
+    // ─── Status Helper Methods ───────────────────────────────────────
+
+    /**
+     * Scope: filter by status value.
+     */
+    public function scopeByStatus($query, string $status)
+    {
+        return $query->where('status', $status);
+    }
+
+    public function isPendingKacab(): bool
+    {
+        return $this->status === RiskReportStatus::PendingKacab->value;
+    }
+
+    public function isNeedRevision(): bool
+    {
+        return $this->status === RiskReportStatus::NeedRevision->value;
+    }
+
+    public function isPendingRevision(): bool
+    {
+        return $this->status === RiskReportStatus::PendingRevision->value;
+    }
+
+    public function isApprovedStatus(): bool
+    {
+        return $this->status === RiskReportStatus::ApprovedStatus->value;
+    }
+
+    public function isInProgress(): bool
+    {
+        return $this->status === RiskReportStatus::InProgress->value;
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->status === RiskReportStatus::Closed->value;
+    }
+
+    /**
+     * Cek apakah bisa transisi ke status target.
+     */
+    public function canTransitionTo(string $target): bool
+    {
+        $current = RiskReportStatus::tryFrom($this->status);
+        $targetEnum = RiskReportStatus::tryFrom($target);
+
+        if (!$current || !$targetEnum) {
+            return false;
+        }
+
+        return $current->canTransitionTo($targetEnum);
+    }
 }
-}
+

@@ -131,43 +131,191 @@
     @endif
 
     {{-- ============================================================
-         FILTER DROPDOWN (Khusus ManRisk)
+         FILTER: Multi-Select Bulan (Group by Year) + Multi-Select Cabang (Searchable)
          ============================================================ --}}
     @if(Auth::user()->isAdmin())
-    <div class="surface-card section-pad mb-6">
+    <div class="surface-card section-pad mb-6" x-data="filterManager()">
         <form method="GET" action="{{ route('dashboard') }}" class="flex flex-col sm:flex-row sm:items-end gap-4">
+            {{-- Multi-Select Bulan (Group by Year) --}}
             <div class="flex-1">
-                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">📅 Periode Waktu</label>
-                <select name="periode" onchange="this.form.submit()" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50">
-                    <option value="1" {{ $periode == 1 ? 'selected' : '' }}>1 Bulan Terakhir</option>
-                    <option value="3" {{ $periode == 3 ? 'selected' : '' }}>3 Bulan Terakhir</option>
-                    <option value="6" {{ $periode == 6 ? 'selected' : '' }}>6 Bulan Terakhir</option>
-                    <option value="12" {{ $periode == 12 ? 'selected' : '' }}>1 Tahun Terakhir</option>
-                    <option value="0" {{ $periode == 0 ? 'selected' : '' }}>Semua Waktu</option>
-                </select>
+                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">📅 Pilih Bulan</label>
+                <div class="relative" @click.away="monthOpen = false">
+                    {{-- Tombol trigger --}}
+                    <button type="button" @click="monthOpen = !monthOpen" class="w-full flex items-center justify-between border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white hover:border-indigo-300 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50">
+                        <span x-text="monthCount > 0 ? monthCount + ' bulan dipilih' : '📅 Semua Bulan (12 bln)'" class="truncate"></span>
+                        <svg class="w-4 h-4 text-slate-400 ml-2 flex-shrink-0" :class="monthOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+
+                    {{-- Dropdown checklist with year grouping --}}
+                    <div x-show="monthOpen" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-72 overflow-y-auto">
+                        {{-- Select All --}}
+                        <label class="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer border-b border-slate-100">
+                            <input type="checkbox" @click="toggleAllMonths($event)" :checked="allMonthsSelected" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                            <span class="text-sm font-semibold text-slate-700">Pilih Semua</span>
+                        </label>
+
+                        {{-- Group by year --}}
+                        <template x-for="yearGroup in groupedMonths" :key="yearGroup.year">
+                            <div>
+                                {{-- Year header (clickable to expand/collapse) --}}
+                                <button type="button" @click="toggleYear(yearGroup.year)" class="w-full flex items-center justify-between px-3 py-2 text-sm font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 border-b border-slate-100">
+                                    <span x-text="yearGroup.year"></span>
+                                    <svg class="w-4 h-4 text-slate-400 transition-transform" :class="expandedYears.includes(yearGroup.year) ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                </button>
+
+                                {{-- Month items (show if year is expanded) --}}
+                                <template x-for="month in yearGroup.months" :key="month.value">
+                                    <label x-show="expandedYears.includes(yearGroup.year)" class="flex items-center gap-2 px-3 py-1.5 pl-8 hover:bg-slate-50 cursor-pointer">
+                                        <input type="checkbox" name="bulan[]" :value="month.value" x-model="selectedMonths" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                        <span class="text-sm text-slate-700" x-text="month.label"></span>
+                                    </label>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+
+                    {{-- Hidden input for empty state --}}
+                    <input type="hidden" name="bulan" value="" x-bind:disabled="selectedMonths.length > 0">
+                </div>
             </div>
+
+            {{-- Multi-Select Cabang (Searchable) --}}
             <div class="flex-1">
                 <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">🏢 Cabang</label>
-                <select name="cabang_id" onchange="this.form.submit()" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50">
-                    <option value="all" {{ $cabangFilter == 'all' ? 'selected' : '' }}>🏦 Bank Wide (Semua Cabang)</option>
-                    @foreach($allBranches as $branch)
-                    <option value="{{ $branch->id }}" {{ $cabangFilter == $branch->id ? 'selected' : '' }}>
-                        {{ $branch->nama_cabang }}
-                    </option>
-                    @endforeach
-                </select>
+                <div class="relative" @click.away="branchOpen = false">
+                    {{-- Tombol trigger --}}
+                    <button type="button" @click="branchOpen = !branchOpen" class="w-full flex items-center justify-between border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white hover:border-indigo-300 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50">
+                        <span x-text="branchCount > 0 ? branchCount + ' cabang dipilih' : '🏦 Semua Cabang'" class="truncate"></span>
+                        <svg class="w-4 h-4 text-slate-400 ml-2 flex-shrink-0" :class="branchOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+
+                    {{-- Dropdown checklist with search --}}
+                    <div x-show="branchOpen" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {{-- Search input --}}
+                        <div class="p-2 border-b border-slate-100">
+                            <input type="text" x-model="branchSearch" placeholder="🔍 Cari cabang..." class="w-full px-3 py-1.5 text-sm border border-slate-200 rounded-md focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50">
+                        </div>
+
+                        {{-- Select All --}}
+                        <label class="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer border-b border-slate-100">
+                            <input type="checkbox" @click="toggleAllBranches($event)" :checked="allBranchesSelected" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                            <span class="text-sm font-semibold text-slate-700">Pilih Semua</span>
+                        </label>
+
+                        {{-- Filtered branch list --}}
+                        <template x-for="branch in filteredBranches" :key="branch.id">
+                            <label class="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer">
+                                <input type="checkbox" name="cabang_ids[]" :value="branch.id" x-model="selectedBranches" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                <span class="text-sm text-slate-700" x-text="branch.nama"></span>
+                            </label>
+                        </template>
+
+                        {{-- Empty state --}}
+                        <p x-show="filteredBranches.length === 0" class="px-3 py-4 text-sm text-slate-400 text-center">Tidak ada cabang ditemukan</p>
+                    </div>
+
+                    {{-- Hidden input for empty state --}}
+                    <input type="hidden" name="cabang_ids" value="" x-bind:disabled="selectedBranches.length > 0">
+                </div>
             </div>
-            <div class="flex-shrink-0">
+
+            {{-- Tombol Aksi --}}
+            <div class="flex-shrink-0 flex items-center gap-2">
                 <button type="submit" class="btn-primary btn-sm w-full sm:w-auto">
                     <svg class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
                     Terapkan Filter
                 </button>
-                @if(request('periode') || request('cabang_id'))
-                <a href="{{ route('dashboard') }}" class="btn-ghost btn-sm text-slate-500 ml-2">Reset</a>
+                @if(request('bulan') || request('cabang_ids'))
+                <a href="{{ route('dashboard') }}" class="btn-ghost btn-sm text-slate-500">Reset</a>
                 @endif
             </div>
         </form>
     </div>
+
+    {{-- Alpine.js component for multi-select bulan (grouped by year) & cabang (searchable) --}}
+    @push('scripts')
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('filterManager', () => ({
+                // ============================================================
+                // MONTH — Grouped by Year
+                // ============================================================
+                monthOpen: false,
+                selectedMonths: @js($bulanFilters),
+                expandedYears: @js(collect($availableMonths)->pluck('value')->map(fn($v) => substr($v, 0, 4))->unique()->sort()->values()->toArray()),
+
+                // Group months by year
+                get groupedMonths() {
+                    const groups = {};
+                    @js($availableMonths).forEach(m => {
+                        const year = m.value.substring(0, 4);
+                        if (!groups[year]) groups[year] = [];
+                        groups[year].push(m);
+                    });
+                    return Object.keys(groups).sort().reverse().map(year => ({
+                        year: year,
+                        months: groups[year]
+                    }));
+                },
+
+                get monthCount() {
+                    return this.selectedMonths.length;
+                },
+
+                get allMonthsSelected() {
+                    return this.selectedMonths.length === {{ count($availableMonths) }};
+                },
+
+                toggleAllMonths(event) {
+                    if (event.target.checked) {
+                        this.selectedMonths = @js(collect($availableMonths)->pluck('value')->toArray());
+                    } else {
+                        this.selectedMonths = [];
+                    }
+                },
+
+                toggleYear(year) {
+                    const idx = this.expandedYears.indexOf(year);
+                    if (idx > -1) {
+                        this.expandedYears.splice(idx, 1);
+                    } else {
+                        this.expandedYears.push(year);
+                    }
+                },
+
+                // ============================================================
+                // BRANCH — Searchable
+                // ============================================================
+                branchOpen: false,
+                branchSearch: '',
+                selectedBranches: @js($cabangFilter),
+                allBranchesData: @js($allBranches->map(fn($b) => ['id' => $b->id, 'nama' => $b->nama_cabang])->values()->toArray()),
+
+                get filteredBranches() {
+                    if (!this.branchSearch) return this.allBranchesData;
+                    const q = this.branchSearch.toLowerCase();
+                    return this.allBranchesData.filter(b => b.nama.toLowerCase().includes(q));
+                },
+
+                get branchCount() {
+                    return this.selectedBranches.length;
+                },
+
+                get allBranchesSelected() {
+                    return this.selectedBranches.length === {{ $allBranches->count() }};
+                },
+
+                toggleAllBranches(event) {
+                    if (event.target.checked) {
+                        this.selectedBranches = @js($allBranches->pluck('id')->toArray());
+                    } else {
+                        this.selectedBranches = [];
+                    }
+                }
+            }));
+        });
+    </script>
+    @endpush
     @endif
 
     {{-- ============================================================
@@ -355,8 +503,9 @@
                             <th class="table-th">Cabang</th>
                             <th class="table-th text-center">Total Laporan</th>
                             <th class="table-th text-center">Pending</th>
-                            <th class="table-th text-center">Approved</th>
                             <th class="table-th text-center">Dalam Progres</th>
+                            <th class="table-th text-center">Approved</th>
+                            <th class="table-th text-center">Closed</th>
                             <th class="table-th text-right">Total Kerugian</th>
                         </tr>
                     </thead>
@@ -391,7 +540,6 @@
                                 <span class="text-slate-400 text-sm">0</span>
                                 @endif
                             </td>
-                            <td class="table-td text-center text-emerald-600 font-semibold">{{ $branch['approved'] }}</td>
                             <td class="table-td text-center">
                                 @if($branch['in_progress'] > 0)
                                 <span class="badge-in-progress text-xs">{{ $branch['in_progress'] }}</span>
@@ -399,6 +547,8 @@
                                 <span class="text-slate-400 text-sm">0</span>
                                 @endif
                             </td>
+                            <td class="table-td text-center text-emerald-600 font-semibold">{{ $branch['approved'] }}</td>
+                            <td class="table-td text-center text-emerald-600 font-semibold">{{ $branch['closed'] }}</td>
                             <td class="table-td text-right font-semibold text-rose-600">Rp {{ number_format($branch['kerugian'], 0, ',', '.') }}</td>
                         </tr>
                         @endforeach
@@ -406,8 +556,9 @@
                     @php
                         $totalAll = array_sum(array_column($branchSummaries, 'total'));
                         $totalPendingAll = array_sum(array_column($branchSummaries, 'pending'));
-                        $totalApprovedAll = array_sum(array_column($branchSummaries, 'approved'));
                         $totalInProgressAll = array_sum(array_column($branchSummaries, 'in_progress'));
+                        $totalApprovedAll = array_sum(array_column($branchSummaries, 'approved'));
+                        $totalClosedAll = array_sum(array_column($branchSummaries, 'closed'));
                         $totalKerugianAll = array_sum(array_column($branchSummaries, 'kerugian'));
                     @endphp
                     <tfoot class="bg-slate-50 border-t-2 border-slate-200">
@@ -415,8 +566,9 @@
                             <td class="px-4 py-3 text-sm font-bold text-slate-800">Total Semua Cabang</td>
                             <td class="px-4 py-3 text-center font-bold text-slate-800">{{ $totalAll }}</td>
                             <td class="px-4 py-3 text-center font-bold text-amber-600">{{ $totalPendingAll }}</td>
-                            <td class="px-4 py-3 text-center font-bold text-emerald-600">{{ $totalApprovedAll }}</td>
                             <td class="px-4 py-3 text-center font-bold text-sky-600">{{ $totalInProgressAll }}</td>
+                            <td class="px-4 py-3 text-center font-bold text-emerald-600">{{ $totalApprovedAll }}</td>
+                            <td class="px-4 py-3 text-center font-bold text-emerald-600">{{ $totalClosedAll }}</td>
                             <td class="px-4 py-3 text-right font-bold text-rose-600">Rp {{ number_format($totalKerugianAll, 0, ',', '.') }}</td>
                         </tr>
                     </tfoot>
@@ -549,20 +701,25 @@
                                 @endif
                             </td>
                             <td class="table-td text-center">
-                                @if($report->approval_status === 'approved')
-                                <span class="badge-approved">Approved</span>
-                                @elseif($report->approval_status === 'rejected')
-                                <span class="badge-rejected">Rejected</span>
-                                @else
-                                <span class="badge-pending">Pending</span>
-                                @endif
+                                @php
+                                $statusMap = [
+                                    'pending_kacab' => ['label' => 'Pending Kacab', 'class' => 'badge-pending'],
+                                    'need_revision' => ['label' => 'Need Revision', 'class' => 'badge-rejected'],
+                                    'pending_revision' => ['label' => 'Pending Revision', 'class' => 'badge-pending'],
+                                    'approved' => ['label' => 'Approved', 'class' => 'badge-approved'],
+                                    'in_progress' => ['label' => 'In Progress', 'class' => 'badge-in-progress'],
+                                    'closed' => ['label' => 'Closed', 'class' => 'badge-closed'],
+                                ];
+                                $s = $statusMap[$report->status] ?? ['label' => $report->status, 'class' => 'badge-pending'];
+                                @endphp
+                                <span class="{{ $s['class'] }}">{{ $s['label'] }}</span>
                             </td>
                             <td class="table-td text-center">
                                 @php
-                                    $map = ['open' => 'badge-open', 'in_progress' => 'badge-in-progress', 'closed' => 'badge-closed'];
-                                    $class = $map[$report->resolution_status] ?? 'badge-open';
+                                    $resMap = ['open' => 'badge-open', 'in_progress' => 'badge-in-progress', 'closed' => 'badge-closed'];
+                                    $resClass = $resMap[$report->status] ?? 'badge-open';
                                 @endphp
-                                <span class="{{ $class }}">{{ str_replace('_', ' ', $report->resolution_status ?? 'open') }}</span>
+                                <span class="{{ $resClass }}">{{ str_replace('_', ' ', $report->status ?? 'open') }}</span>
                             </td>
                             <td class="table-td text-right">
                                 <a href="{{ route('risk_reports.show', $report->id) }}"

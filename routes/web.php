@@ -27,10 +27,12 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
     $roleCategory = $user->roleCategory();
 
     // ================================================================
-    // FILTER: Periode & Cabang (khusus ManRisk, opsional untuk role lain)
+    // FILTER: Bulan & Cabang (khusus ManRisk, opsional untuk role lain)
     // ================================================================
-    $periode = (int) request('periode', 6); // default 6 bulan, 0 = semua waktu
-    $cabangFilter = request('cabang_id', 'all');
+    // Month multi-select — array format "2026-05", default [] = semua bulan (12 bulan terakhir)
+    $bulanFilters = request('bulan', []);
+    // Cabang multi-select — array of IDs, default [] = semua cabang
+    $cabangFilter = request('cabang_ids', []);
 
     // Tentukan branch IDs yang bisa dilihat user
     if (in_array($roleCategory, ['viewer', 'admin'])) {
@@ -39,10 +41,10 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
                 ->whereRaw('is_active = true')
                 ->pluck('id');
         } else { // admin
-            if ($cabangFilter === 'all') {
+            if (empty($cabangFilter)) {
                 $branchIds = Branch::whereRaw('is_active = true')->pluck('id');
             } else {
-                $branchIds = collect([(int) $cabangFilter]);
+                $branchIds = collect($cabangFilter)->map(fn($id) => (int) $id);
             }
         }
     } elseif ($roleCategory === 'checker') {
@@ -55,9 +57,35 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
     // Semua cabang aktif (buat dropdown filter ManRisk)
     $allBranches = Branch::whereRaw('is_active = true')->get();
 
+    // Siapkan data month picker (12 bulan terakhir)
+    $availableMonths = [];
+    for ($i = 11; $i >= 0; $i--) {
+        $m = now()->subMonths($i);
+        $availableMonths[] = [
+            'value' => $m->format('Y-m'),
+            'label' => $m->format('F Y'),
+        ];
+    }
+
+    // Parse bulan filter jadi date range
+    // Jika user milih beberapa bulan, ambil dari bulan paling awal sampai paling akhir
+    if (!empty($bulanFilters)) {
+        $sortedMonths = collect($bulanFilters)->sort();
+        $firstMonth = \Carbon\Carbon::parse($sortedMonths->first() . '-01')->startOfMonth();
+        $lastMonth = \Carbon\Carbon::parse($sortedMonths->last() . '-01')->endOfMonth();
+        $dateFilter = $firstMonth;
+        $dateFilterEnd = $lastMonth;
+        $bulanTren = count($bulanFilters); // jumlah bulan yang dipilih buat tren
+    } else {
+        // Default: 12 bulan terakhir
+        $dateFilter = now()->subMonths(11)->startOfMonth();
+        $dateFilterEnd = now()->endOfMonth();
+        $bulanTren = 12;
+    }
+
     // === DATA VIA SERVICES ===
     $recentReports = $summaryService->getRecentReports($user, $roleCategory, $branchIds->toArray());
-    $statCards = $summaryService->getStatCards($user, $roleCategory, $branchIds->toArray());
+    $statCards = $summaryService->getStatCards($user, $roleCategory, $branchIds->toArray(), $dateFilter, $dateFilterEnd);
     $pendingCount = $summaryService->getPendingCount($user, $roleCategory, $branchIds->toArray());
 
     // Extract stat card variables for the view (which expects individual variables)
@@ -86,40 +114,38 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
     $trenTop5Datasets = [];
 
     if ($roleCategory !== 'maker') {
-        $bulanTren = $periode > 0 ? $periode : 12;
         $branchIdsArray = $branchIds->toArray();
-        $dateFilter = $periode > 0 ? now()->subMonths($periode) : now()->subYears(10);
 
-        // 1. Tren laporan per bulan
+        // 1. Tren laporan per bulan (pake bulan filter — 1 bulan doang)
         $trenData = $chartService->getTrenLaporan($branchIdsArray, $bulanTren);
         $chartMonths = $trenData['chartMonths'];
         $chartCounts = $trenData['chartCounts'];
 
-        // 2. Distribusi kategori
+        // 2. Distribusi kategori (all time — ga kena filter bulan)
         $distribusi = $chartService->getDistribusiKategori($branchIdsArray);
         $chartFinansial = $distribusi['chartFinansial'];
         $chartNonFinansial = $distribusi['chartNonFinansial'];
 
-        // 3. Status tindak lanjut
+        // 3. Status tindak lanjut (all time — ga kena filter bulan)
         $statusTindakLanjut = $chartService->getStatusTindakLanjut($branchIdsArray);
         $chartOpen = $statusTindakLanjut['chartOpen'];
         $chartInProgress = $statusTindakLanjut['chartInProgress'];
         $chartClosed = $statusTindakLanjut['chartClosed'];
 
-        // 4. Ranking Risiko
+        // 4. Ranking Risiko (filter per bulan)
         $ranking = $chartService->getRankingRisiko($branchIdsArray, $dateFilter);
         $rankingRisikoLabels = $ranking['rankingRisikoLabels'];
         $rankingRisikoFullLabels = $ranking['rankingRisikoFullLabels'];
         $rankingRisikoData = $ranking['rankingRisikoData'];
         $rankingRisikoColors = $ranking['rankingRisikoColors'];
 
-        // 5. Sumber Risiko
+        // 5. Sumber Risiko (filter per bulan)
         $sumber = $chartService->getSumberRisiko($branchIdsArray, $dateFilter);
         $sumberRisikoLabels = $sumber['sumberRisikoLabels'];
         $sumberRisikoData = $sumber['sumberRisikoData'];
         $sumberRisikoColors = $sumber['sumberRisikoColors'];
 
-        // 6. Tren Top-5 Risiko
+        // 6. Tren Top-5 Risiko (filter per bulan)
         $trenTop5 = $chartService->getTrenTop5($branchIdsArray, $dateFilter, $bulanTren);
         $trenTop5Labels = $trenTop5['trenTop5Labels'];
         $trenTop5Datasets = $trenTop5['trenTop5Datasets'];
@@ -132,7 +158,7 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
     $branchChartColors = [];
 
     if ($roleCategory === 'admin') {
-        $branchData = $summaryService->getBranchSummaries($allBranches, $periode);
+        $branchData = $summaryService->getBranchSummaries($allBranches, $bulanFilters, $branchIds->toArray());
         $branchSummaries = $branchData['branchSummaries'];
         $branchChartLabels = $branchData['branchChartLabels'];
         $branchChartData = $branchData['branchChartData'];
@@ -143,7 +169,7 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
     $deklarasiSummaries = [];
 
     if ($roleCategory === 'admin') {
-        $deklarasiData = $summaryService->getDeklarasiSummaries($allBranches);
+        $deklarasiData = $summaryService->getDeklarasiSummaries($allBranches, $bulanFilters, $branchIds->toArray());
         $deklarasiSummaries = $deklarasiData['deklarasiSummaries'];
     }
 
@@ -177,9 +203,10 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
         'branchChartLabels',
         'branchChartData',
         'branchChartColors',
-        'periode',
+        'bulanFilters',
         'cabangFilter',
         'allBranches',
+        'availableMonths',
         'deklarasiSummaries'
     ));
 })->middleware(['auth', 'verified', 'throttle:dashboard'])->name('dashboard');

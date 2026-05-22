@@ -29,8 +29,8 @@ class UpdateRiskApprovalStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', 'in:approved,rejected'],
-            'alasan_reject' => ['required_if:status,rejected', 'string', 'min:10', 'max:2000'],
+            'status' => ['required', 'in:approved,need_revision'],
+            'alasan_reject' => ['required_if:status,need_revision', 'string', 'min:10', 'max:2000'],
             'alasan_revisi' => ['nullable', 'string', 'min:10', 'max:2000'],
         ];
     }

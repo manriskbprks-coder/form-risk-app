@@ -84,28 +84,25 @@ class DashboardTest extends TestCase
         RiskReport::factory()->create([
             'user_id' => $this->teller->id,
             'branch_id' => $this->branch->id,
-            'approval_status' => 'approved',
             'kategori' => 'non-finansial',
             'dampak_finansial' => null,
-            'resolution_status' => 'closed',
+            'status' => 'closed',
             'created_at' => now(),
         ]);
 
         RiskReport::factory()->create([
             'user_id' => $this->teller->id,
             'branch_id' => $this->branch->id,
-            'approval_status' => 'pending_kacab',
-            'resolution_status' => 'open',
+            'status' => 'pending_kacab',
             'created_at' => now(),
         ]);
 
         RiskReport::factory()->create([
             'user_id' => $this->teller->id,
             'branch_id' => $this->branch->id,
-            'approval_status' => 'approved',
             'kategori' => 'finansial',
             'dampak_finansial' => 2000000,
-            'resolution_status' => 'open',
+            'status' => 'approved',
             'created_at' => now(),
         ]);
 
@@ -139,12 +136,12 @@ class DashboardTest extends TestCase
         RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'pending_kacab',
+            'status' => 'pending_kacab',
         ]);
         RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'approval_status' => 'approved',
+            'status' => 'approved',
         ]);
 
         $response = $this->actingAs($this->kacab)->get(route('dashboard'));

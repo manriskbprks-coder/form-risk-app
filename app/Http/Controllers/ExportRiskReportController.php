@@ -37,7 +37,7 @@ class ExportRiskReportController extends Controller
             'role_category' => $user->roleCategory(),
             'filename' => 'export-risiko-' . now()->format('Ymd-His') . '.csv',
             'total_reports' => $reports->count(),
-            'filters' => $request->only(['search', 'branch_id', 'kategori', 'jabatan', 'start_date', 'end_date', 'resolution_status', 'approval_status']),
+            'filters' => $request->only(['search', 'branch_id', 'kategori', 'jabatan', 'start_date', 'end_date', 'status']),
             'ip' => $request->ip(),
         ]);
 
@@ -118,8 +118,8 @@ class ExportRiskReportController extends Controller
                     ucfirst($report->skala_dampak ?? '-'),
                     $report->durasi_penyelesaian ?? '-',
                     $report->durasi_satuan ?? '-',
-                    $report->approval_status,
-                    str_replace('_', ' ', $report->resolution_status ?? 'open'),
+                    $report->status,
+                    str_replace('_', ' ', $report->status ?? 'open'),
                 ]);
             }
 

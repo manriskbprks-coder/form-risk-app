@@ -174,7 +174,7 @@ class Phase5LoggingTest extends TestCase
 
         $this->actingAs($this->kacab);
         $response = $this->post(route('risk_reports.update_status', $report->id), [
-            'status' => 'rejected',
+            'status' => 'need_revision',
             'alasan_reject' => 'Data kronologis kurang lengkap, mohon dilengkapi.',
         ]);
 
@@ -390,7 +390,7 @@ class Phase5LoggingTest extends TestCase
             ->andReturnSelf()
             ->shouldReceive('info')
             ->withArgs(function ($message, $context) use ($report) {
-                return str_contains($message, '[AUDIT] Resolution status updated')
+                return str_contains($message, '[AUDIT] Status updated')
                     && isset($context['report_id'])
                     && $context['report_id'] === $report->id
                     && isset($context['old_status'])
@@ -398,9 +398,12 @@ class Phase5LoggingTest extends TestCase
                     && $context['new_status'] === 'in_progress';
             });
 
+        Log::shouldReceive('error')
+            ->byDefault();
+
         $this->actingAs($this->kacab);
         $response = $this->post(route('risk_reports.update_resolution', $report->id), [
-            'resolution_status' => 'in_progress',
+            'status' => 'in_progress',
         ]);
 
         $response->assertSessionHas('success');
@@ -552,7 +555,7 @@ class Phase5LoggingTest extends TestCase
 
         $this->actingAs($this->kacab);
         $response = $this->post(route('risk_reports.update_resolution', $report->id), [
-            'resolution_status' => 'in_progress',
+            'status' => 'in_progress',
         ]);
         $response->assertSessionHas('success');
     }

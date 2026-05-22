@@ -54,7 +54,9 @@ class ChartService
     }
 
     /**
-     * Generate data untuk chart status tindak lanjut (open, in_progress, closed).
+     * Generate data untuk chart status tindak lanjut (pending_kacab, in_progress, closed).
+     * Note: 'open' resolution status is now mapped to 'pending_kacab' in the unified status.
+     * For the chart, we show reports that are pending_kacab (open), in_progress, or closed.
      *
      * @param array $branchIds
      * @return array ['chartOpen' => int, 'chartInProgress' => int, 'chartClosed' => int]
@@ -64,15 +66,15 @@ class ChartService
         return [
             'chartOpen' => RiskReport::query()
                 ->whereIn('branch_id', $branchIds)
-                ->where('resolution_status', 'open')
+                ->where('status', 'pending_kacab')
                 ->count(),
             'chartInProgress' => RiskReport::query()
                 ->whereIn('branch_id', $branchIds)
-                ->where('resolution_status', 'in_progress')
+                ->where('status', 'in_progress')
                 ->count(),
             'chartClosed' => RiskReport::query()
                 ->whereIn('branch_id', $branchIds)
-                ->where('resolution_status', 'closed')
+                ->where('status', 'closed')
                 ->count(),
         ];
     }

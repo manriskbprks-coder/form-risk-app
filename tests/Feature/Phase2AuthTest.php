@@ -165,8 +165,8 @@ class Phase2AuthTest extends TestCase
             'risk_item_id' => $this->riskItem->id,
             'risk_cause_id' => $this->cause->id,
             'kategori' => 'finansial',
-            'approval_status' => 'pending_kacab',
-            'resolution_status' => 'open',
+            'status' => 'pending_kacab',
+            'status' => 'open',
             'kode_laporan' => 'RISK-CBATL-202605-0001',
         ]);
 
@@ -180,7 +180,7 @@ class Phase2AuthTest extends TestCase
 
             if ($response->status() !== 429) {
                 // Reset status biar bisa di-approve lagi
-                $report->update(['approval_status' => 'pending_kacab']);
+                $report->update(['status' => 'pending_kacab']);
             }
         }
 

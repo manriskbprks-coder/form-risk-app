@@ -16,8 +16,7 @@ use App\Http\Requests\StoreRiskReportRequest;
 use App\Http\Requests\UpdateRiskApprovalStatusRequest;
 use App\Http\Requests\UpdateRiskResolutionRequest;
 use App\Http\Requests\AddRiskProgressRequest;
-use App\Domain\Enums\ApprovalStatus;
-use App\Domain\Enums\ResolutionStatus;
+use App\Domain\Enums\RiskReportStatus;
 use App\Domain\Enums\RoleCategory;
 use App\Services\KodeLaporanService;
 use App\Services\RiskReportQueryService;
@@ -86,14 +85,13 @@ class RiskReportController extends Controller
         if ($user->roleCategoryEnum()?->isChecker()) {
             $reports = RiskReport::with(['user.roles', 'item', 'cause.mitigations', 'branch'])
                 ->where('branch_id', $user->branch_id)
-                ->whereIn('approval_status', [ApprovalStatus::PendingKacab->value, ApprovalStatus::NeedRevision->value])
+                ->whereIn('status', [RiskReportStatus::PendingKacab->value, RiskReportStatus::NeedRevision->value])
                 ->orderBy('created_at', 'desc')
                 ->get();
 
             $tindakLanjut = RiskReport::with(['user.roles', 'item', 'cause.mitigations', 'branch'])
                 ->where('branch_id', $user->branch_id)
-                ->where('approval_status', ApprovalStatus::Approved->value)
-                ->whereIn('resolution_status', [ResolutionStatus::Open->value, ResolutionStatus::InProgress->value])
+                ->whereIn('status', [RiskReportStatus::ApprovedStatus->value, RiskReportStatus::InProgress->value])
                 ->orderBy('updated_at', 'desc')
                 ->get();
         }
@@ -109,7 +107,7 @@ class RiskReportController extends Controller
 
         $user = Auth::user();
 
-        if ($request->status === 'rejected') {
+        if ($request->status === 'need_revision') {
             $this->riskReportService->requestRevisionFromKacab($report, $user, $request->alasan_reject);
             return redirect()->back()->with('success', 'Laporan dikembalikan untuk direvisi. Alasan sudah dicatat.');
         }
@@ -134,9 +132,9 @@ class RiskReportController extends Controller
 
         $branches = $this->riskReportQueryService->getBranchesForUser($user);
 
-        $totalLoss = (clone $query)->where('approval_status', ApprovalStatus::Approved->value)->sum('dampak_finansial');
+        $totalLoss = (clone $query)->where('status', RiskReportStatus::ApprovedStatus->value)->sum('dampak_finansial');
         $totalKejadian = (clone $query)->count();
-        $totalRejected = (clone $query)->where('approval_status', 'rejected')->count();
+        $totalRejected = (clone $query)->where('status', 'need_revision')->count();
 
         // === SORTING ===
         $sortField = 'created_at';
@@ -156,12 +154,12 @@ class RiskReportController extends Controller
         }
 
         // Split into 2 queries: Active (not closed) and Closed
-        $activeReports = (clone $query)->where('resolution_status', '!=', 'closed')
+        $activeReports = (clone $query)->where('status', '!=', RiskReportStatus::Closed->value)
             ->orderBy($sortField, $sortDir)
             ->paginate(15, ['*'], 'active_page')
             ->appends($request->query());
 
-        $closedReports = (clone $query)->where('resolution_status', 'closed')
+        $closedReports = (clone $query)->where('status', RiskReportStatus::Closed->value)
             ->orderBy($sortField, $sortDir)
             ->paginate(15, ['*'], 'closed_page')
             ->appends($request->query());
@@ -176,7 +174,7 @@ class RiskReportController extends Controller
         $report = RiskReport::findOrFail($id);
         Gate::authorize('updateProgress', $report);
 
-        $this->riskReportService->updateResolution($report, $user, $request->resolution_status);
+        $this->riskReportService->updateResolution($report, $user, $request->status);
 
         return redirect()->back()->with('success', 'Status tindak lanjut diperbarui!');
     }
@@ -188,7 +186,7 @@ class RiskReportController extends Controller
         $report = RiskReport::findOrFail($id);
         Gate::authorize('updateProgress', $report);
 
-        if ($request->new_status === ResolutionStatus::Closed->value) {
+        if ($request->new_status === RiskReportStatus::Closed->value) {
             if (!$user->roleCategoryEnum()?->isChecker()) {
                 return back()->with('error', 'Hanya Checker (Kacab) yang berwenang menutup laporan.');
             }
@@ -247,7 +245,7 @@ class RiskReportController extends Controller
 
         Gate::authorize('submitRevision', $report);
 
-        if ($report->approval_status !== ApprovalStatus::NeedRevision->value) {
+        if ($report->status !== RiskReportStatus::NeedRevision->value) {
             return back()->with('error', 'Laporan ini tidak dalam status perlu revisi.');
         }
 

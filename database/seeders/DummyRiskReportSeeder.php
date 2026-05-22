@@ -130,23 +130,25 @@ class DummyRiskReportSeeder extends Seeder
                 $dampakFinansial = ($kategori === 'finansial') ? rand(100000, 15000000) : null;
                 $skalaDampak = ($kategori === 'non-finansial') ? fake()->randomElement(['Sangat Tinggi', 'Tinggi', 'Sedang', 'Rendah', 'Sangat Rendah']) : null;
 
-                // Approval status logic
+                // Single status logic (merged approval_status + resolution_status)
                 $isKacab = $user->hasRole('kacab');
                 if ($isKacab) {
-                    $approvalStatus = 'approved';
+                    // Kacab langsung auto-approved, bisa in_progress atau closed
+                    $status = $this->weightedRandom([
+                        'closed' => 40,
+                        'in_progress' => 35,
+                        'approved' => 25,
+                    ]);
                 } else {
-                    $approvalStatus = $this->weightedRandom([
-                        'approved' => 50,
-                        'pending_kacab' => 35,
-                        'rejected' => 15,
+                    $status = $this->weightedRandom([
+                        'approved' => 30,
+                        'pending_kacab' => 25,
+                        'need_revision' => 10,
+                        'closed' => 15,
+                        'in_progress' => 15,
+                        'pending_revision' => 5,
                     ]);
                 }
-
-                $resolutionStatus = $this->weightedRandom([
-                    'closed' => 40,
-                    'in_progress' => 35,
-                    'open' => 25,
-                ]);
 
                 $createdAt = $reportDate->copy()->addHours(rand(7, 16))->addMinutes(rand(0, 59));
 
@@ -162,8 +164,7 @@ class DummyRiskReportSeeder extends Seeder
                     'kategori' => $kategori,
                     'dampak_finansial' => $dampakFinansial,
                     'skala_dampak' => $skalaDampak,
-                    'approval_status' => $approvalStatus,
-                    'resolution_status' => $resolutionStatus,
+                    'status' => $status,
                     'created_at' => $createdAt,
                     'updated_at' => $createdAt,
                 ]);

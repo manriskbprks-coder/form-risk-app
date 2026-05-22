@@ -90,7 +90,7 @@ class Phase4SecurityTest extends TestCase
         
         $this->actingAs($this->kacab);
         $response = $this->post(route('risk_reports.update_status', $report->id), [
-            'status' => 'rejected',
+            'status' => 'need_revision',
             'alasan_reject' => '<script>alert("xss")</script>Ini alasan reject',
         ]);
 
@@ -140,7 +140,7 @@ class Phase4SecurityTest extends TestCase
 
         $this->actingAs($this->kacab);
         $response = $this->post(route('risk_reports.update_status', $report->id), [
-            'status' => 'rejected',
+            'status' => 'need_revision',
             'alasan_reject' => 'abcde',
         ]);
 
@@ -154,7 +154,7 @@ class Phase4SecurityTest extends TestCase
 
         $this->actingAs($this->kacab);
         $response = $this->post(route('risk_reports.update_status', $report->id), [
-            'status' => 'rejected',
+            'status' => 'need_revision',
             'alasan_reject' => str_repeat('A', 2500),
         ]);
 
@@ -186,7 +186,7 @@ class Phase4SecurityTest extends TestCase
         // Tapi saat di-render di Blade dengan {{ }}, akan di-escape jadi &lt;script&gt;
         // Jadi double-safe — tidak akan dieksekusi sebagai script
         $response = $this->post(route('risk_reports.update_status', $report->id), [
-            'status' => 'rejected',
+            'status' => 'need_revision',
             'alasan_reject' => 'Ini alasan reject dengan karakter < dan >',
         ]);
 
@@ -422,8 +422,7 @@ class Phase4SecurityTest extends TestCase
             'risk_item_id' => $this->riskItem->id,
             'risk_cause_id' => $this->cause->id,
             'kategori' => 'finansial',
-            'approval_status' => 'pending_kacab',
-            'resolution_status' => 'open',
+            'status' => 'pending_kacab',
             'kode_laporan' => 'RISK-CBATL-202605-0001',
         ]);
     }
@@ -436,8 +435,7 @@ class Phase4SecurityTest extends TestCase
             'risk_item_id' => $this->riskItem->id,
             'risk_cause_id' => $this->cause->id,
             'kategori' => 'finansial',
-            'approval_status' => 'approved',
-            'resolution_status' => 'open',
+            'status' => 'approved',
             'kode_laporan' => 'RISK-CBATL-202605-0002',
         ]);
     }

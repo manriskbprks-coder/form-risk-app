@@ -30,12 +30,17 @@ return new class extends Migration
      */
     protected function upMysql(): void
     {
-        // Drop unique index first
+        // Drop FK on branch_id first (it's part of the unique index, so MySQL blocks dropping the index)
+        Schema::table('risk_free_declarations', function (Blueprint $table) {
+            $table->dropForeign(['branch_id']);
+        });
+
+        // Drop unique index
         Schema::table('risk_free_declarations', function (Blueprint $table) {
             $table->dropIndex('unique_declaration_per_period');
         });
 
-        // Drop old columns (MySQL supports DROP COLUMN with FK)
+        // Drop old columns
         Schema::table('risk_free_declarations', function (Blueprint $table) {
             $table->dropColumn(['violated_at', 'violated_by']);
         });
@@ -49,6 +54,11 @@ return new class extends Migration
         // Recreate unique constraint
         Schema::table('risk_free_declarations', function (Blueprint $table) {
             $table->unique(['branch_id', 'periode', 'bulan', 'tahun'], 'unique_declaration_per_period');
+        });
+
+        // Re-add FK on branch_id
+        Schema::table('risk_free_declarations', function (Blueprint $table) {
+            $table->foreign('branch_id')->references('id')->on('branches')->onDelete('cascade');
         });
 
         // Update enum values

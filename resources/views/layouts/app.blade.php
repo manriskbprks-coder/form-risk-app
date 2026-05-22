@@ -109,7 +109,7 @@
                 <span>Review & Tindak Lanjut</span>
                 @php
                     $pendingReviewCount = \App\Models\RiskReport::where('branch_id', auth()->user()->branch_id)
-                        ->whereIn('approval_status', ['pending_kacab', 'need_revision'])
+                        ->whereIn('status', ['pending_kacab', 'need_revision'])
                         ->count();
                 @endphp
                 @if($pendingReviewCount > 0)

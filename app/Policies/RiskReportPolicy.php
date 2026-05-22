@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Domain\Enums\ApprovalStatus;
+use App\Domain\Enums\RiskReportStatus;
 use App\Domain\Enums\RoleCategory;
 use App\Domain\Rules\ApprovalRule;
 use App\Models\RiskReport;
@@ -60,7 +60,7 @@ class RiskReportPolicy
         }
 
         // Cuma laporan yang pending_kacab atau need_revision yang bisa diapprove
-        $currentStatus = ApprovalStatus::tryFrom($report->approval_status) ?? ApprovalStatus::PendingKacab;
+        $currentStatus = RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::PendingKacab;
         return $this->approvalRule->canApprove($currentStatus);
     }
 
@@ -97,7 +97,7 @@ class RiskReportPolicy
      */
     public function requestRevision(User $user, RiskReport $report): bool
     {
-        $currentStatus = ApprovalStatus::tryFrom($report->approval_status) ?? ApprovalStatus::Approved;
+        $currentStatus = RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::ApprovedStatus;
         return RoleCategory::tryFrom($user->roleCategory() ?? '')?->canRequestRevision()
             && $this->approvalRule->canRequestRevision($currentStatus);
     }
@@ -108,7 +108,7 @@ class RiskReportPolicy
     public function submitRevision(User $user, RiskReport $report): bool
     {
         // Cuma laporan yang need_revision
-        if ($report->approval_status !== ApprovalStatus::NeedRevision->value) {
+        if ($report->status !== RiskReportStatus::NeedRevision->value) {
             return false;
         }
 
@@ -126,7 +126,7 @@ class RiskReportPolicy
      */
     public function approveRevision(User $user, RiskReport $report): bool
     {
-        $currentStatus = ApprovalStatus::tryFrom($report->approval_status) ?? ApprovalStatus::PendingRevision;
+        $currentStatus = RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::PendingRevision;
         return RoleCategory::tryFrom($user->roleCategory() ?? '')?->canApproveRevision()
             && $this->approvalRule->canApproveRevision($currentStatus);
     }

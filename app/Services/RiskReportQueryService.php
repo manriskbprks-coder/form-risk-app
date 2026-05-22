@@ -89,8 +89,7 @@ class RiskReportQueryService
 
     /**
      * Terapkan filter dari request ke query RiskReport.
-     * Filters: branch_id, kategori, jabatan, date_from/date_to,
-     * resolution_status, approval_status
+     * Filters: branch_id, kategori, jabatan, date_from/date_to, status
      *
      * @param Builder $query
      * @param Request $request
@@ -131,12 +130,8 @@ class RiskReportQueryService
             $query->where('tanggal_kejadian', '<=', $dateTo);
         }
 
-        if ($request->filled('resolution_status')) {
-            $query->where('resolution_status', $request->resolution_status);
-        }
-
-        if ($request->filled('approval_status')) {
-            $query->where('approval_status', $request->approval_status);
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
         }
 
         return $query;
