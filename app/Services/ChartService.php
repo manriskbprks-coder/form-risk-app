@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\RiskItem;
 use App\Models\RiskReport;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ChartService
@@ -20,14 +21,25 @@ class ChartService
         $chartMonths = [];
         $chartCounts = [];
 
+        // OPTIMASI: 1 bulk query dengan driver detection
+        $driver = DB::connection()->getDriverName();
+        $dateFormat = match($driver) {
+            'mysql' => "DATE_FORMAT(created_at, '%Y-%m')",
+            'pgsql'  => "TO_CHAR(created_at, 'YYYY-MM')",
+            default  => "strftime('%Y-%m', created_at)", // SQLite
+        };
+
+        $monthlyData = RiskReport::selectRaw("{$dateFormat} as bulan, COUNT(*) as total")
+            ->whereIn('branch_id', $branchIds)
+            ->where('created_at', '>=', now()->subMonths($bulanTren)->startOfMonth())
+            ->groupBy('bulan')
+            ->orderBy('bulan')
+            ->pluck('total', 'bulan');
+
         for ($i = $bulanTren - 1; $i >= 0; $i--) {
             $month = now()->subMonths($i);
             $chartMonths[] = $month->format('M Y');
-            $chartCounts[] = RiskReport::query()
-                ->whereIn('branch_id', $branchIds)
-                ->whereMonth('created_at', $month->month)
-                ->whereYear('created_at', $month->year)
-                ->count();
+            $chartCounts[] = (int) ($monthlyData[$month->format('Y-m')] ?? 0);
         }
 
         return compact('chartMonths', 'chartCounts');
@@ -88,11 +100,13 @@ class ChartService
      */
     public function getRankingRisiko(array $branchIds, $dateFilter): array
     {
-        $rankingRisiko = RiskReport::selectRaw('risk_item_id, COUNT(*) as total')
-            ->whereIn('branch_id', $branchIds)
-            ->whereNotNull('risk_item_id')
-            ->where('created_at', '>=', $dateFilter)
-            ->groupBy('risk_item_id')
+        // OPTIMASI: JOIN risk_items langsung — ga perlu RiskItem::find() di loop
+        $rankingRisiko = RiskReport::selectRaw('risk_reports.risk_item_id, COUNT(*) as total, risk_items.nama_risiko')
+            ->join('risk_items', 'risk_reports.risk_item_id', '=', 'risk_items.id')
+            ->whereIn('risk_reports.branch_id', $branchIds)
+            ->whereNotNull('risk_reports.risk_item_id')
+            ->where('risk_reports.created_at', '>=', $dateFilter)
+            ->groupBy('risk_reports.risk_item_id', 'risk_items.nama_risiko')
             ->orderByDesc('total')
             ->take(10)
             ->get();
@@ -103,8 +117,7 @@ class ChartService
         $rankingRisikoColors = [];
 
         foreach ($rankingRisiko as $item) {
-            $riskItem = RiskItem::find($item->risk_item_id);
-            $namaAsli = $riskItem?->nama_risiko ?? 'Risiko #' . $item->risk_item_id;
+            $namaAsli = $item->nama_risiko ?? 'Risiko #' . $item->risk_item_id;
             $rankingRisikoLabels[] = Str::limit($namaAsli, 35);
             $rankingRisikoFullLabels[] = $namaAsli;
             $rankingRisikoData[] = (int) $item->total;
@@ -182,14 +195,19 @@ class ChartService
      */
     public function getTrenTop5(array $branchIds, $dateFilter, int $bulanTren): array
     {
-        $top5Ids = RiskReport::selectRaw('risk_item_id, COUNT(*) as total')
-            ->whereIn('branch_id', $branchIds)
-            ->whereNotNull('risk_item_id')
-            ->where('created_at', '>=', $dateFilter)
-            ->groupBy('risk_item_id')
+        // OPTIMASI: Query 1 — ambil top 5 risk items + nama_risiko langsung via JOIN
+        $top5 = RiskReport::selectRaw('risk_reports.risk_item_id, risk_items.nama_risiko, COUNT(*) as total')
+            ->join('risk_items', 'risk_reports.risk_item_id', '=', 'risk_items.id')
+            ->whereIn('risk_reports.branch_id', $branchIds)
+            ->whereNotNull('risk_reports.risk_item_id')
+            ->where('risk_reports.created_at', '>=', $dateFilter)
+            ->groupBy('risk_reports.risk_item_id', 'risk_items.nama_risiko')
             ->orderByDesc('total')
             ->take(5)
-            ->pluck('risk_item_id');
+            ->get();
+
+        $top5Ids = $top5->pluck('risk_item_id')->toArray();
+        $riskNames = $top5->pluck('nama_risiko', 'risk_item_id');
 
         // Siapkan label bulan
         $trenTop5Labels = [];
@@ -197,22 +215,42 @@ class ChartService
             $trenTop5Labels[] = now()->subMonths($i)->format('M Y');
         }
 
+        // OPTIMASI: Query 2 — bulk monthly counts untuk semua top 5 risks
+        $driver = DB::connection()->getDriverName();
+        $dateFormat = match($driver) {
+            'mysql' => "DATE_FORMAT(created_at, '%Y-%m')",
+            'pgsql'  => "TO_CHAR(created_at, 'YYYY-MM')",
+            default  => "strftime('%Y-%m', created_at)", // SQLite
+        };
+
+        $bulkData = RiskReport::selectRaw("risk_item_id, {$dateFormat} as bulan, COUNT(*) as total")
+            ->whereIn('risk_item_id', $top5Ids)
+            ->whereIn('branch_id', $branchIds)
+            ->where('created_at', '>=', now()->subMonths($bulanTren)->startOfMonth())
+            ->groupBy('risk_item_id', 'bulan')
+            ->orderBy('risk_item_id')
+            ->orderBy('bulan')
+            ->get()
+            ->groupBy('risk_item_id');
+
         $trenColors = ['#6366f1', '#ef4444', '#f97316', '#22c55e', '#eab308'];
         $trenTop5Datasets = [];
         $idx = 0;
 
         foreach ($top5Ids as $rid) {
-            $riskItem = RiskItem::find($rid);
-            $nama = $riskItem?->nama_risiko ?? 'Risiko #' . $rid;
+            $nama = $riskNames[$rid] ?? 'Risiko #' . $rid;
+            $monthlyMap = collect();
+            if ($bulkData->has($rid)) {
+                $monthlyMap = $bulkData->get($rid)->keyBy('bulan');
+            }
+
             $data = [];
             for ($i = $bulanTren - 1; $i >= 0; $i--) {
                 $month = now()->subMonths($i);
-                $data[] = RiskReport::where('risk_item_id', $rid)
-                    ->whereIn('branch_id', $branchIds)
-                    ->whereMonth('created_at', $month->month)
-                    ->whereYear('created_at', $month->year)
-                    ->count();
+                $bulanKey = $month->format('Y-m');
+                $data[] = (int) ($monthlyMap[$bulanKey]->total ?? 0);
             }
+
             $trenTop5Datasets[] = [
                 'label' => $nama,
                 'data' => $data,

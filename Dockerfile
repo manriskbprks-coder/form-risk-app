@@ -1,15 +1,19 @@
 FROM php:8.2-cli
 
-# Install tool tambahan, MySQL, & Node.js (buat Vite)
+# Install tool tambahan, MySQL, Node.js (buat Vite), & OPCache
 RUN apt-get update -y && apt-get install -y libpq-dev unzip curl default-mysql-client \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
-    && docker-php-ext-install pdo pdo_mysql pdo_pgsql
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql opcache
 
 # Ambil Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
+
+# Copy OPCache config ke direktori PHP config
+COPY opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+
 COPY . .
 
 # Install kebutuhan Laravel (PHP) — tanpa dev dependencies

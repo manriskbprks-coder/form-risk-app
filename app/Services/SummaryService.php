@@ -155,21 +155,34 @@ class SummaryService
             $dateEnd = now();
         }
 
+        // OPTIMASI: 1 bulk query dengan SUM(CASE WHEN...) untuk semua metric per cabang
+        $branchIdsList = $allBranches->pluck('id')->toArray();
+
+        $branchStats = RiskReport::selectRaw("
+            branch_id,
+            COUNT(*) as total,
+            SUM(CASE WHEN status IN ('pending_kacab','pending_korwil') THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
+            SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) as closed,
+            SUM(CASE WHEN status IN ('approved','in_progress','closed') AND kategori = 'finansial' THEN dampak_finansial ELSE 0 END) as kerugian,
+            SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress
+        ")
+            ->whereIn('branch_id', $branchIdsList)
+            ->whereBetween('created_at', [$dateStart, $dateEnd])
+            ->groupBy('branch_id')
+            ->get()
+            ->keyBy('branch_id');
+
         $maxTotal = 0;
 
         foreach ($allBranches as $branch) {
-            $query = RiskReport::where('branch_id', $branch->id)
-                ->whereBetween('created_at', [$dateStart, $dateEnd]);
-            $total = (clone $query)->count();
-            $pending = (clone $query)->whereIn('status', [RiskReportStatus::PendingKacab->value, 'pending_korwil'])->count();
-            $approved = (clone $query)->where('status', RiskReportStatus::ApprovedStatus->value)->count();
-            $closed = (clone $query)->where('status', RiskReportStatus::Closed->value)->count();
-            $kerugian = (clone $query)->whereIn('status', [
-                RiskReportStatus::ApprovedStatus->value,
-                RiskReportStatus::InProgress->value,
-                RiskReportStatus::Closed->value,
-            ])->where('kategori', 'finansial')->sum('dampak_finansial');
-            $inProgress = (clone $query)->where('status', RiskReportStatus::InProgress->value)->count();
+            $stats = $branchStats->get($branch->id);
+            $total = $stats ? (int) $stats->total : 0;
+            $pending = $stats ? (int) $stats->pending : 0;
+            $approved = $stats ? (int) $stats->approved : 0;
+            $closed = $stats ? (int) $stats->closed : 0;
+            $kerugian = $stats ? (int) $stats->kerugian : 0;
+            $inProgress = $stats ? (int) $stats->in_progress : 0;
 
             if ($total > $maxTotal) $maxTotal = $total;
 
@@ -227,31 +240,34 @@ class SummaryService
             $tahunIni = now()->year;
         }
 
+        // OPTIMASI: Bulk fetch semua deklarasi bulan ini (1 query)
+        $branchIdsList = $allBranches->pluck('id')->toArray();
+
+        $allDeklarasi = RiskFreeDeclaration::whereIn('branch_id', $branchIdsList)
+            ->where('bulan', $bulanIni)
+            ->where('tahun', $tahunIni)
+            ->get()
+            ->groupBy('branch_id');
+
+        // OPTIMASI: Bulk cek cabang mana yang ada laporan approved bulan ini (1 query)
+        $branchesWithApproved = RiskReport::whereIn('branch_id', $branchIdsList)
+            ->where('status', RiskReportStatus::ApprovedStatus->value)
+            ->whereMonth('created_at', $bulanIni)
+            ->whereYear('created_at', $tahunIni)
+            ->select('branch_id')
+            ->distinct()
+            ->pluck('branch_id')
+            ->toArray();
+
         foreach ($allBranches as $branch) {
-            $periode1 = RiskFreeDeclaration::where('branch_id', $branch->id)
-                ->where('periode', 1)
-                ->where('bulan', $bulanIni)
-                ->where('tahun', $tahunIni)
-                ->exists();
+            $branchDeklarasi = $allDeklarasi->get($branch->id, collect());
 
-            $periode2 = RiskFreeDeclaration::where('branch_id', $branch->id)
-                ->where('periode', 2)
-                ->where('bulan', $bulanIni)
-                ->where('tahun', $tahunIni)
-                ->exists();
-
-            $total = RiskFreeDeclaration::where('branch_id', $branch->id)
-                ->where('bulan', $bulanIni)
-                ->where('tahun', $tahunIni)
-                ->count();
+            $periode1 = $branchDeklarasi->contains('periode', 1);
+            $periode2 = $branchDeklarasi->contains('periode', 2);
+            $total = $branchDeklarasi->count();
 
             // Rejected = ada laporan risiko approved di cabang ini bulan ini, tapi kacab deklarasi nihil
-            $adaLaporanApproved = RiskReport::where('branch_id', $branch->id)
-                ->where('status', RiskReportStatus::ApprovedStatus->value)
-                ->whereMonth('created_at', $bulanIni)
-                ->whereYear('created_at', $tahunIni)
-                ->exists();
-
+            $adaLaporanApproved = in_array($branch->id, $branchesWithApproved);
             $rejected = $adaLaporanApproved && $total > 0;
 
             $deklarasiSummaries[] = [
