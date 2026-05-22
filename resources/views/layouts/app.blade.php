@@ -72,7 +72,7 @@
                 @endif
             </a>
 
-            @if(Auth::user()->isMaker())
+            @if(Auth::user()->canCreateReport())
             <a href="{{ route('risk.history') }}"
                class="{{ request()->routeIs('risk.history') ? 'sidebar-link-active' : 'sidebar-link' }}">
                 <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
