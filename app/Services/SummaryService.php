@@ -51,7 +51,11 @@ class SummaryService
             ->count();
 
         $totalLossApproved = (clone $reportQuery)
-            ->where('status', RiskReportStatus::ApprovedStatus->value)
+            ->whereIn('status', [
+                RiskReportStatus::ApprovedStatus->value,
+                RiskReportStatus::InProgress->value,
+                RiskReportStatus::Closed->value,
+            ])
             ->where('kategori', 'finansial')
             ->sum('dampak_finansial');
 
@@ -160,7 +164,11 @@ class SummaryService
             $pending = (clone $query)->whereIn('status', [RiskReportStatus::PendingKacab->value, 'pending_korwil'])->count();
             $approved = (clone $query)->where('status', RiskReportStatus::ApprovedStatus->value)->count();
             $closed = (clone $query)->where('status', RiskReportStatus::Closed->value)->count();
-            $kerugian = (clone $query)->where('status', RiskReportStatus::ApprovedStatus->value)->where('kategori', 'finansial')->sum('dampak_finansial');
+            $kerugian = (clone $query)->whereIn('status', [
+                RiskReportStatus::ApprovedStatus->value,
+                RiskReportStatus::InProgress->value,
+                RiskReportStatus::Closed->value,
+            ])->where('kategori', 'finansial')->sum('dampak_finansial');
             $inProgress = (clone $query)->where('status', RiskReportStatus::InProgress->value)->count();
 
             if ($total > $maxTotal) $maxTotal = $total;
