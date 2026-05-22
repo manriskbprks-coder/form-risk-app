@@ -53,7 +53,7 @@ class DeclarationRule
     public function getPeriodeDateRange(string $periode, int $bulan, int $tahun): array
     {
         $startDay = $periode === '1' ? 1 : 15;
-        $endDay = $periode === '1' ? 14 : cal_days_in_month(CAL_GREGORIAN, $bulan, $tahun);
+        $endDay = $periode === '1' ? 14 : (int) date('t', mktime(0, 0, 0, $bulan, 1, $tahun));
 
         return [
             'start' => "{$tahun}-{$bulan}-{$startDay}",
