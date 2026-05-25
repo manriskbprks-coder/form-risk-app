@@ -43,7 +43,6 @@ class StoreRiskReportRequest extends FormRequest
             'mitigasi_tambahan' => ['nullable', 'string', 'max:2000'],
 
             'tindakan_awal' => ['nullable', 'string', 'max:2000'],
-            'status_awal' => ['required', 'in:open,in_progress'],
 
             // Validasi durasi
             'durasi_penyelesaian' => ['nullable', 'integer', 'min:1', 'max:9999'],

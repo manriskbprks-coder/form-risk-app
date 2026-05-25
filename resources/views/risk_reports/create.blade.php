@@ -217,29 +217,16 @@
                     @endif
 
                     <div class="mt-8 border-b pb-2 mb-4">
-                        <h3 class="text-lg font-bold text-gray-800">4. Penanganan Awal & Status</h3>
+                        <h3 class="text-lg font-bold text-gray-800">4. Penanganan Awal</h3>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-bold text-gray-700">Tindakan Penanganan Awal (Opsional)</label>
-                            <p class="text-xs text-gray-500 mb-1">Jika masalah sudah langsung ditangani saat kejadian, ceritakan di sini.</p>
-                            <textarea name="tindakan_awal" rows="2" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('tindakan_awal') border-red-500 bg-red-50 @enderror" placeholder="Contoh: Selisih kas sudah langsung diganti sore itu juga / Nasabah sudah ditelepon untuk TT ulang...">{{ old('tindakan_awal') }}</textarea>
-                            @error('tindakan_awal')
-                            <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700">Status Penyelesaian Saat Ini <span class="text-red-500">*</span></label>
-                            <select name="status_awal" required class="mt-1 w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('status_awal') border-red-500 bg-red-50 @enderror">
-                                <option value="open" {{ old('status_awal') == 'open' ? 'selected' : '' }}>Open (Belum ada tindakan sama sekali)</option>
-                                <option value="in_progress" {{ old('status_awal') == 'in_progress' ? 'selected' : '' }}>In Progress (Sedang dalam proses penyelesaian)</option>
-                            </select>
-                            @error('status_awal')
-                            <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold text-gray-700">Tindakan Penanganan Awal (Opsional)</label>
+                        <p class="text-xs text-gray-500 mb-1">Jika masalah sudah langsung ditangani saat kejadian, ceritakan di sini.</p>
+                        <textarea name="tindakan_awal" rows="2" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('tindakan_awal') border-red-500 bg-red-50 @enderror" placeholder="Contoh: Selisih kas sudah langsung diganti sore itu juga / Nasabah sudah ditelepon untuk TT ulang...">{{ old('tindakan_awal') }}</textarea>
+                        @error('tindakan_awal')
+                        <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     <div class="flex justify-end pt-2">
