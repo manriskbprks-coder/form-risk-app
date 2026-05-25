@@ -23,13 +23,10 @@ RUN composer install --no-dev --optimize-autoloader
 RUN npm install
 RUN npm run build
 
-# Hapus file & folder yang ga perlu di production
+# Hapus folder & file sisa build biar image Docker jadi super ringan
 RUN rm -rf tests/ node_modules/ resources/css/ resources/js/ \
-    phpunit.xml phpunit.dusk.xml .env.dusk \
-    vite.config.js postcss.config.js tailwind.config.js \
-    ROADMAP.md TEST_*.md chartplan.md sc_phase.md \
-    rulescline .rulescline query RISK_REPORT_POLICY.md \
-    _ide_helper.php _ide_helper_models.php
+    phpunit.xml phpunit.dusk.xml vite.config.js postcss.config.js tailwind.config.js \
+    *.md _ide_helper*.php
 
 # Jalankan migration (tanpa fresh — biar data aman) & serve
 CMD php artisan migrate:fresh --seed --force && php artisan serve --host=0.0.0.0 --port=$PORT

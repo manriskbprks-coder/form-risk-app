@@ -30,7 +30,7 @@ class AdminUserController extends Controller
             'username' => ['required', 'string', 'max:255', 'unique:users'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'branch_id' => ['required', 'exists:branches,id'],
+            'branch_id' => ['required', 'uuid', 'exists:branches,id'],
             'role' => ['required', 'exists:roles,name'],
         ]);
 
@@ -53,7 +53,7 @@ class AdminUserController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'branch_id' => ['required', 'exists:branches,id'],
+            'branch_id' => ['required', 'uuid', 'exists:branches,id'],
             'role' => ['required', 'exists:roles,name'],
         ]);
 

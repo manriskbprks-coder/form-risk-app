@@ -12,9 +12,9 @@ return new class extends Migration
     public function up()
     {
         Schema::create('risk_report_logs', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('risk_report_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->constrained(); // Siapa yang nulis note
+            $table->uuid('id')->primary();
+            $table->foreignUuid('risk_report_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('user_id')->constrained(); // Siapa yang nulis note
             $table->text('note'); // Isi progressnya
             $table->string('status_after_note'); // Status setelah note ini dibuat
             $table->timestamps();

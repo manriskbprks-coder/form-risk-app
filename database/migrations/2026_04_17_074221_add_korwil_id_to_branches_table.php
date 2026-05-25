@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('branches', function (Blueprint $table) {
             // Tambahin korwil_id. Harus nullable karena pas pertama kali cabang dibangun, belum tentu ada Korwil-nya.
-            $table->unsignedBigInteger('korwil_id')->nullable()->after('nama_cabang');
+            $table->uuid('korwil_id')->nullable()->after('nama_cabang');
         });
     }
 

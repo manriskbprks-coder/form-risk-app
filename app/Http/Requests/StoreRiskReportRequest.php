@@ -33,10 +33,10 @@ class StoreRiskReportRequest extends FormRequest
             'tanggal_kejadian' => ['required', 'date', 'date_format:Y-m-d', 'before_or_equal:today'],
             'tanggal_diketahui' => ['required', 'date', 'date_format:Y-m-d', 'before_or_equal:today', 'after_or_equal:tanggal_kejadian'],
 
-            'risk_item_id' => ['required', 'integer', 'min:1', 'exists:risk_items,id'],
+            'risk_item_id' => ['required', 'uuid', 'exists:risk_items,id'],
             'other_item_description' => ['nullable', 'string', 'max:255'],
 
-            'risk_cause_id' => ['nullable', 'integer', 'min:1', 'exists:risk_causes,id', 'required_without:other_cause_description'],
+            'risk_cause_id' => ['nullable', 'uuid', 'exists:risk_causes,id', 'required_without:other_cause_description'],
             'other_cause_description' => ['nullable', 'string', 'max:255', 'required_without:risk_cause_id'],
             'kronologis_kejadian' => ['required', 'string', 'min_words:20', 'max:5000'],
 

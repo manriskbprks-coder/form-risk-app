@@ -12,15 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('risk_reports', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users'); // Siapa yang lapor
-            $table->foreignId('branch_id')->constrained('branches'); // Di cabang mana
+            $table->uuid('id')->primary();
+            $table->foreignUuid('user_id')->constrained('users'); // Siapa yang lapor
+            $table->foreignUuid('branch_id')->constrained('branches'); // Di cabang mana
 
             $table->date('tanggal_kejadian');
             $table->date('tanggal_diketahui');
 
-            $table->foreignId('risk_item_id')->constrained('risk_items');
-            $table->foreignId('risk_cause_id')->constrained('risk_causes');
+            $table->foreignUuid('risk_item_id')->constrained('risk_items');
+            $table->foreignUuid('risk_cause_id')->nullable()->constrained('risk_causes');
 
             // Kalau milih cause "Other", dia ngisi ini
             $table->string('other_cause_description')->nullable();

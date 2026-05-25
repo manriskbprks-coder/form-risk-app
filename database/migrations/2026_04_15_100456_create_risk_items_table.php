@@ -12,7 +12,7 @@ return new class extends Migration
     public function up()
     {
         Schema::create('risk_items', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('nama_risiko');
             // TAMBAHIN BARIS INI:
             $table->enum('kategori', ['finansial', 'non-finansial'])->default('finansial');

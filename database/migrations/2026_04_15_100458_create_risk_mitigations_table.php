@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
     Schema::create('risk_mitigations', function (Blueprint $table) {
-        $table->id();
+        $table->uuid('id')->primary();
         // FK yang nyambung ke tabel risk_causes
-        $table->foreignId('risk_cause_id')->constrained('risk_causes')->cascadeOnDelete();
+        $table->foreignUuid('risk_cause_id')->constrained('risk_causes')->cascadeOnDelete();
         $table->text('mitigasi'); // Teks mitigasi standar dari lu (Manrisk)
         $table->timestamps();
     });

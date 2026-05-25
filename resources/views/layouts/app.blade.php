@@ -38,14 +38,14 @@
         <div class="px-4 py-4 border-b border-slate-100 shrink-0">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm shrink-0">
-                    {{ Str::substr(Auth::user()->name, 0, 1) }}
+                    {{ Str::substr(Auth::user()?->name ?? 'U', 0, 1) }}
                 </div>
                 <div class="min-w-0">
-                    <p class="text-sm font-semibold text-slate-900 truncate">{{ Auth::user()->name }}</p>
+                    <p class="text-sm font-semibold text-slate-900 truncate">{{ Auth::user()?->name ?? 'Guest' }}</p>
                     <p class="text-[11px] text-slate-400 font-medium truncate uppercase">
-                        {{ Auth::user()->primaryRoleName() ?? '—' }}
+                        {{ Auth::user()?->primaryRoleName() ?? '—' }}
                         &middot;
-                        {{ Auth::user()->branch->nama_cabang ?? 'Pusat' }}
+                        {{ Auth::user()?->branch->nama_cabang ?? 'Pusat' }}
                     </p>
                 </div>
             </div>
@@ -72,7 +72,7 @@
                 @endif
             </a>
 
-            @if(Auth::user()->canCreateReport())
+            @if(Auth::check() && Auth::user()->canCreateReport())
             <a href="{{ route('risk.history') }}"
                class="{{ request()->routeIs('risk.history') ? 'sidebar-link-active' : 'sidebar-link' }}">
                 <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,7 +100,7 @@
             </a>
             @endif
 
-            @if(Auth::user()->isChecker())
+            @if(Auth::check() && Auth::user()->isChecker())
             <a href="{{ route('review.laporan') }}"
                class="{{ request()->routeIs('review.laporan') ? 'sidebar-link-active' : 'sidebar-link' }}">
                 <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,7 +145,7 @@
             </a>
             @endif
 
-            @if(Auth::user()->isViewer() || Auth::user()->isAdmin())
+            @if(Auth::check() && (Auth::user()->isViewer() || Auth::user()->isAdmin()))
             <a href="{{ route('risk.history') }}"
                class="{{ request()->routeIs('risk.history') ? 'sidebar-link-active' : 'sidebar-link' }}">
                 <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,7 +156,7 @@
             @endif
 
 
-            @if(Auth::user()->isAdmin())
+            @if(Auth::check() && Auth::user()->isAdmin())
             <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-[0.14em] mb-2 mt-6">Administrasi</p>
 
             <a href="{{ route('admin.risk_master.index') }}"
@@ -235,13 +235,25 @@
                        class="relative p-2 rounded-lg hover:bg-slate-100 transition group"
                        x-data="{ unread: 0 }"
                        x-init="
-                           fetch('{{ route('notifications.unread_count') }}')
+                           fetch('{{ route('notifications.unread_count') }}', {
+                               headers: {
+                                   'Accept': 'application/json',
+                                   'X-Requested-With': 'XMLHttpRequest'
+                               }
+                           })
                                .then(r => r.json())
-                               .then(d => { unread = d.count; });
+                               .then(d => { unread = d.count; })
+                               .catch(e => console.log('Notif polling error:', e));
                            setInterval(() => {
-                               fetch('{{ route('notifications.unread_count') }}')
+                               fetch('{{ route('notifications.unread_count') }}', {
+                                   headers: {
+                                       'Accept': 'application/json',
+                                       'X-Requested-With': 'XMLHttpRequest'
+                                   }
+                               })
                                    .then(r => r.json())
-                                   .then(d => { unread = d.count; });
+                                   .then(d => { unread = d.count; })
+                                   .catch(e => console.log('Notif polling error:', e));
                            }, 30000);
                        ">
                         <svg class="w-5 h-5 text-slate-500 group-hover:text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,11 +270,11 @@
                     <div class="relative" x-data="{ open: false }" @click.outside="open = false">
                         <button @click="open = !open" class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition group">
                             <div class="hidden sm:block text-right">
-                                <p class="text-sm font-semibold text-slate-800 group-hover:text-indigo-700 transition">{{ Auth::user()->name }}</p>
-                                <p class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{{ Auth::user()->primaryRoleName() ?? '—' }}</p>
+                                <p class="text-sm font-semibold text-slate-800 group-hover:text-indigo-700 transition">{{ Auth::user()?->name ?? 'Guest' }}</p>
+                                <p class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{{ Auth::user()?->primaryRoleName() ?? '—' }}</p>
                             </div>
                             <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0">
-                                {{ Str::substr(Auth::user()->name, 0, 1) }}
+                                {{ Str::substr(Auth::user()?->name ?? 'U', 0, 1) }}
                             </div>
                             <svg class="w-4 h-4 text-slate-400 transition" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>

@@ -116,7 +116,7 @@
                         <div x-show="(filterRole === 'semua' || filterRole === '{{ strtolower($item->role_target) }}') && (filterKategori === 'semua' || filterKategori === '{{ strtolower($item->kategori) }}') && (filterSumber === 'semua' || filterSumber === '{{ strtolower($item->sumber_risiko) }}')" 
                              x-transition
                              class="p-4 sm:p-5 hover:bg-slate-50 cursor-pointer transition flex items-start justify-between gap-4 group"
-                             @click="activeModal = {{ $item->id }}">
+                             @click="activeModal = '{{ $item->id }}'">
                             
                             <div class="min-w-0 flex-1 pr-2">
                                 <div class="mb-2 flex flex-wrap items-center gap-2">
@@ -145,20 +145,20 @@
                                 </button>
                                 <form id="deleteItemForm_{{ $item->id }}" action="{{ route('admin.risk_master.destroy_item', $item->id) }}" method="POST" class="relative z-10" @click.stop>
                                     @csrf @method('DELETE')
-                                    <button type="button" onclick="openDeleteItem({{ $item->id }}, '{{ addslashes($item->nama_risiko) }}')" class="inline-flex items-center justify-center min-w-[84px] text-rose-600 hover:text-white hover:bg-rose-500 border border-rose-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">
+                                    <button type="button" onclick="openDeleteItem('{{ $item->id }}', '{{ addslashes($item->nama_risiko) }}')" class="inline-flex items-center justify-center min-w-[84px] text-rose-600 hover:text-white hover:bg-rose-500 border border-rose-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">
                                         Hapus
                                     </button>
                                 </form>
                             </div>
                         </div>
 
-                        <div x-show="activeModal === {{ $item->id }}" style="display: none;" class="fixed inset-0 z-40 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                        <div x-show="activeModal === '{{ $item->id }}'" style="display: none;" class="fixed inset-0 z-40 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
                             <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                                 
-                                <div x-show="activeModal === {{ $item->id }}" x-transition.opacity class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="activeModal = null" aria-hidden="true"></div>
+                                <div x-show="activeModal === '{{ $item->id }}'" x-transition.opacity class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="activeModal = null" aria-hidden="true"></div>
                                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-                                <div x-show="activeModal === {{ $item->id }}" x-transition class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl w-full max-w-full">
+                                <div x-show="activeModal === '{{ $item->id }}'" x-transition class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl w-full max-w-full">
                                     
                                     <div class="bg-slate-50 px-4 py-4 border-b border-slate-200 flex items-start justify-between gap-3 sticky top-0 z-10">
                                         <div>
@@ -177,7 +177,7 @@
                                                 
                                                 <div class="flex flex-col md:flex-row gap-0 md:gap-4 border border-gray-200 rounded-lg overflow-hidden group hover:border-blue-300 transition relative">
                                                     
-                                                    <button type="button" @click="openEdit({{ $cause->id }}, '{{ addslashes($cause->penyebab) }}', '{{ $cause->sumber_risiko }}', '{{ addslashes($mitigasiTeks) }}')" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 px-2 py-1 rounded text-[10px] font-bold uppercase transition z-10 border border-yellow-300">
+                                                    <button type="button" @click="openEdit('{{ $cause->id }}', '{{ addslashes($cause->penyebab) }}', '{{ $cause->sumber_risiko }}', '{{ addslashes($mitigasiTeks) }}')" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 px-2 py-1 rounded text-[10px] font-bold uppercase transition z-10 border border-yellow-300">
                                                         Edit
                                                     </button>
 

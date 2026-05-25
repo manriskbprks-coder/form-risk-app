@@ -12,16 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('risk_free_declarations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('branch_id')->constrained('branches')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->uuid('id')->primary();
+            $table->foreignUuid('branch_id')->constrained('branches')->onDelete('cascade');
+            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
             $table->enum('periode', ['1', '2']); // 1 = tgl 1-14, 2 = tgl 15-akhir
             $table->tinyInteger('bulan'); // 1-12
             $table->year('tahun');
             $table->text('statement_text');
-            $table->enum('status', ['active', 'violated', 'cancelled'])->default('active');
-            $table->timestamp('violated_at')->nullable();
-            $table->foreignId('violated_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->enum('status', ['active', 'rejected', 'cancelled'])->default('active');
+            $table->timestamp('rejected_at')->nullable();
+            $table->foreignUuid('rejected_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
 
             // Unique constraint: 1 branch hanya boleh 1 deklarasi per periode per bulan per tahun
@@ -29,8 +29,8 @@ return new class extends Migration
         });
 
         Schema::create('risk_free_declaration_details', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('risk_free_declaration_id')->constrained('risk_free_declarations')->onDelete('cascade');
+            $table->uuid('id')->primary();
+            $table->foreignUuid('risk_free_declaration_id')->constrained('risk_free_declarations')->onDelete('cascade');
             $table->string('jabatan'); // Teller, CA, CS, Security, Kacab
             $table->boolean('is_clean')->default(true); // true = nihil
             $table->text('keterangan')->nullable();
