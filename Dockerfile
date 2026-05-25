@@ -32,5 +32,5 @@ RUN rm -rf tests/ node_modules/ resources/css/ resources/js/ \
     _ide_helper.php _ide_helper_models.php
 
 # Jalankan migration (tanpa fresh — biar data aman) & serve
-# CMD php artisan migrate:fresh --seed --force && php artisan serve --host=0.0.0.0 --port=$PORT
-CMD php artisan serve --host=0.0.0.0 --port=$PORT
+CMD php artisan migrate:fresh --seed --force && php artisan serve --host=0.0.0.0 --port=$PORT
+#CMD php artisan serve --host=0.0.0.0 --port=$PORT
