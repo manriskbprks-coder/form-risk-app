@@ -243,7 +243,7 @@
                     </div>
 
                     <div class="flex justify-end pt-2">
-                        <button type="submit" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-black font-bold py-2 px-6 rounded">
+                        <button type="submit" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded">
                             Submit Laporan
                         </button>
                     </div>
