@@ -22,13 +22,13 @@ class NotificationService
     /**
      * Buat notifikasi untuk semua user Kacab di suatu cabang.
      *
-     * @param int $branchId
+     * @param string $branchId
      * @param string $type
      * @param string $message
-     * @param int|null $riskReportId
+     * @param string|null $riskReportId
      * @return Collection
      */
-    public function notifyKacabBranch(int $branchId, string $type, string $message, ?int $riskReportId = null): Collection
+    public function notifyKacabBranch(string $branchId, string $type, string $message, ?string $riskReportId = null): Collection
     {
         $kacabUsers = User::whereHas('roles', function ($q) {
             $q->where('role_category', 'checker');
@@ -42,10 +42,10 @@ class NotificationService
      *
      * @param string $type
      * @param string $message
-     * @param int|null $riskReportId
+     * @param string|null $riskReportId
      * @return Collection
      */
-    public function notifyManRisk(string $type, string $message, ?int $riskReportId = null): Collection
+    public function notifyManRisk(string $type, string $message, ?string $riskReportId = null): Collection
     {
         $manriskUsers = User::whereHas('roles', function ($q) {
             $q->where('role_category', 'admin');
@@ -60,10 +60,10 @@ class NotificationService
      * @param User $user
      * @param string $type
      * @param string $message
-     * @param int|null $riskReportId
+     * @param string|null $riskReportId
      * @return Notification
      */
-    public function notifyUser(User $user, string $type, string $message, ?int $riskReportId = null): Notification
+    public function notifyUser(User $user, string $type, string $message, ?string $riskReportId = null): Notification
     {
         return Notification::create([
             'user_id' => $user->id,
@@ -92,10 +92,10 @@ class NotificationService
      * @param string $roleCategory
      * @param string $type
      * @param string $message
-     * @param int|null $riskReportId
+     * @param string|null $riskReportId
      * @return Collection
      */
-    public function notifyByRoleCategory(string $roleCategory, string $type, string $message, ?int $riskReportId = null): Collection
+    public function notifyByRoleCategory(string $roleCategory, string $type, string $message, ?string $riskReportId = null): Collection
     {
         $users = User::whereHas('roles', function ($q) use ($roleCategory) {
             $q->where('role_category', $roleCategory);
@@ -108,13 +108,13 @@ class NotificationService
      * Buat notifikasi untuk semua user Kacab di cabang tertentu + ManRisk.
      * Dipakai saat ada laporan baru yang butuh perhatian.
      *
-     * @param int $branchId
+     * @param string $branchId
      * @param string $type
      * @param string $message
-     * @param int|null $riskReportId
+     * @param string|null $riskReportId
      * @return Collection
      */
-    public function notifyKacabAndManRisk(int $branchId, string $type, string $message, ?int $riskReportId = null): Collection
+    public function notifyKacabAndManRisk(string $branchId, string $type, string $message, ?string $riskReportId = null): Collection
     {
         $notifications = collect();
 
@@ -139,10 +139,10 @@ class NotificationService
      * @param Collection|User[] $users
      * @param string $type
      * @param string $message
-     * @param int|null $riskReportId
+     * @param string|null $riskReportId
      * @return Collection
      */
-    private function createForUsers($users, string $type, string $message, ?int $riskReportId = null): Collection
+    private function createForUsers($users, string $type, string $message, ?string $riskReportId = null): Collection
     {
         $notifications = collect();
 

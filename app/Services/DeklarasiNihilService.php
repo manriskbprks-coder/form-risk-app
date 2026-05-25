@@ -37,7 +37,7 @@ class DeklarasiNihilService
     /**
      * Cek apakah Kacab sudah pernah deklarasi untuk periode ini.
      */
-    public function sudahDeklarasi(int $branchId, string $periode, int $bulan, int $tahun): bool
+    public function sudahDeklarasi(string $branchId, string $periode, int $bulan, int $tahun): bool
     {
         return RiskFreeDeclaration::where('branch_id', $branchId)
             ->where('periode', $periode)
@@ -49,7 +49,7 @@ class DeklarasiNihilService
     /**
      * Cek apakah ada laporan risiko yang dibuat di periode ini oleh cabang tersebut.
      */
-    public function adaLaporanDiPeriode(int $branchId, string $periode, int $bulan, int $tahun): bool
+    public function adaLaporanDiPeriode(string $branchId, string $periode, int $bulan, int $tahun): bool
     {
         $dateRange = $this->declarationRule->getPeriodeDateRange($periode, $bulan, $tahun);
 
@@ -112,7 +112,7 @@ class DeklarasiNihilService
      *
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      */
-    public function reject(int $id, User $user): RiskFreeDeclaration
+    public function reject(string $id, User $user): RiskFreeDeclaration
     {
         $declaration = RiskFreeDeclaration::findOrFail($id);
 

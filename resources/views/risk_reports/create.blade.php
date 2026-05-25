@@ -82,14 +82,6 @@
                         <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
                         @enderror
                     </div>
-                    <div id="otherCauseContainer" class="mt-3 hidden p-3 bg-yellow-50 border border-yellow-200 rounded">
-                        <label class="block text-sm font-medium text-yellow-700">Sebutkan Penyebab Risiko Tersebut <span class="text-red-500">*</span></label>
-                        <input type="text" name="other_cause_description" id="otherCauseInput" value="{{ old('other_cause_description') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm @error('other_cause_description') border-red-500 bg-red-50 @enderror" placeholder="Ketik penyebab detail di sini...">
-                        @error('other_cause_description')
-                        <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-
                     <!-- SUMBER RISIKO (khusus Lainnya) -->
                     <div id="sumberRisikoContainer" class="mt-3 hidden p-3 bg-purple-50 border border-purple-200 rounded-lg">
                         <label class="block text-sm font-medium text-purple-700">Sumber Risiko <span class="text-red-500">*</span></label>
@@ -104,12 +96,21 @@
                         <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
                         @enderror
                     </div>
+
                     <div id="causeContainer" class="mb-4 hidden">
                         <label class="block text-sm font-medium text-gray-700">Apa penyebabnya? <span class="text-red-500">*</span></label>
                         <select id="riskCauseSelect" name="risk_cause_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm @error('risk_cause_id') border-red-500 bg-red-50 @enderror">
                             <option value="">-- Pilih Penyebab --</option>
                         </select>
                         @error('risk_cause_id')
+                        <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div id="otherCauseContainer" class="mt-3 mb-4 hidden p-3 bg-yellow-50 border border-yellow-200 rounded">
+                        <label class="block text-sm font-medium text-yellow-700">Sebutkan Penyebab Risiko Tersebut <span class="text-red-500">*</span></label>
+                        <input type="text" name="other_cause_description" id="otherCauseInput" value="{{ old('other_cause_description') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm @error('other_cause_description') border-red-500 bg-red-50 @enderror" placeholder="Ketik penyebab detail di sini...">
+                        @error('other_cause_description')
                         <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
                         @enderror
                     </div>
@@ -383,6 +384,15 @@
             }
         });
 
+        // Trigger validasi Sumber Risiko manual saat item Lainnya
+        sumberRisikoSelect.addEventListener('change', function() {
+            if (this.value === 'sistem_teknologi') {
+                toggleDurasi(true);
+            } else {
+                toggleDurasi(false);
+            }
+        });
+
         // Trigger saat milih dropdown penyebab
         causeSelect.addEventListener('change', function() {
             // Guard: kalo dropdown kosong atau ga ada option yang dipilih, skip
@@ -422,8 +432,14 @@
             if (sumberRisiko === 'sistem_teknologi' && this.value !== 'other' && this.value !== '') {
                 toggleDurasi(true);
             } else if (this.value === 'other') {
-                // Kalo pilih "Lainnya", munculin durasi juga (soalnya bisa aja masalah sistem)
-                toggleDurasi(true);
+                // Kalo pilih "Lainnya", jangan sembarangan munculin durasi!
+                // Cek dulu apakah Item-nya adalah sistem teknologi
+                const selectedItemId = itemSelect.value;
+                if (cekSumberTeknologi(selectedItemId)) {
+                    toggleDurasi(true);
+                } else {
+                    toggleDurasi(false);
+                }
             } else {
                 // Fallback: cek dari item yang dipilih
                 const selectedItemId = itemSelect.value;
