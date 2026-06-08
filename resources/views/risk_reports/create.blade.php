@@ -135,10 +135,10 @@
                         <p id="mitigationText" class="text-sm text-blue-700 mt-1 font-medium"></p>
                     </div>
 
-                    <!-- DURASI PENYELESAIAN (khusus sumber risiko = sistem_teknologi) -->
+                    <!-- DURASI PENYELESAIAN (khusus sumber risiko = sistem_teknologi atau proses_internal) -->
                     <div id="durasiContainer" class="mb-4 hidden p-4 bg-orange-50 border border-orange-200 rounded-lg">
                         <label class="block text-sm font-bold text-orange-800 mb-1">
-                            ⏱ Durasi Penyelesaian (Sistem Teknologi)
+                            ⏱ Durasi Penyelesaian (SLA)
                         </label>
                         <p class="text-xs text-orange-600 mb-2">Berapa lama waktu yang dibutuhkan untuk menyelesaikan masalah ini?</p>
                         <div class="flex gap-2 items-center">
@@ -273,11 +273,11 @@
         const sumberRisikoContainer = document.getElementById('sumberRisikoContainer');
         const sumberRisikoSelect = document.getElementById('sumberRisikoSelect');
 
-        // Fungsi untuk cek apakah sumber risiko = sistem_teknologi
+        // Fungsi untuk cek apakah sumber risiko = sistem_teknologi atau proses_internal
         function cekSumberTeknologi(itemId) {
             if (!itemId) return false;
             const selectedItem = riskData.find(item => item.id == itemId);
-            return selectedItem && selectedItem.sumber_risiko === 'sistem_teknologi';
+            return selectedItem && (selectedItem.sumber_risiko === 'sistem_teknologi' || selectedItem.sumber_risiko === 'proses_internal');
         }
 
         // Fungsi untuk toggle durasi container
@@ -375,7 +375,7 @@
 
         // Trigger validasi Sumber Risiko manual saat item Lainnya
         sumberRisikoSelect.addEventListener('change', function() {
-            if (this.value === 'sistem_teknologi') {
+            if (this.value === 'sistem_teknologi' || this.value === 'proses_internal') {
                 toggleDurasi(true);
             } else {
                 toggleDurasi(false);
@@ -418,7 +418,7 @@
 
             // Logika Durasi: cek sumber risiko dari cause yang dipilih
             const sumberRisiko = selectedOption.getAttribute('data-sumber-risiko');
-            if (sumberRisiko === 'sistem_teknologi' && this.value !== 'other' && this.value !== '') {
+            if ((sumberRisiko === 'sistem_teknologi' || sumberRisiko === 'proses_internal') && this.value !== 'other' && this.value !== '') {
                 toggleDurasi(true);
             } else if (this.value === 'other') {
                 // Kalo pilih "Lainnya", jangan sembarangan munculin durasi!

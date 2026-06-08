@@ -227,7 +227,7 @@
  @endphp
 
  <select name="new_status" class="w-full max-w-[150px] text-xs border-gray-300 rounded shadow-sm focus:ring-blue-500">
- <option value="in_progress" {{ $tl->status == 'in_progress' ? 'selected' : '' }}>In Progress</option>
+ <option value="approved_in_progress" {{ $tl->status == 'approved_in_progress' ? 'selected' : '' }}>In Progress</option>
 
  @if($canClose)
  <option value="closed">Selesai (Closed)</option>
@@ -461,7 +461,7 @@
  <p id="detailMitigasiTambahan" class="text-sm text-gray-800 bg-gray-50 p-3 rounded border border-gray-200 italic"></p>
  </div>
  <div id="detailDurasiContainer" class="hidden">
- <p class="text-gray-500 font-bold text-[10px] uppercase mb-1">Durasi Penyelesaian</p>
+ <p class="text-gray-500 font-bold text-[10px] uppercase mb-1">Durasi Penyelesaian (SLA)</p>
  <p id="detailDurasi" class="text-sm font-semibold text-orange-700 bg-orange-50 p-3 rounded border border-orange-200"></p>
  </div>
  </div>

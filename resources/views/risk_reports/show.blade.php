@@ -178,7 +178,7 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     @if($report->durasi_penyelesaian)
                                     <div>
-                                        <p class="text-gray-500 font-bold text-xs uppercase mb-1">Durasi Penyelesaian</p>
+                                        <p class="text-gray-500 font-bold text-xs uppercase mb-1">Durasi Penyelesaian (SLA)</p>
                                         <p class="text-sm font-semibold text-blue-700 bg-blue-50 p-3 rounded-lg border border-blue-200">{{ $report->durasi_penyelesaian }} {{ $report->durasi_satuan }}</p>
                                     </div>
                                     @endif
@@ -264,7 +264,7 @@
 
                                     <div id="durasiRevisiContainer" class="grid grid-cols-2 gap-3 mb-4 {{ $isSistemTeknologi ? '' : 'hidden' }}">
                                         <div>
-                                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Durasi Penyelesaian</label>
+                                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Durasi Penyelesaian (SLA)</label>
                                             <input type="number" name="durasi_penyelesaian" min="1"
                                                 class="w-full rounded-md border-gray-300 text-sm focus:ring-orange-500 focus:border-orange-500"
                                                 value="{{ old('durasi_penyelesaian', $report->durasi_penyelesaian) }}">
@@ -292,18 +292,31 @@
                                 <form action="{{ route('risk_reports.add_progress', $report->id) }}" method="POST">
                                     @csrf
                                     <label class="block text-xs font-bold text-blue-800 uppercase mb-2">Update Progress Baru</label>
-                                    <textarea name="note" rows="3" required class="w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500 mb-3" placeholder="Ketik tindakan penyelesaian di sini..."></textarea>
-
-                                    <label class="block text-xs font-bold text-blue-800 uppercase mb-1">Set Status Menjadi:</label>
-                                    <select name="new_status" class="w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500 mb-4">
-                                        <option value="in_progress" {{ $report->status == 'in_progress' ? 'selected' : '' }}>In Progress (Sedang dikerjakan)</option>
-                                        @if(auth()->user()->roleCategory() === 'checker')
-                                        <option value="closed" class="font-bold text-green-600">Closed (Selesai Tuntas)</option>
-                                        @endif
-                                    </select>
+                                    <textarea name="note" rows="3" required class="w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500 mb-4" placeholder="Ketik tindakan penyelesaian di sini..."></textarea>
 
                                     <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg shadow transition">
                                         💾 Simpan Progress
+                                    </button>
+                                </form>
+                            </div>
+                            @endif
+
+                            {{-- FORM UPDATE STATUS (KHUSUS KACAB) --}}
+                            @if(auth()->user()->roleCategory() === 'checker' && in_array($report->status, ['in_progress', 'approved_in_progress']))
+                            <div class="bg-white p-5 rounded-lg border border-green-200 shadow-sm mt-4">
+                                <h4 class="text-sm font-bold text-green-800 uppercase mb-3">🛠 Update Status Laporan</h4>
+                                <form action="{{ route('risk_reports.add_progress', $report->id) }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="note" value="Update status dari halaman Detail Laporan">
+                                    
+                                    <label class="block text-xs font-bold text-green-800 uppercase mb-2">Pilih Status Baru</label>
+                                    <select name="new_status" class="w-full rounded-md border-gray-300 text-sm focus:ring-green-500 focus:border-green-500 mb-4">
+                                        <option value="approved_in_progress" {{ $report->status == 'approved_in_progress' ? 'selected' : '' }}>In Progress (Sedang dikerjakan)</option>
+                                        <option value="closed">Closed (Selesai Tuntas)</option>
+                                    </select>
+
+                                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-4 rounded-lg shadow transition">
+                                        ✅ Simpan Status
                                     </button>
                                 </form>
                             </div>

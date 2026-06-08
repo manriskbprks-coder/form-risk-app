@@ -193,17 +193,18 @@ class RiskReportController extends Controller
         $report = RiskReport::findOrFail($id);
         Gate::authorize('updateProgress', $report);
 
-        if ($request->new_status === RiskReportStatus::Closed->value) {
+        $newStatus = $request->new_status ?? $report->status;
+
+        if ($newStatus === \App\Domain\Enums\RiskReportStatus::Closed->value) {
             if (!$user->roleCategoryEnum()?->isChecker()) {
                 return back()->with('error', 'Hanya Checker (Kacab) yang berwenang menutup laporan.');
             }
-
             if ((string) $report->branch_id !== (string) $user->branch_id) {
                 return back()->with('error', 'Anda tidak berwenang menutup laporan dari cabang lain.');
             }
         }
 
-        $this->riskReportService->addProgress($report, $user, $request->note, $request->new_status);
+        $this->riskReportService->addProgress($report, $user, $request->note, $newStatus);
 
         return back()->with('success', 'Progress berhasil dicatat!');
     }
