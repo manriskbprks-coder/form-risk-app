@@ -91,7 +91,7 @@ class RiskFreeDeclarationController extends Controller
         }
 
         try {
-            $this->deklarasiNihilService->reject((int) $id, $user);
+            $this->deklarasiNihilService->reject((string) $id, $user);
             return back()->with('success', 'Deklarasi ditolak (rejected).');
         } catch (\RuntimeException | \DomainException $e) {
             return back()->with('error', $e->getMessage());

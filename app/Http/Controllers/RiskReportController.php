@@ -81,22 +81,29 @@ class RiskReportController extends Controller
 
         $reports = collect();
         $tindakLanjut = collect();
+        $closedReports = collect();
 
         if ($user->roleCategoryEnum()?->isChecker()) {
             $reports = RiskReport::with(['user.roles', 'item', 'cause.mitigations', 'branch'])
                 ->where('branch_id', $user->branch_id)
-                ->whereIn('status', [RiskReportStatus::PendingKacab->value, RiskReportStatus::NeedRevision->value])
+                ->whereIn('status', [RiskReportStatus::PendingAtasan->value, RiskReportStatus::NeedRevision->value])
                 ->orderBy('created_at', 'desc')
                 ->get();
 
             $tindakLanjut = RiskReport::with(['user.roles', 'item', 'cause.mitigations', 'branch'])
                 ->where('branch_id', $user->branch_id)
-                ->whereIn('status', [RiskReportStatus::ApprovedStatus->value, RiskReportStatus::InProgress->value])
+                ->where('status', RiskReportStatus::ApprovedInProgress->value)
+                ->orderBy('updated_at', 'desc')
+                ->get();
+
+            $closedReports = RiskReport::with(['user.roles', 'item', 'branch'])
+                ->where('branch_id', $user->branch_id)
+                ->where('status', RiskReportStatus::Closed->value)
                 ->orderBy('updated_at', 'desc')
                 ->get();
         }
 
-        return view('risk_reports.review', compact('reports', 'tindakLanjut'));
+        return view('risk_reports.review', compact('reports', 'tindakLanjut', 'closedReports'));
     }
 
     // PROSES APPROVAL / REJECT (Kacab)
@@ -132,7 +139,7 @@ class RiskReportController extends Controller
 
         $branches = $this->riskReportQueryService->getBranchesForUser($user);
 
-        $totalLoss = (clone $query)->where('status', RiskReportStatus::ApprovedStatus->value)->sum('dampak_finansial');
+        $totalLoss = (clone $query)->whereIn('status', [RiskReportStatus::ApprovedInProgress->value, RiskReportStatus::Closed->value])->sum('dampak_finansial');
         $totalKejadian = (clone $query)->count();
         $totalRejected = (clone $query)->where('status', 'need_revision')->count();
 
@@ -191,7 +198,7 @@ class RiskReportController extends Controller
                 return back()->with('error', 'Hanya Checker (Kacab) yang berwenang menutup laporan.');
             }
 
-            if ((int) $report->branch_id !== (int) $user->branch_id) {
+            if ((string) $report->branch_id !== (string) $user->branch_id) {
                 return back()->with('error', 'Anda tidak berwenang menutup laporan dari cabang lain.');
             }
         }

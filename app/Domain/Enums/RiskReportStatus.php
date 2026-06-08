@@ -18,11 +18,10 @@ namespace App\Domain\Enums;
  */
 enum RiskReportStatus: string
 {
-    case PendingKacab = 'pending_kacab';
+    case PendingAtasan = 'pending_atasan';
     case NeedRevision = 'need_revision';
     case PendingRevision = 'pending_revision';
-    case ApprovedStatus = 'approved';
-    case InProgress = 'in_progress';
+    case ApprovedInProgress = 'approved_in_progress';
     case Closed = 'closed';
 
     /**
@@ -42,11 +41,10 @@ enum RiskReportStatus: string
     public static function allowedTransitions(): array
     {
         return [
-            'pending_kacab' => [self::ApprovedStatus, self::NeedRevision],
-            'need_revision' => [self::PendingKacab, self::PendingRevision],
-            'pending_revision' => [self::ApprovedStatus],
-            'approved' => [self::InProgress, self::NeedRevision],
-            'in_progress' => [self::Closed],
+            'pending_atasan' => [self::ApprovedInProgress, self::NeedRevision],
+            'need_revision' => [self::PendingAtasan, self::PendingRevision],
+            'pending_revision' => [self::ApprovedInProgress],
+            'approved_in_progress' => [self::Closed],
             'closed' => [],
         ];
     }
@@ -60,14 +58,10 @@ enum RiskReportStatus: string
         return $this === self::Closed;
     }
 
-    /**
-     * Apakah status ini membutuhkan tindakan dari user?
-     * Status yang butuh action: pending_kacab, need_revision, pending_revision
-     */
     public function needsAction(): bool
     {
         return in_array($this, [
-            self::PendingKacab,
+            self::PendingAtasan,
             self::NeedRevision,
             self::PendingRevision,
         ]);
@@ -79,11 +73,10 @@ enum RiskReportStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::PendingKacab => 'Menunggu Persetujuan Kacab',
+            self::PendingAtasan => 'Menunggu Persetujuan Atasan',
             self::NeedRevision => 'Perlu Revisi',
             self::PendingRevision => 'Menunggu Persetujuan Revisi',
-            self::ApprovedStatus => 'Disetujui',
-            self::InProgress => 'Dalam Progres',
+            self::ApprovedInProgress => 'Disetujui & Diproses',
             self::Closed => 'Selesai',
         };
     }
@@ -94,11 +87,10 @@ enum RiskReportStatus: string
     public function badgeColor(): string
     {
         return match ($this) {
-            self::PendingKacab => 'bg-yellow-100 text-yellow-800',
+            self::PendingAtasan => 'bg-yellow-100 text-yellow-800',
             self::NeedRevision => 'bg-red-100 text-red-800',
             self::PendingRevision => 'bg-orange-100 text-orange-800',
-            self::ApprovedStatus => 'bg-green-100 text-green-800',
-            self::InProgress => 'bg-blue-100 text-blue-800',
+            self::ApprovedInProgress => 'bg-blue-100 text-blue-800',
             self::Closed => 'bg-gray-100 text-gray-800',
         };
     }
@@ -118,13 +110,14 @@ enum RiskReportStatus: string
     public static function fromOldStatuses(string $approvalStatus, string $resolutionStatus): self
     {
         return match (true) {
-            $approvalStatus === 'pending_kacab' => self::PendingKacab,
+            $approvalStatus === 'pending_kacab' || $approvalStatus === 'pending_atasan' => self::PendingAtasan,
             $approvalStatus === 'need_revision' => self::NeedRevision,
             $approvalStatus === 'pending_revision' => self::PendingRevision,
-            $approvalStatus === 'approved' && $resolutionStatus === 'open' => self::ApprovedStatus,
-            $approvalStatus === 'approved' && $resolutionStatus === 'in_progress' => self::InProgress,
+            $approvalStatus === 'approved' && $resolutionStatus === 'open' => self::ApprovedInProgress,
+            $approvalStatus === 'approved' && $resolutionStatus === 'in_progress' => self::ApprovedInProgress,
+            $approvalStatus === 'approved_in_progress' => self::ApprovedInProgress,
             $approvalStatus === 'approved' && $resolutionStatus === 'closed' => self::Closed,
-            default => self::PendingKacab,
+            default => self::PendingAtasan,
         };
     }
 
@@ -134,12 +127,11 @@ enum RiskReportStatus: string
     public function toApprovalStatus(): string
     {
         return match ($this) {
-            self::PendingKacab => 'pending_kacab',
+            self::PendingAtasan => 'pending_atasan',
             self::NeedRevision => 'need_revision',
             self::PendingRevision => 'pending_revision',
-            self::ApprovedStatus => 'approved',
-            self::InProgress => 'approved',
-            self::Closed => 'approved',
+            self::ApprovedInProgress => 'approved_in_progress',
+            self::Closed => 'closed',
         };
     }
 
@@ -149,11 +141,10 @@ enum RiskReportStatus: string
     public function toResolutionStatus(): string
     {
         return match ($this) {
-            self::PendingKacab => 'open',
+            self::PendingAtasan => 'open',
             self::NeedRevision => 'open',
             self::PendingRevision => 'open',
-            self::ApprovedStatus => 'open',
-            self::InProgress => 'in_progress',
+            self::ApprovedInProgress => 'in_progress',
             self::Closed => 'closed',
         };
     }

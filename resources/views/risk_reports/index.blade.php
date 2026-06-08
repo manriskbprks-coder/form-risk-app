@@ -181,7 +181,17 @@
                                 </td>
                                 <td class="px-4 py-3 border-b whitespace-nowrap text-center align-middle" data-sort-value="{{ $report->created_at->format('YmdHis') }}">
                                     <div class="text-xs font-bold text-blue-700">Lapor: {{ $report->created_at->format('d/m/Y') }}</div>
-                                    <div class="text-xs text-gray-600 mt-1">Kejadian: {{ \Carbon\Carbon::parse($report->tanggal_kejadian)->format('d/m/Y') }}</div>
+                                    <div class="text-xs text-gray-600 mt-1">Kej: {{ \Carbon\Carbon::parse($report->tanggal_kejadian)->format('d/m/Y') }}</div>
+                                    @php
+                                        $tglDiketahui = \Carbon\Carbon::parse($report->tanggal_diketahui)->startOfDay();
+                                        $tglLapor = $report->created_at->startOfDay();
+                                        $isLate = $tglDiketahui->diffInDays($tglLapor, false) > 7;
+                                    @endphp
+                                    @if(auth()->user()?->hasRole('manrisk') && $isLate)
+                                        <div class="mt-1.5">
+                                            <span class="px-1.5 py-0.5 text-[9px] font-bold text-red-700 bg-red-100 border border-red-200 rounded uppercase" title="Lebih dari 7 hari sejak tanggal diketahui">⚠️ Late Report</span>
+                                        </div>
+                                    @endif
                                 </td>
                                 {{-- Pelapor / Cabang --}}
                                 <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->user->name }}">

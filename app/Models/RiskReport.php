@@ -56,9 +56,9 @@ class RiskReport extends Model
         return $query->where('status', $status);
     }
 
-    public function isPendingKacab(): bool
+    public function isPendingAtasan(): bool
     {
-        return $this->status === RiskReportStatus::PendingKacab->value;
+        return $this->status === RiskReportStatus::PendingAtasan->value;
     }
 
     public function isNeedRevision(): bool
@@ -71,9 +71,9 @@ class RiskReport extends Model
         return $this->status === RiskReportStatus::PendingRevision->value;
     }
 
-    public function isApprovedStatus(): bool
+    public function isApprovedInProgress(): bool
     {
-        return $this->status === RiskReportStatus::ApprovedStatus->value;
+        return $this->status === RiskReportStatus::ApprovedInProgress->value;
     }
 
     public function isInProgress(): bool

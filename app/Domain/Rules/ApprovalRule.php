@@ -30,14 +30,14 @@ class ApprovalRule
     public function determineInitialStatus(RoleCategory $roleCategory): RiskReportStatus
     {
         return $roleCategory->isChecker()
-            ? RiskReportStatus::ApprovedStatus
-            : RiskReportStatus::PendingKacab;
+            ? RiskReportStatus::ApprovedInProgress
+            : RiskReportStatus::PendingAtasan;
     }
 
     /**
      * Tentukan target status setelah revisi disubmit.
      *
-     * - Jika revisi diminta oleh Kacab → submit ke Kacab lagi (pending_kacab)
+     * - Jika revisi diminta oleh Kacab → submit ke Kacab lagi (pending_atasan)
      * - Jika revisi diminta oleh ManRisk → submit ke ManRisk (pending_revision)
      *
      * @param string|null $lastLogNote Isi note dari log terakhir (untuk deteksi siapa yang minta revisi)
@@ -46,7 +46,7 @@ class ApprovalRule
     public function determineRevisionTarget(?string $lastLogNote): RiskReportStatus
     {
         if ($lastLogNote && str_contains($lastLogNote, 'Kacab')) {
-            return RiskReportStatus::PendingKacab;
+            return RiskReportStatus::PendingAtasan;
         }
 
         return RiskReportStatus::PendingRevision;
@@ -61,7 +61,7 @@ class ApprovalRule
     public function canApprove(RiskReportStatus $currentStatus): bool
     {
         return in_array($currentStatus, [
-            RiskReportStatus::PendingKacab,
+            RiskReportStatus::PendingAtasan,
             RiskReportStatus::NeedRevision,
         ]);
     }
@@ -74,7 +74,7 @@ class ApprovalRule
      */
     public function canRequestRevision(RiskReportStatus $currentStatus): bool
     {
-        return $currentStatus === RiskReportStatus::ApprovedStatus;
+        return $currentStatus === RiskReportStatus::ApprovedInProgress;
     }
 
     /**

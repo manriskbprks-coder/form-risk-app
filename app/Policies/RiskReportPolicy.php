@@ -32,16 +32,16 @@ class RiskReportPolicy
         // Viewer (Korwil) — hanya cabang yang diawasi
         if ($category === RoleCategory::Viewer) {
             $branch = $report->branch;
-            return $branch && (int) $branch->korwil_id === (int) $user->id;
+            return $branch && (string) $branch->korwil_id === (string) $user->id;
         }
 
         // Checker — lihat laporan cabang sendiri
         if ($category === RoleCategory::Checker) {
-            return (int) $report->branch_id === (int) $user->branch_id;
+            return (string) $report->branch_id === (string) $user->branch_id;
         }
 
         // Maker — lihat laporan sendiri
-        return (int) $report->user_id === (int) $user->id;
+        return (string) $report->user_id === (string) $user->id;
     }
 
     /**
@@ -55,12 +55,12 @@ class RiskReportPolicy
         }
 
         // Checker cuma bisa approve laporan cabang sendiri
-        if ((int) $report->branch_id !== (int) $user->branch_id) {
+        if ((string) $report->branch_id !== (string) $user->branch_id) {
             return false;
         }
 
-        // Cuma laporan yang pending_kacab atau need_revision yang bisa diapprove
-        $currentStatus = RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::PendingKacab;
+        // Cuma laporan yang pending_atasan atau need_revision yang bisa diapprove
+        $currentStatus = RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::PendingAtasan;
         return $this->approvalRule->canApprove($currentStatus);
     }
 
@@ -89,7 +89,7 @@ class RiskReportPolicy
             return false;
         }
 
-        return (int) $report->branch_id === (int) $user->branch_id;
+        return (string) $report->branch_id === (string) $user->branch_id;
     }
 
     /**
@@ -97,7 +97,7 @@ class RiskReportPolicy
      */
     public function requestRevision(User $user, RiskReport $report): bool
     {
-        $currentStatus = RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::ApprovedStatus;
+        $currentStatus = RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::ApprovedInProgress;
         return RoleCategory::tryFrom($user->roleCategory() ?? '')?->canRequestRevision()
             && $this->approvalRule->canRequestRevision($currentStatus);
     }
@@ -112,13 +112,8 @@ class RiskReportPolicy
             return false;
         }
 
-        // Checker (kacab) bisa submit revisi untuk laporan cabangnya
-        if (RoleCategory::tryFrom($user->roleCategory() ?? '')?->isChecker()) {
-            return (int) $report->branch_id === (int) $user->branch_id;
-        }
-
-        // Maker bisa submit revisi untuk laporannya sendiri
-        return (int) $report->user_id === (int) $user->id;
+        // Cuma Maker (pelapor) yang bisa submit revisi laporannya sendiri
+        return (string) $report->user_id === (string) $user->id;
     }
 
     /**

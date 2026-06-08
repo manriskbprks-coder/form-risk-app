@@ -45,22 +45,21 @@ class SummaryService
 
         $totalPending = (clone $reportQuery)
             ->where(function ($q) {
-                $q->where('status', RiskReportStatus::PendingKacab->value)
+                $q->where('status', RiskReportStatus::PendingAtasan->value)
                   ->orWhere('status', 'pending_korwil');
             })
             ->count();
 
         $totalLossApproved = (clone $reportQuery)
             ->whereIn('status', [
-                RiskReportStatus::ApprovedStatus->value,
-                RiskReportStatus::InProgress->value,
+                RiskReportStatus::ApprovedInProgress->value,
                 RiskReportStatus::Closed->value,
             ])
             ->where('kategori', 'finansial')
             ->sum('dampak_finansial');
 
         $totalInProgress = (clone $reportQuery)
-            ->where('status', RiskReportStatus::InProgress->value)
+            ->where('status', RiskReportStatus::ApprovedInProgress->value)
             ->count();
 
         $labelTotalLaporan = match($roleCategory) {
@@ -88,7 +87,7 @@ class SummaryService
     {
         if ($roleCategory === RoleCategory::Checker->value) {
             return RiskReport::where('branch_id', $user->branch_id)
-                ->where('status', RiskReportStatus::PendingKacab->value)
+                ->where('status', RiskReportStatus::PendingAtasan->value)
                 ->count();
         } elseif ($roleCategory === RoleCategory::Viewer->value) {
             return RiskReport::whereIn('branch_id', $branchIds)
@@ -113,7 +112,7 @@ class SummaryService
             return RiskReport::with(['user', 'branch', 'item'])
                 ->whereIn('branch_id', $branchIds)
                 ->latest()
-                ->take(10)
+                ->take(5)
                 ->get();
         }
 
@@ -121,7 +120,7 @@ class SummaryService
         return RiskReport::with(['user', 'branch', 'item'])
             ->where('user_id', $user->id)
             ->latest()
-            ->take(10)
+            ->take(5)
             ->get();
     }
 
@@ -161,11 +160,10 @@ class SummaryService
         $branchStats = RiskReport::selectRaw("
             branch_id,
             COUNT(*) as total,
-            SUM(CASE WHEN status IN ('pending_kacab','pending_korwil') THEN 1 ELSE 0 END) as pending,
-            SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
+            SUM(CASE WHEN status IN ('pending_atasan','pending_korwil') THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN status = 'approved_in_progress' THEN 1 ELSE 0 END) as approved_in_progress,
             SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) as closed,
-            SUM(CASE WHEN status IN ('approved','in_progress','closed') AND kategori = 'finansial' THEN dampak_finansial ELSE 0 END) as kerugian,
-            SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress
+            SUM(CASE WHEN status IN ('approved_in_progress','closed') AND kategori = 'finansial' THEN dampak_finansial ELSE 0 END) as kerugian
         ")
             ->whereIn('branch_id', $branchIdsList)
             ->whereBetween('created_at', [$dateStart, $dateEnd])
@@ -179,10 +177,9 @@ class SummaryService
             $stats = $branchStats->get($branch->id);
             $total = $stats ? (int) $stats->total : 0;
             $pending = $stats ? (int) $stats->pending : 0;
-            $approved = $stats ? (int) $stats->approved : 0;
+            $approved = $stats ? (int) $stats->approved_in_progress : 0;
             $closed = $stats ? (int) $stats->closed : 0;
             $kerugian = $stats ? (int) $stats->kerugian : 0;
-            $inProgress = $stats ? (int) $stats->in_progress : 0;
 
             if ($total > $maxTotal) $maxTotal = $total;
 
@@ -191,7 +188,6 @@ class SummaryService
                 'total' => $total,
                 'pending' => $pending,
                 'approved' => $approved,
-                'in_progress' => $inProgress,
                 'closed' => $closed,
                 'kerugian' => $kerugian,
             ];
@@ -249,15 +245,16 @@ class SummaryService
             ->get()
             ->groupBy('branch_id');
 
-        // OPTIMASI: Bulk cek cabang mana yang ada laporan approved bulan ini (1 query)
-        $branchesWithApproved = RiskReport::whereIn('branch_id', $branchIdsList)
-            ->where('status', RiskReportStatus::ApprovedStatus->value)
+        // OPTIMASI: Bulk cek cabang mana yang ada laporan bulan ini (1 query)
+        $branchesWithReports = RiskReport::whereIn('branch_id', $branchIdsList)
             ->whereMonth('created_at', $bulanIni)
             ->whereYear('created_at', $tahunIni)
             ->select('branch_id')
             ->distinct()
             ->pluck('branch_id')
             ->toArray();
+        
+        $cabangBelumDeklarasi = [];
 
         foreach ($allBranches as $branch) {
             $branchDeklarasi = $allDeklarasi->get($branch->id, collect());
@@ -266,9 +263,13 @@ class SummaryService
             $periode2 = $branchDeklarasi->contains('periode', 2);
             $total = $branchDeklarasi->count();
 
-            // Rejected = ada laporan risiko approved di cabang ini bulan ini, tapi kacab deklarasi nihil
-            $adaLaporanApproved = in_array($branch->id, $branchesWithApproved);
-            $rejected = $adaLaporanApproved && $total > 0;
+            // Rejected = ada laporan risiko di cabang ini bulan ini, tapi kacab deklarasi nihil
+            $adaLaporan = in_array($branch->id, $branchesWithReports);
+            $rejected = $adaLaporan && $total > 0;
+
+            if (!$adaLaporan && $total == 0) {
+                $cabangBelumDeklarasi[] = $branch->nama_cabang;
+            }
 
             $deklarasiSummaries[] = [
                 'nama' => $branch->nama_cabang,
@@ -279,6 +280,6 @@ class SummaryService
             ];
         }
 
-        return compact('deklarasiSummaries');
+        return compact('deklarasiSummaries', 'cabangBelumDeklarasi');
     }
 }

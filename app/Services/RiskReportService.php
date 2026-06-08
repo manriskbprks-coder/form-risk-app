@@ -64,25 +64,21 @@ class RiskReportService
             'status' => $targetStatus->value,
         ]);
 
-        // Log pertama: laporan dibuat
+        // Log pertama: laporan dibuat (gabung dengan penanganan awal jika ada)
+        $noteText = 'notif system : laporan dibuat';
+        if (!empty($data['tindakan_awal'])) {
+            $noteText .= "\npenanganan awal : " . strip_tags($data['tindakan_awal']);
+        }
+
         $report->logs()->create([
             'user_id' => $user->id,
-            'note' => 'Laporan dibuat',
+            'note' => $noteText,
             'status_after_note' => $targetStatus->value,
             'old_data' => null,
         ]);
 
-        // Log penanganan awal jika ada (XSS sanitized)
-        if (!empty($data['tindakan_awal'])) {
-            $report->logs()->create([
-                'user_id' => $user->id,
-                'note' => 'Penanganan Awal: ' . strip_tags($data['tindakan_awal']),
-                'status_after_note' => $targetStatus->value,
-            ]);
-        }
-
         // Notifikasi ke Kacab jika perlu approval
-        if ($targetStatus === RiskReportStatus::PendingKacab) {
+        if ($targetStatus === RiskReportStatus::PendingAtasan) {
             $this->notifyKacabBranch($report, $user, 'new_report',
                 "Laporan baru dari {$user->name}: {$report->kode_laporan}"
             );
@@ -97,12 +93,12 @@ class RiskReportService
     public function approve(RiskReport $report, User $user): void
     {
         $this->approvalRule->validateTransition(
-            RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::PendingKacab,
-            RiskReportStatus::ApprovedStatus
+            RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::PendingAtasan,
+            RiskReportStatus::ApprovedInProgress
         );
 
         $report->update([
-            'status' => RiskReportStatus::ApprovedStatus->value,
+            'status' => RiskReportStatus::ApprovedInProgress->value,
             'revision_note' => null,
         ]);
 
@@ -110,7 +106,7 @@ class RiskReportService
             'risk_report_id' => $report->id,
             'user_id' => $user->id,
             'note' => 'Laporan disetujui oleh Kacab',
-            'status_after_note' => RiskReportStatus::ApprovedStatus->value,
+            'status_after_note' => RiskReportStatus::ApprovedInProgress->value,
             'old_data' => null,
         ]);
 
@@ -126,7 +122,7 @@ class RiskReportService
     public function requestRevisionFromKacab(RiskReport $report, User $user, string $alasan): void
     {
         $this->approvalRule->validateTransition(
-            RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::PendingKacab,
+            RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::PendingAtasan,
             RiskReportStatus::NeedRevision
         );
 
@@ -154,7 +150,7 @@ class RiskReportService
     public function requestRevisionFromManRisk(RiskReport $report, User $user, string $revisionNote): void
     {
         $this->approvalRule->validateTransition(
-            RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::ApprovedStatus,
+            RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::ApprovedInProgress,
             RiskReportStatus::NeedRevision
         );
 
@@ -212,7 +208,7 @@ class RiskReportService
         ]);
 
         // Notif ke reviewer
-        if ($newStatus === RiskReportStatus::PendingKacab) {
+        if ($newStatus === RiskReportStatus::PendingAtasan) {
             $this->notifyKacabBranch($report, $user, 'revision_submitted',
                 "Revisi laporan {$report->kode_laporan} telah dikirim oleh {$user->name}."
             );
@@ -230,18 +226,18 @@ class RiskReportService
     {
         $this->approvalRule->validateTransition(
             RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::PendingRevision,
-            RiskReportStatus::ApprovedStatus
+            RiskReportStatus::ApprovedInProgress
         );
 
         $report->update([
-            'status' => RiskReportStatus::ApprovedStatus->value,
+            'status' => RiskReportStatus::ApprovedInProgress->value,
             'revision_note' => null,
         ]);
 
         $report->logs()->create([
             'user_id' => $user->id,
             'note' => 'Revisi disetujui oleh ManRisk',
-            'status_after_note' => RiskReportStatus::ApprovedStatus->value,
+            'status_after_note' => RiskReportStatus::ApprovedInProgress->value,
             'old_data' => null,
         ]);
 
@@ -259,8 +255,8 @@ class RiskReportService
         $oldStatus = $report->status;
 
         // Validasi transisi status
-        $fromStatus = RiskReportStatus::tryFrom($oldStatus) ?? RiskReportStatus::ApprovedStatus;
-        $toStatus = RiskReportStatus::tryFrom($newStatus) ?? RiskReportStatus::ApprovedStatus;
+        $fromStatus = RiskReportStatus::tryFrom($oldStatus) ?? RiskReportStatus::ApprovedInProgress;
+        $toStatus = RiskReportStatus::tryFrom($newStatus) ?? RiskReportStatus::ApprovedInProgress;
 
         if (!$fromStatus->canTransitionTo($toStatus)) {
             throw new \DomainException(

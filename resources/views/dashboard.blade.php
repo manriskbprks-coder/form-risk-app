@@ -1,54 +1,32 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="space-y-1">
-            <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                Selamat Datang kembali, {{ Auth::user()->name }}!
-            </h2>
-            <p class="text-sm text-slate-500">
-                Ringkasan aktivitas hari ini —
-                <span class="font-semibold text-indigo-600">{{ now()->format('l, d F Y') }}</span>
-            </p>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="space-y-1">
+                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+                    Selamat Datang kembali, {{ Auth::user()->name }}!
+                </h2>
+                <p class="text-sm text-slate-500">
+                    Ringkasan aktivitas hari ini —
+                    <span class="font-semibold text-indigo-600">{{ now()->format('l, d F Y') }}</span>
+                </p>
+            </div>
+            
+            {{-- QUICK ACTION BUTTONS (MAKER & CHECKER) --}}
+            @if(Auth::user()->isMaker() || Auth::user()->isChecker())
+            <div class="flex items-center gap-3">
+                <a href="{{ route('form.risiko', 'finansial') }}" class="btn-primary py-2 px-4 shadow-sm hover:shadow-md transition whitespace-nowrap">
+                    <span class="mr-2">💸</span>+ Lapor Finansial
+                </a>
+                <a href="{{ route('form.risiko', 'non-finansial') }}" class="btn-secondary bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 py-2 px-4 shadow-sm hover:shadow-md transition whitespace-nowrap">
+                    <span class="mr-2">⚠️</span>+ Lapor Non-Finansial
+                </a>
+            </div>
+            @endif
         </div>
     </x-slot>
 
     {{-- ============================================================
-         GREETING CARD + USER INFO
-         ============================================================ --}}
-    <div class="surface-card overflow-hidden border-l-4 border-indigo-500 mb-8">
-        <div class="section-pad">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                    <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                        {{ Auth::user()->name }}
-                    </h3>
-                    <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-slate-500">
-                        <span class="inline-flex items-center gap-1.5">
-                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                            </svg>
-                            <span class="font-semibold text-slate-700">{{ Auth::user()->branch->nama_cabang ?? 'Pusat (HQ)' }}</span>
-                        </span>
-                        <span class="inline-flex items-center gap-1.5">
-                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                            </svg>
-                            <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md text-xs font-bold uppercase">{{ Auth::user()->primaryRoleName() ?? 'Tidak Ada Jabatan' }}</span>
-                        </span>
-                    </div>
-                </div>
-                <div class="hidden sm:block">
-                    <div class="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- ============================================================
-         STAT CARDS — Staff: 3 kolom, Kacab/Korwil/ManRisk: 4 kolom
+         STAT CARDS
          ============================================================ --}}
     @if(Auth::user()->roleCategory() === 'maker')
     {{-- Staff: 3 card --}}
@@ -131,39 +109,29 @@
     @endif
 
     {{-- ============================================================
-         FILTER: Multi-Select Bulan (Group by Year) + Multi-Select Cabang (Searchable)
+         FILTER ADMIN/VIEWER
          ============================================================ --}}
-    @if(Auth::user()->isAdmin())
+    @if(Auth::user()->isAdmin() || Auth::user()->isViewer())
     <div class="surface-card section-pad mb-6" x-data="filterManager()">
         <form method="GET" action="{{ route('dashboard') }}" class="flex flex-col sm:flex-row sm:items-end gap-4">
-            {{-- Multi-Select Bulan (Group by Year) --}}
             <div class="flex-1">
                 <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">📅 Pilih Bulan</label>
                 <div class="relative" @click.away="monthOpen = false">
-                    {{-- Tombol trigger --}}
                     <button type="button" @click="monthOpen = !monthOpen" class="w-full flex items-center justify-between border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white hover:border-indigo-300 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50">
                         <span x-text="monthCount > 0 ? monthCount + ' bulan dipilih' : '📅 Semua Bulan (12 bln)'" class="truncate"></span>
                         <svg class="w-4 h-4 text-slate-400 ml-2 flex-shrink-0" :class="monthOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
-
-                    {{-- Dropdown checklist with year grouping --}}
-                    <div x-show="monthOpen" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-72 overflow-y-auto">
-                        {{-- Select All --}}
+                    <div x-show="monthOpen" style="display: none;" class="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-72 overflow-y-auto">
                         <label class="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer border-b border-slate-100">
                             <input type="checkbox" @click="toggleAllMonths($event)" :checked="allMonthsSelected" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
                             <span class="text-sm font-semibold text-slate-700">Pilih Semua</span>
                         </label>
-
-                        {{-- Group by year --}}
                         <template x-for="yearGroup in groupedMonths" :key="yearGroup.year">
                             <div>
-                                {{-- Year header (clickable to expand/collapse) --}}
                                 <button type="button" @click="toggleYear(yearGroup.year)" class="w-full flex items-center justify-between px-3 py-2 text-sm font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 border-b border-slate-100">
                                     <span x-text="yearGroup.year"></span>
                                     <svg class="w-4 h-4 text-slate-400 transition-transform" :class="expandedYears.includes(yearGroup.year) ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                 </button>
-
-                                {{-- Month items (show if year is expanded) --}}
                                 <template x-for="month in yearGroup.months" :key="month.value">
                                     <label x-show="expandedYears.includes(yearGroup.year)" class="flex items-center gap-2 px-3 py-1.5 pl-8 hover:bg-slate-50 cursor-pointer">
                                         <input type="checkbox" name="bulan[]" :value="month.value" x-model="selectedMonths" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
@@ -173,56 +141,41 @@
                             </div>
                         </template>
                     </div>
-
-                    {{-- Hidden input for empty state --}}
                     <input type="hidden" name="bulan" value="" x-bind:disabled="selectedMonths.length > 0">
                 </div>
             </div>
 
-            {{-- Multi-Select Cabang (Searchable) --}}
+            @if(Auth::user()->isAdmin())
             <div class="flex-1">
                 <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">🏢 Cabang</label>
                 <div class="relative" @click.away="branchOpen = false">
-                    {{-- Tombol trigger --}}
                     <button type="button" @click="branchOpen = !branchOpen" class="w-full flex items-center justify-between border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white hover:border-indigo-300 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50">
                         <span x-text="branchCount > 0 ? branchCount + ' cabang dipilih' : '🏦 Semua Cabang'" class="truncate"></span>
                         <svg class="w-4 h-4 text-slate-400 ml-2 flex-shrink-0" :class="branchOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
-
-                    {{-- Dropdown checklist with search --}}
-                    <div x-show="branchOpen" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        {{-- Search input --}}
+                    <div x-show="branchOpen" style="display: none;" class="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                         <div class="p-2 border-b border-slate-100">
                             <input type="text" x-model="branchSearch" placeholder="🔍 Cari cabang..." class="w-full px-3 py-1.5 text-sm border border-slate-200 rounded-md focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50">
                         </div>
-
-                        {{-- Select All --}}
                         <label class="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer border-b border-slate-100">
                             <input type="checkbox" @click="toggleAllBranches($event)" :checked="allBranchesSelected" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
                             <span class="text-sm font-semibold text-slate-700">Pilih Semua</span>
                         </label>
-
-                        {{-- Filtered branch list --}}
                         <template x-for="branch in filteredBranches" :key="branch.id">
                             <label class="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer">
                                 <input type="checkbox" name="cabang_ids[]" :value="branch.id" x-model="selectedBranches" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
                                 <span class="text-sm text-slate-700" x-text="branch.nama"></span>
                             </label>
                         </template>
-
-                        {{-- Empty state --}}
                         <p x-show="filteredBranches.length === 0" class="px-3 py-4 text-sm text-slate-400 text-center">Tidak ada cabang ditemukan</p>
                     </div>
-
-                    {{-- Hidden input for empty state --}}
                     <input type="hidden" name="cabang_ids" value="" x-bind:disabled="selectedBranches.length > 0">
                 </div>
             </div>
+            @endif
 
-            {{-- Tombol Aksi --}}
             <div class="flex-shrink-0 flex items-center gap-2">
                 <button type="submit" class="btn-primary btn-sm w-full sm:w-auto">
-                    <svg class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
                     Terapkan Filter
                 </button>
                 @if(request('bulan') || request('cabang_ids'))
@@ -231,738 +184,300 @@
             </div>
         </form>
     </div>
+    @endif
 
-    {{-- Alpine.js component for multi-select bulan (grouped by year) & cabang (searchable) --}}
+    {{-- ============================================================
+         GRID UTAMA (70% Kiri, 30% Kanan)
+         ============================================================ --}}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+        
+        {{-- ================= KONTEN UTAMA (KIRI 70%) ================= --}}
+        <div class="lg:col-span-2 space-y-6">
+            
+            {{-- MAKER: TIMELINE AKTIVITAS --}}
+            @if(Auth::user()->isMaker())
+            <div class="surface-card p-5 sm:p-6">
+                <h3 class="section-title mb-4">🕒 Aktivitas Terakhir Saya</h3>
+                <div class="relative pl-4 border-l-2 border-slate-200 space-y-6">
+                    @forelse($recentReports->take(5) as $report)
+                    <div class="relative">
+                        <div class="absolute -left-[25px] top-1 w-3 h-3 rounded-full {{ $report->status === 'closed' ? 'bg-indigo-500' : ($report->status === 'need_revision' ? 'bg-rose-500' : 'bg-amber-400') }} border-2 border-white"></div>
+                        <p class="text-xs text-slate-400 mb-1">{{ $report->updated_at->diffForHumans() }}</p>
+                        <p class="text-sm text-slate-800">
+                            Laporan <a href="{{ route('risk_reports.show', $report->id) }}" class="font-bold text-indigo-600 hover:underline">{{ $report->nomor_laporan }}</a> 
+                            - {{ $report->item->nama_item ?? 'Risiko' }}
+                        </p>
+                        <p class="text-xs font-semibold mt-1">Status: <span class="uppercase text-slate-500">{{ str_replace('_', ' ', $report->status) }}</span></p>
+                    </div>
+                    @empty
+                    <p class="text-sm text-slate-500">Belum ada aktivitas laporan akhir-akhir ini.</p>
+                    @endforelse
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-100">
+                    <a href="{{ route('risk.history') }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Lihat Semua Riwayat Laporan &rarr;</a>
+                </div>
+            </div>
+            @endif
+
+            {{-- CHECKER: TUGAS SAYA (To-Do List) --}}
+            @if(Auth::user()->isChecker())
+            @php
+                $myTasks = $recentReports->whereIn('status', ['pending_atasan', 'approved_in_progress', 'pending_revision'])->take(10);
+            @endphp
+            <div class="surface-card p-5 sm:p-6">
+                <h3 class="section-title mb-4">📋 Tugas Saya: Menunggu Review</h3>
+                <div class="space-y-4">
+                    @forelse($myTasks as $task)
+                    <div class="p-4 border border-slate-200 rounded-xl hover:border-indigo-300 transition-colors">
+                        <div class="flex justify-between items-start gap-4">
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">{{ $task->nomor_laporan }} <span class="font-normal text-slate-500">— {{ $task->item->nama_item ?? 'Laporan' }}</span></p>
+                                <p class="text-xs text-slate-500 mt-1">Dari: <span class="font-semibold">{{ $task->user->name ?? 'Staf' }}</span> | Menunggu sejak {{ $task->updated_at->diffForHumans() }}</p>
+                            </div>
+                            <a href="{{ route('risk_reports.show', $task->id) }}" class="btn-primary py-1 px-3 text-xs whitespace-nowrap">Review Cepat &rarr;</a>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                        <p class="text-slate-500 text-sm">Tidak ada tugas review saat ini. Kerja bagus! 🎉</p>
+                    </div>
+                    @endforelse
+                </div>
+                <div class="mt-4 pt-4 border-t border-slate-100">
+                    <a href="{{ route('risk.history') }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Buka Tabel Riwayat Lengkap &rarr;</a>
+                </div>
+            </div>
+            @endif
+
+            {{-- VIEWER / ADMIN: CHARTS --}}
+            @if(Auth::user()->isViewer() || Auth::user()->isAdmin())
+                {{-- Ranking Risiko (Bar) --}}
+                <div class="surface-card section-pad">
+                    <h3 class="section-title text-base mb-4">🏆 Ranking Risiko (Terbanyak)</h3>
+                    <div class="relative" style="height: 300px;">
+                        <canvas id="rankingRisikoChart" style="height: 100% !important; width: 100% !important;"></canvas>
+                    </div>
+                </div>
+
+                @if(Auth::user()->isAdmin())
+                {{-- Tren Risiko (Line) - Admin Only --}}
+                <div class="surface-card section-pad mt-6">
+                    <h3 class="section-title text-base mb-4">📈 Tren Top-5 Risiko (6 Bulan)</h3>
+                    <div class="relative" style="height: 260px;">
+                        <canvas id="trenTop5Chart" style="height: 100% !important; width: 100% !important;"></canvas>
+                    </div>
+                </div>
+                @endif
+            @endif
+
+        </div>
+
+        {{-- ================= SIDEBAR (KANAN 30%) ================= --}}
+        <div class="space-y-6">
+            
+            {{-- MAKER: ALERT REVISI --}}
+            @if(Auth::user()->isMaker())
+            @php
+                $revisions = $recentReports->where('status', 'need_revision');
+            @endphp
+            @if($revisions->count() > 0)
+            <div class="surface-card p-5 border-t-4 border-rose-500 shadow-sm bg-rose-50/30">
+                <h3 class="text-sm font-bold text-rose-700 flex items-center mb-3"><span class="mr-2">🚨</span> ALERT: BUTUH REVISI!</h3>
+                <div class="space-y-3">
+                    @foreach($revisions as $rev)
+                    <div class="bg-white p-3 rounded-lg border border-rose-100 shadow-sm">
+                        <p class="text-sm font-bold text-slate-800">{{ $rev->nomor_laporan }}</p>
+                        <p class="text-xs text-slate-600 mt-1 line-clamp-2">Laporan ini ditolak oleh atasan dan membutuhkan perbaikan segera.</p>
+                        <a href="{{ route('risk_reports.show', $rev->id) }}" class="mt-2 inline-block text-xs font-semibold text-rose-600 hover:text-rose-800">Revisi Sekarang &rarr;</a>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+            @endif
+
+            {{-- CHECKER: INSIGHT CABANG BULAN INI --}}
+            @if(Auth::user()->isChecker())
+            <div class="surface-card p-5">
+                <h3 class="section-title text-sm mb-4">📊 Insight Cabang Bulan Ini</h3>
+                <div class="mb-4">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Top Risiko Tertinggi</p>
+                    <ul class="space-y-2">
+                        @forelse(collect($rankingRisikoLabels ?? [])->take(3) as $index => $label)
+                        <li class="flex justify-between items-center text-sm">
+                            <span class="text-slate-700">{{ $index + 1 }}. {{ $label }}</span>
+                            <span class="font-bold text-indigo-600">{{ $rankingRisikoData[$index] ?? 0 }}x</span>
+                        </li>
+                        @empty
+                        <li class="text-xs text-slate-400">Belum ada data risiko bulan ini.</li>
+                        @endforelse
+                    </ul>
+                </div>
+                
+                {{-- Mini Chart Sumber Risiko --}}
+                <div class="mt-4 pt-4 border-t border-slate-100">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Sumber Risiko</p>
+                    <div style="height: 150px;">
+                        <canvas id="sumberRisikoChart" style="height: 100% !important; max-height: 150px; width: auto; max-width: 150px; margin: auto;"></canvas>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            {{-- VIEWER / ADMIN: ALERT & INSIDEN KRITIS --}}
+            @if(Auth::user()->isViewer() || Auth::user()->isAdmin())
+                @if(isset($kritisReports) && $kritisReports->count() > 0)
+                <div class="surface-card p-5 border-t-4 border-rose-500 shadow-sm bg-rose-50/30">
+                    <h3 class="text-sm font-bold text-rose-700 flex items-center mb-3"><span class="mr-2">🚨</span> INSIDEN KRITIS (RED ALERT)</h3>
+                    <div class="space-y-3">
+                        @foreach($kritisReports as $kr)
+                        <div class="bg-white p-3 rounded-lg border border-rose-100 shadow-sm">
+                            <p class="text-xs font-semibold text-slate-500">{{ $kr->branch->nama_cabang ?? 'Unknown' }}</p>
+                            <p class="text-sm font-bold text-slate-800">{{ $kr->nomor_laporan }}</p>
+                            <p class="text-xs text-rose-600 font-bold mt-1">Dampak: Rp {{ number_format($kr->dampak_finansial, 0, ',', '.') }}</p>
+                            <a href="{{ route('risk_reports.show', $kr->id) }}" class="mt-2 inline-block text-xs font-semibold text-rose-600 hover:text-rose-800">Investigasi &rarr;</a>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+                
+                @if(Auth::user()->isAdmin())
+                {{-- ADMIN: CABANG BELUM DEKLARASI --}}
+                <div class="surface-card p-5 mt-6 border-t-4 border-orange-400 bg-orange-50/30">
+                    <h3 class="text-sm font-bold text-orange-700 flex items-center mb-3"><span class="mr-2">🏆</span> BELUM DEKLARASI NIHIL</h3>
+                    <p class="text-xs text-slate-500 mb-3">Cabang dengan 0 laporan namun belum mengirim deklarasi bulan ini:</p>
+                    <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                        @forelse($cabangBelumDeklarasi ?? [] as $namaCabang)
+                        <div class="flex items-center text-sm text-slate-700 bg-white p-2 rounded-md border border-orange-100">
+                            <span class="mr-2 text-orange-500">❌</span> {{ $namaCabang }}
+                        </div>
+                        @empty
+                        <p class="text-xs text-emerald-600 font-semibold bg-emerald-50 p-2 rounded border border-emerald-100">Semua cabang aman / sudah deklarasi!</p>
+                        @endforelse
+                    </div>
+                </div>
+
+                {{-- Chart Sumber Risiko for Admin (since Kacab has it above) --}}
+                <div class="surface-card p-5 mt-6">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">🎯 Distribusi Sumber Risiko</p>
+                    <div style="height: 180px;">
+                        <canvas id="sumberRisikoChart" style="height: 100% !important; max-height: 180px; width: auto; max-width: 180px; margin: auto;"></canvas>
+                    </div>
+                </div>
+                @endif
+
+                @if(Auth::user()->isViewer())
+                {{-- Chart Sumber Risiko for Viewer --}}
+                <div class="surface-card p-5 mt-6">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">🎯 Distribusi Sumber Risiko</p>
+                    <div style="height: 180px;">
+                        <canvas id="sumberRisikoChart" style="height: 100% !important; max-height: 180px; width: auto; max-width: 180px; margin: auto;"></canvas>
+                    </div>
+                </div>
+                @endif
+            @endif
+        </div>
+    </div>
+
+    {{-- ============================================================
+         SCRIPTS (Alpine JS Filters & Chart JS)
+         ============================================================ --}}
+    @if(Auth::user()->isAdmin() || Auth::user()->isViewer())
     @push('scripts')
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('filterManager', () => ({
-                // ============================================================
-                // MONTH — Grouped by Year
-                // ============================================================
                 monthOpen: false,
-                selectedMonths: @js($bulanFilters),
-                expandedYears: @js(collect($availableMonths)->pluck('value')->map(fn($v) => substr($v, 0, 4))->unique()->sort()->values()->toArray()),
-
-                // Group months by year
+                selectedMonths: @js($bulanFilters ?? []),
+                expandedYears: @js(collect($availableMonths ?? [])->pluck('value')->map(fn($v) => substr($v, 0, 4))->unique()->sort()->values()->toArray()),
                 get groupedMonths() {
                     const groups = {};
-                    @js($availableMonths).forEach(m => {
+                    @js($availableMonths ?? []).forEach(m => {
                         const year = m.value.substring(0, 4);
                         if (!groups[year]) groups[year] = [];
                         groups[year].push(m);
                     });
-                    return Object.keys(groups).sort().reverse().map(year => ({
-                        year: year,
-                        months: groups[year]
-                    }));
+                    return Object.keys(groups).sort().reverse().map(year => ({ year: year, months: groups[year] }));
                 },
-
-                get monthCount() {
-                    return this.selectedMonths.length;
-                },
-
-                get allMonthsSelected() {
-                    return this.selectedMonths.length === {{ count($availableMonths) }};
-                },
-
-                toggleAllMonths(event) {
-                    if (event.target.checked) {
-                        this.selectedMonths = @js(collect($availableMonths)->pluck('value')->toArray());
-                    } else {
-                        this.selectedMonths = [];
-                    }
-                },
-
+                get monthCount() { return this.selectedMonths.length; },
+                get allMonthsSelected() { return this.selectedMonths.length === {{ count($availableMonths ?? []) }}; },
+                toggleAllMonths(event) { this.selectedMonths = event.target.checked ? @js(collect($availableMonths ?? [])->pluck('value')->toArray()) : []; },
                 toggleYear(year) {
                     const idx = this.expandedYears.indexOf(year);
-                    if (idx > -1) {
-                        this.expandedYears.splice(idx, 1);
-                    } else {
-                        this.expandedYears.push(year);
-                    }
+                    if (idx > -1) this.expandedYears.splice(idx, 1);
+                    else this.expandedYears.push(year);
                 },
 
-                // ============================================================
-                // BRANCH — Searchable
-                // ============================================================
                 branchOpen: false,
                 branchSearch: '',
-                selectedBranches: @js($cabangFilter),
-                allBranchesData: @js($allBranches->map(fn($b) => ['id' => $b->id, 'nama' => $b->nama_cabang])->values()->toArray()),
-
+                selectedBranches: @js($cabangFilter ?? []),
+                allBranchesData: @js(collect($allBranches ?? [])->map(fn($b) => ['id' => $b->id, 'nama' => $b->nama_cabang])->values()->toArray()),
                 get filteredBranches() {
                     if (!this.branchSearch) return this.allBranchesData;
                     const q = this.branchSearch.toLowerCase();
                     return this.allBranchesData.filter(b => b.nama.toLowerCase().includes(q));
                 },
-
-                get branchCount() {
-                    return this.selectedBranches.length;
-                },
-
-                get allBranchesSelected() {
-                    return this.selectedBranches.length === {{ $allBranches->count() }};
-                },
-
-                toggleAllBranches(event) {
-                    if (event.target.checked) {
-                        this.selectedBranches = @js($allBranches->pluck('id')->toArray());
-                    } else {
-                        this.selectedBranches = [];
-                    }
-                }
+                get branchCount() { return this.selectedBranches.length; },
+                get allBranchesSelected() { return this.selectedBranches.length === {{ count($allBranches ?? []) }}; },
+                toggleAllBranches(event) { this.selectedBranches = event.target.checked ? @js(collect($allBranches ?? [])->pluck('id')->toArray()) : []; }
             }));
         });
     </script>
     @endpush
     @endif
 
-    {{-- ============================================================
-         CHART ANALISA RISIKO SECTION (Khusus Kacab/Korwil/Manrisk)
-         HIDE: Diatur lewat env SHOW_CHARTS=true — default false
-         ============================================================ --}}
-    @if(env('SHOW_CHARTS', false))
+    {{-- Chart.js Scripts --}}
     @if(Auth::user()->isChecker() || Auth::user()->isViewer() || Auth::user()->isAdmin())
-    {{-- Baris 1: Ranking Risiko + Sumber Risiko --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 mb-8">
-        {{-- Ranking Risiko (Horizontal Bar) --}}
-        <div class="surface-card section-pad">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="w-1 h-5 bg-rose-500 rounded-full"></div>
-                <h3 class="section-title text-base">🏆 Ranking Risiko</h3>
-            </div>
-            <div class="relative" style="height: 300px;">
-                <canvas id="rankingRisikoChart" style="height: 100% !important; width: 100% !important;"></canvas>
-            </div>
-        </div>
-
-        {{-- Sumber Risiko (Doughnut) --}}
-        <div class="surface-card section-pad">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="w-1 h-5 bg-emerald-500 rounded-full"></div>
-                <h3 class="section-title text-base">🎯 Sumber Risiko</h3>
-            </div>
-            <div class="flex items-center justify-center" style="height: 300px;">
-                <canvas id="sumberRisikoChart" style="height: 100% !important; max-height: 300px; width: auto; max-width: 300px;"></canvas>
-            </div>
-        </div>
-    </div>
-
-    {{-- Baris 2: Tren Top-5 Risiko (Full Width) --}}
-    <div class="grid grid-cols-1 gap-4 sm:gap-5 mb-8">
-        <div class="surface-card section-pad">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="w-1 h-5 bg-indigo-500 rounded-full"></div>
-                <h3 class="section-title text-base">📈 Tren Top-5 Risiko (6 Bulan)</h3>
-            </div>
-            <div class="relative" style="height: 260px;">
-                <canvas id="trenTop5Chart" style="height: 100% !important; width: 100% !important;"></canvas>
-            </div>
-        </div>
-    </div>
-    @endif
-    @endif
-
-    {{-- ============================================================
-         MAKER SECTION — Form Entry Cards
-         ============================================================ --}}
-    @if(Auth::user()->isMaker() || Auth::user()->isChecker())
-    <div class="mb-8">
-        <div class="flex items-center gap-3 mb-5">
-            <div class="w-1 h-6 bg-indigo-500 rounded-full"></div>
-            <h3 class="section-title">Form Pelaporan Risiko</h3>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-            <a href="{{ route('form.risiko', 'finansial') }}"
-               class="group surface-card-hover border-t-4 border-t-rose-500 p-5 sm:p-6 block">
-                <div class="flex items-start justify-between mb-3">
-                    <div class="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">💸</div>
-                    <svg class="w-5 h-5 text-slate-300 group-hover:text-slate-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                </div>
-                <h4 class="text-lg font-bold text-slate-900 mb-1.5">Risiko Finansial</h4>
-                <p class="text-sm text-slate-500 leading-relaxed">Laporkan selisih kas, salah input nominal, atau kerugian finansial lainnya.</p>
-            </a>
-            <a href="{{ route('form.risiko', 'non-finansial') }}"
-               class="group surface-card-hover border-t-4 border-t-orange-500 p-5 sm:p-6 block">
-                <div class="flex items-start justify-between mb-3">
-                    <div class="w-11 h-11 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">⚠️</div>
-                    <svg class="w-5 h-5 text-slate-300 group-hover:text-slate-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                </div>
-                <h4 class="text-lg font-bold text-slate-900 mb-1.5">Risiko Non-Finansial</h4>
-                <p class="text-sm text-slate-500 leading-relaxed">Laporkan komplain nasabah, sistem down, pelanggaran SOP, dll.</p>
-            </a>
-        </div>
-    </div>
-    @endif
-
-    {{-- ============================================================
-         CHECKER SECTION — Review (Khusus Kacab)
-         ============================================================ --}}
-    @if(Auth::user()->isChecker())
-    <div class="mb-8">
-        <div class="flex items-center gap-3 mb-5">
-            <div class="w-1 h-6 bg-amber-500 rounded-full"></div>
-            <h3 class="section-title">Review & Tindak Lanjut</h3>
-        </div>
-        <a href="{{ route('review.laporan') }}"
-           class="surface-card-hover border-t-4 border-t-amber-400 p-5 sm:p-6 block">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    </div>
-                    <div>
-                        <h4 class="text-lg font-bold text-slate-900">Validasi Laporan Masuk</h4>
-                        <p class="text-sm text-slate-500 mt-0.5">Approve atau reject laporan dari bawahan Anda</p>
-                    </div>
-                </div>
-                <span class="badge-pending text-xs">{{ $pendingCount }} Menunggu</span>
-            </div>
-        </a>
-    </div>
-    @endif
-
-    {{-- ============================================================
-         DEKLARASI NIHIL RISIKO (Khusus Kacab)
-         ============================================================ --}}
-    @if(Auth::user()->isChecker())
-    @php
-        $hariIni = now()->day;
-        $periodeSekarang = $hariIni <= 14 ? '1' : '2';
-        $periodeLabel = $periodeSekarang === '1' ? '1 - 14' : '15 - ' . now()->daysInMonth;
-        $sudahDeklarasi = \App\Models\RiskFreeDeclaration::where('branch_id', Auth::user()->branch_id)
-            ->where('periode', $periodeSekarang)
-            ->where('bulan', now()->month)
-            ->where('tahun', now()->year)
-            ->exists();
-        $deklarasiAktif = \App\Models\RiskFreeDeclaration::where('branch_id', Auth::user()->branch_id)
-            ->where('status', 'active')
-            ->count();
-    @endphp
-    <div class="mb-8">
-        <div class="flex items-center gap-3 mb-5">
-            <div class="w-1 h-6 bg-green-500 rounded-full"></div>
-            <h3 class="section-title">Deklarasi Nihil Risiko</h3>
-        </div>
-        <div class="surface-card section-pad">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                    <p class="text-sm text-slate-500">
-                        Periode <strong>{{ $periodeSekarang }}</strong> (Tanggal {{ $periodeLabel }} {{ now()->translatedFormat('F Y') }})
-                    </p>
-                    @if ($sudahDeklarasi)
-                        <p class="text-sm text-green-600 font-medium mt-1">
-                            ✅ Deklarasi untuk periode ini sudah dilakukan.
-                        </p>
-                    @else
-                        <p class="text-sm text-amber-600 font-medium mt-1">
-                            ⏳ Belum melakukan deklarasi untuk periode ini.
-                        </p>
-                    @endif
-                    @if ($deklarasiAktif > 0)
-                        <p class="text-xs text-slate-400 mt-1">
-                            Total {{ $deklarasiAktif }} deklarasi aktif tersimpan.
-                        </p>
-                    @endif
-                </div>
-                <div class="flex items-center gap-2">
-                    <a href="{{ route('risk_free_declarations.create') }}" 
-                       class="btn-primary btn-sm {{ $sudahDeklarasi ? 'opacity-50 pointer-events-none' : '' }}">
-                        <svg class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        {{ $sudahDeklarasi ? 'Sudah Dideklarasikan' : 'Deklarasi Nihil' }}
-                    </a>
-                    <a href="{{ route('risk_free_declarations.history') }}" class="btn-ghost btn-sm text-slate-500">
-                        Riwayat
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
-
-    {{-- ============================================================
-         RINGKASAN WILAYAH (Khusus ManRisk)
-         ============================================================ --}}
-    @if(Auth::user()->isAdmin())
-    @if(count($branchSummaries) > 0)
-    <div class="mb-8">
-        <div class="flex items-center gap-3 mb-5">
-            <div class="w-1 h-6 bg-emerald-500 rounded-full"></div>
-            <h3 class="section-title">🏢 Ringkasan Wilayah</h3>
-        </div>
-
-        {{-- Tabel Ringkasan Per Cabang --}}
-        <div class="surface-card overflow-hidden mb-5">
-            <div class="table-wrap">
-                <table class="table-min">
-                    <thead>
-                        <tr>
-                            <th class="table-th">Cabang</th>
-                            <th class="table-th text-center">Total Laporan</th>
-                            <th class="table-th text-center">Pending</th>
-                            <th class="table-th text-center">Dalam Progres</th>
-                            <th class="table-th text-center">Approved</th>
-                            <th class="table-th text-center">Closed</th>
-                            <th class="table-th text-right">Total Kerugian</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-slate-100">
-                        @php
-                            $maxTotal = max(array_column($branchSummaries, 'total'));
-                            $maxKerugian = max(array_column($branchSummaries, 'kerugian'));
-                        @endphp
-                        @foreach($branchSummaries as $branch)
-                        @php
-                            $isTopLaporan = $branch['total'] > 0 && $branch['total'] === $maxTotal;
-                            $isTopKerugian = $branch['kerugian'] > 0 && $branch['kerugian'] === $maxKerugian;
-                        @endphp
-                        <tr class="table-tr {{ $isTopLaporan || $isTopKerugian ? 'bg-amber-50/50' : '' }}">
-                            <td class="table-td font-semibold text-slate-800">
-                                <div class="flex items-center gap-2">
-                                    <span>🏦</span>
-                                    <span>{{ $branch['nama'] }}</span>
-                                    @if($isTopLaporan)
-                                    <span class="badge bg-amber-100 text-amber-700 border-amber-200 text-[9px]">Terbanyak</span>
-                                    @endif
-                                    @if($isTopKerugian)
-                                    <span class="badge bg-rose-100 text-rose-700 border-rose-200 text-[9px]">Kerugian Tertinggi</span>
-                                    @endif
-                                </div>
-                            </td>
-                            <td class="table-td text-center font-bold text-slate-700">{{ $branch['total'] }}</td>
-                            <td class="table-td text-center">
-                                @if($branch['pending'] > 0)
-                                <span class="badge-pending text-xs">{{ $branch['pending'] }}</span>
-                                @else
-                                <span class="text-slate-400 text-sm">0</span>
-                                @endif
-                            </td>
-                            <td class="table-td text-center">
-                                @if($branch['in_progress'] > 0)
-                                <span class="badge-in-progress text-xs">{{ $branch['in_progress'] }}</span>
-                                @else
-                                <span class="text-slate-400 text-sm">0</span>
-                                @endif
-                            </td>
-                            <td class="table-td text-center text-emerald-600 font-semibold">{{ $branch['approved'] }}</td>
-                            <td class="table-td text-center text-emerald-600 font-semibold">{{ $branch['closed'] }}</td>
-                            <td class="table-td text-right font-semibold text-rose-600">Rp {{ number_format($branch['kerugian'], 0, ',', '.') }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                    @php
-                        $totalAll = array_sum(array_column($branchSummaries, 'total'));
-                        $totalPendingAll = array_sum(array_column($branchSummaries, 'pending'));
-                        $totalInProgressAll = array_sum(array_column($branchSummaries, 'in_progress'));
-                        $totalApprovedAll = array_sum(array_column($branchSummaries, 'approved'));
-                        $totalClosedAll = array_sum(array_column($branchSummaries, 'closed'));
-                        $totalKerugianAll = array_sum(array_column($branchSummaries, 'kerugian'));
-                    @endphp
-                    <tfoot class="bg-slate-50 border-t-2 border-slate-200">
-                        <tr>
-                            <td class="px-4 py-3 text-sm font-bold text-slate-800">Total Semua Cabang</td>
-                            <td class="px-4 py-3 text-center font-bold text-slate-800">{{ $totalAll }}</td>
-                            <td class="px-4 py-3 text-center font-bold text-amber-600">{{ $totalPendingAll }}</td>
-                            <td class="px-4 py-3 text-center font-bold text-sky-600">{{ $totalInProgressAll }}</td>
-                            <td class="px-4 py-3 text-center font-bold text-emerald-600">{{ $totalApprovedAll }}</td>
-                            <td class="px-4 py-3 text-center font-bold text-emerald-600">{{ $totalClosedAll }}</td>
-                            <td class="px-4 py-3 text-right font-bold text-rose-600">Rp {{ number_format($totalKerugianAll, 0, ',', '.') }}</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
-
-        {{-- Bar Chart Perbandingan Laporan Per Cabang --}}
-        @if(count($branchChartLabels) > 1)
-        <div class="surface-card section-pad">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="w-1 h-5 bg-indigo-500 rounded-full"></div>
-                <h3 class="section-title text-base">📊 Laporan per Cabang</h3>
-            </div>
-            <div class="relative" style="height: 250px;">
-                <canvas id="branchChart" style="height: 100% !important; width: 100% !important;"></canvas>
-            </div>
-        </div>
-        @endif
-
-        {{-- Tabel Rekap Deklarasi Nihil Risiko --}}
-        @if(count($deklarasiSummaries) > 0)
-        <div class="surface-card overflow-hidden">
-            <div class="flex items-center gap-3 mb-4 px-5 pt-5">
-                <div class="w-1 h-5 bg-green-500 rounded-full"></div>
-                <h3 class="section-title text-base">✅ Rekap Deklarasi Nihil Risiko</h3>
-            </div>
-            <div class="table-wrap">
-                <table class="table-min">
-                    <thead>
-                        <tr>
-                            <th class="table-th">Cabang</th>
-                            <th class="table-th text-center">Periode 1</th>
-                            <th class="table-th text-center">Periode 2</th>
-                            <th class="table-th text-center">Total</th>
-                            <th class="table-th text-center">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-slate-100">
-                        @foreach($deklarasiSummaries as $d)
-                        <tr class="table-tr">
-                            <td class="table-td font-semibold text-slate-800">{{ $d['nama'] }}</td>
-                            <td class="table-td text-center">
-                                @if($d['periode1'])
-                                    <span class="text-emerald-600 font-semibold">✅</span>
-                                @else
-                                    <span class="text-slate-300">—</span>
-                                @endif
-                            </td>
-                            <td class="table-td text-center">
-                                @if($d['periode2'])
-                                    <span class="text-emerald-600 font-semibold">✅</span>
-                                @else
-                                    <span class="text-slate-300">—</span>
-                                @endif
-                            </td>
-                            <td class="table-td text-center font-bold text-slate-700">{{ $d['total'] }}</td>
-                            <td class="table-td text-center">
-                                @if($d['rejected'])
-                                    <span class="badge bg-rose-100 text-rose-700 border-rose-200 text-[10px]">⚠️ Rejected</span>
-                                @else
-                                    <span class="badge bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px]">✅ Compliant</span>
-                                @endif
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        @endif
-    </div>
-    @endif
-    @endif
-
-    {{-- ============================================================
-         DATA TABLE — Recent Reports
-         ============================================================ --}}
-    <div class="mb-8">
-        <div class="flex items-center gap-3 mb-5">
-            <div class="w-1 h-6 bg-slate-400 rounded-full"></div>
-            <h3 class="section-title">Laporan Terbaru</h3>
-            <span class="badge bg-slate-100 text-slate-500 border border-slate-200 text-[10px]">Preview</span>
-        </div>
-        <div class="surface-card overflow-hidden">
-            <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <p class="text-sm font-medium text-slate-500">Menampilkan <span class="font-semibold text-slate-700">{{ $recentReports->count() }}</span> laporan terbaru</p>
-                <div class="flex items-center gap-2">
-                    <div class="relative">
-                        <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input type="text" placeholder="Cari laporan..." class="pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50 w-full sm:w-56">
-                    </div>
-                    <button class="btn-secondary btn-sm">Filter</button>
-                </div>
-            </div>
-            <div class="table-wrap">
-                <table class="table-min">
-                    <thead>
-                        <tr>
-                            <th class="table-th">Tgl Lapor</th>
-                            <th class="table-th">Cabang</th>
-                            <th class="table-th">Maker</th>
-                            <th class="table-th">Risiko</th>
-                            <th class="table-th">Kategori</th>
-                            <th class="table-th text-center">Status</th>
-                            <th class="table-th text-center">Tindak Lanjut</th>
-                            <th class="table-th text-right">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-slate-100">
-                        @forelse($recentReports as $report)
-                        <tr class="table-tr">
-                            <td class="table-td">
-                                <span class="text-xs font-semibold text-slate-700">{{ $report->created_at->format('d/m/Y') }}</span>
-                                <span class="block text-[10px] text-slate-400">{{ $report->created_at->format('H:i') }}</span>
-                            </td>
-                            <td class="table-td font-semibold text-slate-700">{{ $report->branch->nama_cabang ?? 'HQ' }}</td>
-                            <td class="table-td">
-                                <span class="font-medium text-slate-800">{{ $report->user->name }}</span>
-                                <span class="block text-[10px] text-slate-400 uppercase">{{ optional($report->user->roles->first())->name ?? '—' }}</span>
-                            </td>
-                            <td class="table-td">
-                                <span class="text-sm font-medium text-slate-800">{{ $report->item->nama_risiko ?? $report->other_item_description ?? '—' }}</span>
-                            </td>
-                            <td class="table-td">
-                                @if($report->kategori === 'finansial')
-                                <span class="badge bg-rose-50 text-rose-700 border-rose-200 text-[10px]">Finansial</span>
-                                @else
-                                <span class="badge bg-amber-50 text-amber-700 border-amber-200 text-[10px]">Non-Finansial</span>
-                                @endif
-                            </td>
-                            <td class="table-td text-center">
-                                @php
-                                $statusMap = [
-                                    'pending_kacab' => ['label' => 'Pending Kacab', 'class' => 'badge-pending'],
-                                    'need_revision' => ['label' => 'Need Revision', 'class' => 'badge-rejected'],
-                                    'pending_revision' => ['label' => 'Pending Revision', 'class' => 'badge-pending'],
-                                    'approved' => ['label' => 'Approved', 'class' => 'badge-approved'],
-                                    'in_progress' => ['label' => 'In Progress', 'class' => 'badge-in-progress'],
-                                    'closed' => ['label' => 'Closed', 'class' => 'badge-closed'],
-                                ];
-                                $s = $statusMap[$report->status] ?? ['label' => $report->status, 'class' => 'badge-pending'];
-                                @endphp
-                                <span class="{{ $s['class'] }}">{{ $s['label'] }}</span>
-                            </td>
-                            <td class="table-td text-center">
-                                @php
-                                    $resMap = ['open' => 'badge-open', 'in_progress' => 'badge-in-progress', 'closed' => 'badge-closed'];
-                                    $resClass = $resMap[$report->status] ?? 'badge-open';
-                                @endphp
-                                <span class="{{ $resClass }}">{{ str_replace('_', ' ', $report->status ?? 'open') }}</span>
-                            </td>
-                            <td class="table-td text-right">
-                                <a href="{{ route('risk_reports.show', $report->id) }}"
-                                   class="btn-ghost btn-xs text-indigo-600 hover:text-indigo-800">
-                                    Detail
-                                </a>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="8" class="px-5 py-16 text-center">
-                                <div class="flex flex-col items-center justify-center gap-3">
-                                    <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
-                                        <svg class="w-7 h-7 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-semibold text-slate-600">Belum Ada Laporan</p>
-                                        <p class="text-xs text-slate-400 mt-1">Data laporan akan muncul di sini setelah Anda atau tim membuat laporan baru.</p>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            <div class="px-5 py-3 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between">
-                <p class="text-xs text-slate-400">Halaman 1 dari 1</p>
-                <div class="flex items-center gap-1">
-                    <button class="px-3 py-1.5 text-xs font-medium text-slate-400 bg-white border border-slate-200 rounded-lg cursor-not-allowed">&larr; Sebelumnya</button>
-                    <button class="px-3 py-1.5 text-xs font-medium text-slate-400 bg-white border border-slate-200 rounded-lg cursor-not-allowed">Selanjutnya &rarr;</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Chart.js --}}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // ================================================================
-            // CHART 1: RANKING RISIKO (Horizontal Bar)
-            // ================================================================
             const rankingCtx = document.getElementById('rankingRisikoChart');
             if (rankingCtx) {
-                const rankingFullLabels = {!! json_encode($rankingRisikoFullLabels) !!};
+                const rankingFullLabels = {!! json_encode($rankingRisikoFullLabels ?? []) !!};
                 new Chart(rankingCtx, {
                     type: 'bar',
                     data: {
-                        labels: {!! json_encode($rankingRisikoLabels) !!},
+                        labels: {!! json_encode($rankingRisikoLabels ?? []) !!},
                         datasets: [{
                             label: 'Jumlah Kejadian',
-                            data: {!! json_encode($rankingRisikoData) !!},
-                            backgroundColor: {!! json_encode($rankingRisikoColors) !!},
-                            borderColor: {!! json_encode($rankingRisikoColors) !!},
-                            borderWidth: 1,
+                            data: {!! json_encode($rankingRisikoData ?? []) !!},
+                            backgroundColor: {!! json_encode($rankingRisikoColors ?? []) !!},
                             borderRadius: 4,
                         }]
                     },
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    title: function(ctx) {
-                                        // Tampilkan nama risiko lengkap di title tooltip
-                                        return rankingFullLabels[ctx[0].dataIndex] || ctx[0].label;
-                                    },
-                                    label: function(ctx) {
-                                        return ctx.parsed.x + ' kejadian';
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 1,
-                                    font: { size: 10 }
-                                },
-                                grid: { color: 'rgba(0,0,0,0.05)' }
-                            },
-                            y: {
-                                ticks: {
-                                    font: { size: 10 }
-                                },
-                                grid: { display: false }
-                            }
-                        }
-                    }
+                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
                 });
             }
 
-            // ================================================================
-            // CHART 2: SUMBER RISIKO (Doughnut)
-            // ================================================================
             const sumberCtx = document.getElementById('sumberRisikoChart');
             if (sumberCtx) {
                 new Chart(sumberCtx, {
                     type: 'doughnut',
                     data: {
-                        labels: {!! json_encode($sumberRisikoLabels) !!},
+                        labels: {!! json_encode($sumberRisikoLabels ?? []) !!},
                         datasets: [{
-                            data: {!! json_encode($sumberRisikoData) !!},
-                            backgroundColor: {!! json_encode($sumberRisikoColors) !!},
-                            borderColor: '#ffffff',
+                            data: {!! json_encode($sumberRisikoData ?? []) !!},
+                            backgroundColor: {!! json_encode($sumberRisikoColors ?? []) !!},
                             borderWidth: 3,
                         }]
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    font: { size: 11 },
-                                    padding: 14,
-                                    usePointStyle: true,
-                                    pointStyle: 'circle',
-                                }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(ctx) {
-                                        var total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                        var pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
-                                        return ctx.label + ': ' + ctx.parsed + ' (' + pct + '%)';
-                                    }
-                                }
-                            }
-                        },
-                        cutout: '60%',
-                    }
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: {font: {size: 11}, usePointStyle: true} } }, cutout: '60%' }
                 });
             }
 
-            // ================================================================
-            // CHART 3: TREN TOP-5 RISIKO (Multi-line)
-            // ================================================================
             const trenCtx = document.getElementById('trenTop5Chart');
             if (trenCtx) {
                 new Chart(trenCtx, {
                     type: 'line',
                     data: {
-                        labels: {!! json_encode($trenTop5Labels) !!},
-                        datasets: {!! json_encode($trenTop5Datasets) !!}
+                        labels: {!! json_encode($trenTop5Labels ?? []) !!},
+                        datasets: {!! json_encode($trenTop5Datasets ?? []) !!}
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false,
-                        },
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    font: { size: 10 },
-                                    padding: 12,
-                                    usePointStyle: true,
-                                    pointStyle: 'circle',
-                                }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(ctx) {
-                                        return ctx.dataset.label + ': ' + ctx.parsed.y + ' kejadian';
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 1,
-                                    font: { size: 10 }
-                                },
-                                grid: { color: 'rgba(0,0,0,0.05)' }
-                            },
-                            x: {
-                                ticks: { font: { size: 9 } },
-                                grid: { display: false }
-                            }
-                        }
-                    }
-                });
-            }
-
-            // ================================================================
-            // CHART 4: LAPORAN PER CABANG (Bar Chart — Khusus ManRisk)
-            // ================================================================
-            const branchCtx = document.getElementById('branchChart');
-            if (branchCtx) {
-                new Chart(branchCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: {!! json_encode($branchChartLabels) !!},
-                        datasets: [{
-                            label: 'Total Laporan',
-                            data: {!! json_encode($branchChartData) !!},
-                            backgroundColor: {!! json_encode($branchChartColors) !!},
-                            borderColor: '#6366f1',
-                            borderWidth: 1,
-                            borderRadius: 6,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(ctx) {
-                                        return ctx.parsed.y + ' laporan';
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 1,
-                                    font: { size: 10 }
-                                },
-                                grid: { color: 'rgba(0,0,0,0.05)' }
-                            },
-                            x: {
-                                ticks: { font: { size: 10 } },
-                                grid: { display: false }
-                            }
-                        }
-                    }
+                    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom' } } }
                 });
             }
         });
     </script>
+    @endif
 </x-app-layout>

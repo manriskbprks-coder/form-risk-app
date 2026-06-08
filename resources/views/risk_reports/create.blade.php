@@ -163,7 +163,7 @@
 
                     @if($kategori === 'finansial')
                     <div class="mt-8 border-b pb-2 mb-4">
-                        <h3 class="text-lg font-bold text-blue-600">3. Dampak Finansial</h3>
+                        <h3 class="text-lg font-bold text-blue-700">3. Dampak Finansial</h3>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Seberapa besar kerugian (Rp) <span class="text-red-500">*</span></label>
@@ -174,7 +174,7 @@
                     </div>
                     @else
                     <div class="mt-8 border-b pb-2 mb-4">
-                        <h3 class="text-lg font-bold text-orange-600">3. Analisa Dampak Non-Finansial</h3>
+                        <h3 class="text-lg font-bold text-blue-700">3. Analisa Dampak Non-Finansial</h3>
                     </div>
 
                     <div class="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -217,11 +217,10 @@
                     @endif
 
                     <div class="mt-8 border-b pb-2 mb-4">
-                        <h3 class="text-lg font-bold text-gray-800">4. Penanganan Awal</h3>
+                        <h3 class="text-lg font-bold text-blue-700">4. Penanganan yang telah dilakukan</h3>
                     </div>
 
                     <div class="mb-6">
-                        <label class="block text-sm font-bold text-gray-700">Tindakan Penanganan Awal (Opsional)</label>
                         <p class="text-xs text-gray-500 mb-1">Jika masalah sudah langsung ditangani saat kejadian, ceritakan di sini.</p>
                         <textarea name="tindakan_awal" rows="2" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('tindakan_awal') border-red-500 bg-red-50 @enderror" placeholder="Contoh: Selisih kas sudah langsung diganti sore itu juga / Nasabah sudah ditelepon untuk TT ulang...">{{ old('tindakan_awal') }}</textarea>
                         @error('tindakan_awal')

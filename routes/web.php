@@ -44,7 +44,7 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
             if (empty($cabangFilter)) {
                 $branchIds = Branch::whereRaw('is_active = true')->pluck('id');
             } else {
-                $branchIds = collect($cabangFilter)->map(fn($id) => (int) $id);
+                $branchIds = collect($cabangFilter)->map(fn($id) => (string) $id);
             }
         }
     } elseif ($roleCategory === 'checker') {
@@ -165,12 +165,26 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
         $branchChartColors = $branchData['branchChartColors'];
     }
 
+    // === DATA INSIDEN KRITIS (Khusus Korwil/ManRisk) ===
+    $kritisReports = collect();
+    if (in_array($roleCategory, ['viewer', 'admin'])) {
+        $kritisReports = RiskReport::with(['user', 'branch'])
+            ->whereIn('branch_id', $branchIds->toArray())
+            ->where('dampak_finansial', '>=', 100000000) // >= 100 Juta
+            ->whereIn('status', ['pending_atasan', 'pending_korwil', 'pending_revision', 'approved_in_progress'])
+            ->orderBy('dampak_finansial', 'desc')
+            ->take(5)
+            ->get();
+    }
+
     // === DATA DEKLARASI NIHIL RISIKO (Khusus ManRisk) ===
     $deklarasiSummaries = [];
+    $cabangBelumDeklarasi = [];
 
     if ($roleCategory === 'admin') {
         $deklarasiData = $summaryService->getDeklarasiSummaries($allBranches, $bulanFilters, $branchIds->toArray());
         $deklarasiSummaries = $deklarasiData['deklarasiSummaries'];
+        $cabangBelumDeklarasi = $deklarasiData['cabangBelumDeklarasi'];
     }
 
     return view('dashboard', compact(
@@ -207,7 +221,9 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
         'cabangFilter',
         'allBranches',
         'availableMonths',
-        'deklarasiSummaries'
+        'deklarasiSummaries',
+        'cabangBelumDeklarasi',
+        'kritisReports'
     ));
 })->middleware(['auth', 'verified', 'throttle:dashboard'])->name('dashboard');
 

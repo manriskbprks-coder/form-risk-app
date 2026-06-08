@@ -12,7 +12,7 @@
         <div class="page-shell page-stack py-4 sm:py-8">
 
             <div class="surface-card overflow-hidden p-4 sm:p-6 border-l-4 border-yellow-500">
-                <h3 class="text-lg font-bold border-b pb-2 mb-4 text-gray-800">1. Menunggu Persetujuan Anda</h3>
+                <h3 class="text-lg font-bold border-b pb-2 mb-4 text-gray-800">1. Menunggu persetujuan Risiko (Checker)</h3>
 
                 @if($reports->isEmpty())
                 <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
@@ -26,9 +26,9 @@
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="kode">ID Laporan</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="tgl">Tgl Lapor & Ketahui</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="pelapor">Pelapor</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="sumber">Sumber Risiko</th>
+                                
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="kategori">Kategori</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider">Risiko, Penyebab & Mitigasi</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider">Risiko</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="dampak">Dampak</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Detail</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Aksi</th>
@@ -60,11 +60,7 @@
 
                                 <td class="px-4 py-3 border-b text-sm font-bold text-gray-800 text-center align-middle whitespace-nowrap" data-sort-value="{{ $report->user->name }}">{{ $report->user->name }}</td>
 
-                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
-                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $sumber['color'] }}">
-                                        {{ $sumber['label'] }}
-                                    </span>
-                                </td>
+                                
 
                                 <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
                                     @if($report->kategori === 'finansial')
@@ -77,31 +73,6 @@
                                 <td class="px-4 py-3 border-b align-middle">
                                     <div class="text-sm font-bold text-gray-900 truncate max-w-[280px]" title="{{ $report->item->nama_risiko ?? $report->other_item_description }}">
                                         {{ $report->item->nama_risiko ?? $report->other_item_description }}
-                                    </div>
-                                    <div class="mt-1 flex flex-wrap gap-1">
-                                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200 truncate max-w-[260px]" title="{{ $report->cause->penyebab ?? $report->other_cause_description }}">
-                                            <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
-                                            {{ $report->cause->penyebab ?? $report->other_cause_description }}
-                                        </span>
-                                    </div>
-                                    <div class="mt-1 flex flex-wrap gap-1">
-                                        @if($report->cause && $report->cause->mitigations->isNotEmpty())
-                                        @foreach($report->cause->mitigations as $mitigasi)
-                                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 truncate max-w-[240px]" title="{{ $mitigasi->mitigasi }}">
-                                            <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                            {{ $mitigasi->mitigasi }}
-                                        </span>
-                                        @endforeach
-                                        @endif
-                                        @if($report->mitigasi_tambahan)
-                                        <span class="inline-flex items-center gap-1 text-[11px] font-medium text-gray-600 bg-gray-50 px-2 py-0.5 rounded border border-gray-200 truncate max-w-[240px]" title="{{ $report->mitigasi_tambahan }}">
-                                            <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                            {{ $report->mitigasi_tambahan }}
-                                        </span>
-                                        @endif
-                                        @if((!$report->cause || $report->cause->mitigations->isEmpty()) && empty($report->mitigasi_tambahan))
-                                        <span class="text-[11px] text-gray-400 italic">- Tidak ada mitigasi -</span>
-                                        @endif
                                     </div>
                                 </td>
 
@@ -129,7 +100,7 @@
                                 </td>
 
                                 <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
-                                    <button type="button" onclick="openDetailModal({{ $report->id }})" class="inline-flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1.5 px-2.5 rounded text-xs border border-indigo-200 transition">
+                                    <button type="button" onclick="openDetailModal('{{ $report->id }}')" class="inline-flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1.5 px-2.5 rounded text-xs border border-indigo-200 transition">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                         Detail
                                     </button>
@@ -142,7 +113,7 @@
                                             <input type="hidden" name="status" value="approved">
                                             <button type="submit" class="w-20 bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded text-xs border border-green-600">Approve</button>
                                         </form>
-                                        <button type="button" onclick="openRejectModal({{ $report->id }}, '{{ $report->kode_laporan ?? 'N/A' }}')" class="w-20 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs border border-red-600">
+                                        <button type="button" onclick="openRejectModal('{{ $report->id }}', '{{ $report->kode_laporan ?? 'N/A' }}')" class="w-20 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs border border-red-600">
                                             Reject
                                         </button>
                                     </div>
@@ -156,7 +127,7 @@
             </div>
 
             <div class="surface-card overflow-hidden p-4 sm:p-6 border-l-4 border-blue-500">
-                <h3 class="text-lg font-bold border-b pb-2 mb-4 text-gray-800">2. Menunggu Tindak Lanjut (Penyelesaian)</h3>
+                <h3 class="text-lg font-bold border-b pb-2 mb-4 text-gray-800">2. Menunggu Tindah Lanjut (penyelesaian)</h3>
 
                 @if($tindakLanjut->isEmpty())
                 <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
@@ -170,9 +141,9 @@
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="kode">ID Laporan</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="tgl">Tgl Lapor & Ketahui</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="pelapor">Pelapor</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="sumber">Sumber Risiko</th>
+                                
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="kategori">Kategori</th>
-                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider">Risiko, Penyebab & Mitigasi</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider">Risiko</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="status">Status Tindak Lanjut</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Detail</th>
                                 <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Update Status</th>
@@ -204,11 +175,7 @@
 
                                 <td class="px-4 py-3 border-b text-sm font-bold text-gray-800 text-center align-middle whitespace-nowrap" data-sort-value="{{ $tl->user->name }}">{{ $tl->user->name }}</td>
 
-                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
-                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border {{ $sumber['color'] }}">
-                                        {{ $sumber['label'] }}
-                                    </span>
-                                </td>
+                                
 
                                 <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
                                     @if($tl->kategori === 'finansial')
@@ -221,31 +188,6 @@
                                 <td class="px-4 py-3 border-b align-middle">
                                     <div class="text-sm font-bold text-gray-900 truncate max-w-[280px]" title="{{ $tl->item->nama_risiko ?? $tl->other_item_description }}">
                                         {{ $tl->item->nama_risiko ?? $tl->other_item_description }}
-                                    </div>
-                                    <div class="mt-1 flex flex-wrap gap-1">
-                                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200 truncate max-w-[260px]" title="{{ $tl->cause->penyebab ?? $tl->other_cause_description }}">
-                                            <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
-                                            {{ $tl->cause->penyebab ?? $tl->other_cause_description }}
-                                        </span>
-                                    </div>
-                                    <div class="mt-1 flex flex-wrap gap-1">
-                                        @if($tl->cause && $tl->cause->mitigations->isNotEmpty())
-                                        @foreach($tl->cause->mitigations as $mitigasi)
-                                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 truncate max-w-[240px]" title="{{ $mitigasi->mitigasi }}">
-                                            <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                            {{ $mitigasi->mitigasi }}
-                                        </span>
-                                        @endforeach
-                                        @endif
-                                        @if($tl->mitigasi_tambahan)
-                                        <span class="inline-flex items-center gap-1 text-[11px] font-medium text-gray-600 bg-gray-50 px-2 py-0.5 rounded border border-gray-200 truncate max-w-[240px]" title="{{ $tl->mitigasi_tambahan }}">
-                                            <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                            {{ $tl->mitigasi_tambahan }}
-                                        </span>
-                                        @endif
-                                        @if((!$tl->cause || $tl->cause->mitigations->isEmpty()) && empty($tl->mitigasi_tambahan))
-                                        <span class="text-[11px] text-gray-400 italic">- Tidak ada mitigasi -</span>
-                                        @endif
                                     </div>
                                 </td>
 
@@ -267,7 +209,7 @@
                                 </td>
 
                                 <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
-                                    <button type="button" onclick="openDetailModal({{ $tl->id }})" class="inline-flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1.5 px-2.5 rounded text-xs border border-indigo-200 transition">
+                                    <button type="button" onclick="openDetailModal('{{ $tl->id }}')" class="inline-flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1.5 px-2.5 rounded text-xs border border-indigo-200 transition">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                         Detail
                                     </button>
@@ -297,6 +239,73 @@
                                             </button>
                                         </form>
                                     </div>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @endif
+            </div>
+
+            <!-- TABLE 3: LAPORAN CLOSED -->
+            <div class="surface-card overflow-hidden p-4 sm:p-6 border-l-4 border-green-500 mt-8 mb-8">
+                <h3 class="text-lg font-bold border-b pb-2 mb-4 text-gray-800">3. Laporan yang sudah close</h3>
+
+                @if($closedReports->isEmpty())
+                <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
+                    <p class="text-green-700 italic">Belum ada laporan yang selesai / closed.</p>
+                </div>
+                @else
+                <div class="overflow-x-auto -mx-4 sm:mx-0">
+                    <table class="min-w-[1000px] w-full bg-white border border-gray-200">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="kode">ID Laporan</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="tgl">Tgl Lapor & Ketahui</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="pelapor">Pelapor</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="kategori">Kategori</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider">Risiko</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap sortable" data-sort="status">Status Tindak Lanjut</th>
+                                <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider whitespace-nowrap">Detail</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($closedReports as $tl)
+                            <tr class="hover:bg-gray-50 align-middle">
+                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap" data-sort-value="{{ $tl->kode_laporan ?? '' }}">
+                                    <span class="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded border border-indigo-200">
+                                        {{ $tl->kode_laporan ?? '—' }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 border-b whitespace-nowrap text-center align-middle" data-sort-value="{{ $tl->created_at->format('YmdHis') }}">
+                                    <div class="text-xs font-bold text-blue-700">Lapor: {{ $tl->created_at->format('d/m/Y') }}</div>
+                                    <div class="text-xs text-gray-600 mt-1">Kejadian: {{ \Carbon\Carbon::parse($tl->tanggal_kejadian)->format('d/m/Y') }}</div>
+                                    <div class="text-xs text-gray-600">Diketahui: {{ \Carbon\Carbon::parse($tl->tanggal_diketahui)->format('d/m/Y') }}</div>
+                                </td>
+                                <td class="px-4 py-3 border-b text-sm font-bold text-gray-800 text-center align-middle whitespace-nowrap" data-sort-value="{{ $tl->user->name }}">{{ $tl->user->name }}</td>
+                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
+                                    @if($tl->kategori === 'finansial')
+                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border bg-green-100 text-green-800 border-green-200">Finansial</span>
+                                    @else
+                                    <span class="px-2 py-1 text-[10px] font-bold uppercase rounded border bg-orange-100 text-orange-800 border-orange-200">Non-Finansial</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 border-b align-middle">
+                                    <div class="text-sm font-bold text-gray-900 truncate max-w-[280px]" title="{{ $tl->item->nama_risiko ?? $tl->other_item_description }}">
+                                        {{ $tl->item->nama_risiko ?? $tl->other_item_description }}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 border-b text-sm text-center align-middle whitespace-nowrap">
+                                    <span class="px-2 py-1 bg-green-100 text-green-800 border-green-200 rounded font-bold text-xs uppercase border">
+                                        {{ $tl->status }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 border-b text-center align-middle whitespace-nowrap">
+                                    <button type="button" onclick="openDetailModal('{{ $tl->id }}')" class="inline-flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1.5 px-2.5 rounded text-xs border border-indigo-200 transition">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        Detail
+                                    </button>
                                 </td>
                             </tr>
                             @endforeach
@@ -479,7 +488,7 @@
         // =============================================================
         // DATA LAPORAN (JSON embedded dari Blade)
         // =============================================================
-        var reportsData = @json($reports->merge($tindakLanjut)->keyBy->id);
+        var reportsData = @json($reports->merge($tindakLanjut)->merge($closedReports)->keyBy('id'));
 
         // =============================================================
         // MODAL DETAIL
