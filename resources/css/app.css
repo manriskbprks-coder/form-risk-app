@@ -37,7 +37,7 @@
 @layer components {
     /* ── Layout Containers ── */
     .page-shell {
-        @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+        @apply w-full max-w-full mx-auto px-4 sm:px-8 lg:px-12;
     }
 
     .page-stack {

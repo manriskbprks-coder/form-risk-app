@@ -8,8 +8,8 @@
         </div>
     </x-slot>
 
-    <div class="py-6 sm:py-12">
-        <div class="page-shell page-stack">
+    <div class="pt-4 pb-8 sm:pb-12">
+        <div class="max-w-full w-full px-4 sm:px-6 lg:px-8 mx-auto page-stack">
 
             @if(session('success'))
             <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
@@ -27,8 +27,8 @@
                     <h3 class="text-lg font-bold">Daftar Karyawan BPR</h3>
                 </div>
 
-                <div class="py-6 sm:py-12">
-                    <div class="page-shell">
+                <div class="pt-4 pb-8 sm:pb-12">
+                    <div class="max-w-full w-full px-4 sm:px-6 lg:px-8 mx-auto">
 
                         <div class="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
                             <h3 class="text-lg font-bold text-gray-800 uppercase tracking-wider">Manajemen Pengguna BPR</h3>

@@ -177,6 +177,23 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
             ->get();
     }
 
+    // === TUGAS SAYA (Khusus Kacab) & REVISI (Khusus Maker) ===
+    $myTasks = collect();
+    $makerRevisions = collect();
+    if ($roleCategory === 'checker') {
+        $myTasks = RiskReport::with(['user', 'item'])
+            ->where('branch_id', $userBranchId)
+            ->whereIn('status', ['pending_atasan', 'approved_in_progress', 'pending_revision'])
+            ->orderBy('updated_at', 'desc')
+            ->take(10)
+            ->get();
+    } elseif ($roleCategory === 'maker') {
+        $makerRevisions = RiskReport::where('user_id', $user->id)
+            ->where('status', 'need_revision')
+            ->orderBy('updated_at', 'desc')
+            ->get();
+    }
+
     // === DATA DEKLARASI NIHIL RISIKO (Khusus ManRisk) ===
     $deklarasiSummaries = [];
     $cabangBelumDeklarasi = [];
@@ -223,7 +240,9 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
         'availableMonths',
         'deklarasiSummaries',
         'cabangBelumDeklarasi',
-        'kritisReports'
+        'kritisReports',
+        'myTasks',
+        'makerRevisions'
     ));
 })->middleware(['auth', 'verified', 'throttle:dashboard'])->name('dashboard');
 

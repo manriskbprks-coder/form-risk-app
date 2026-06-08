@@ -28,15 +28,15 @@
         :class="{ 'translate-x-0': sidebarOpen }"
     >
         {{-- Brand / Logo --}}
-        <div class="flex items-center gap-3 px-10 h-16 border-b border-slate-100 shrink-0">
+        <div class="flex items-center gap-3 px-10 h-16 border-b border-slate-200 shrink-0">
             <img src="{{ asset('images/bpr-tulisan-landscape.png') }}" 
                 alt="{{ config('app.name') }}" 
                 class="h-40 w-auto">
         </div>
 
         {{-- User Info --}}
-        <div class="px-4 py-4 border-b border-slate-100 shrink-0">
-            <div class="flex items-center gap-3">
+        <div class="px-4 border-b border-slate-200 shrink-0 h-20 flex items-center">
+            <div class="flex items-center gap-3 w-full">
                 <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm shrink-0">
                     {{ Str::substr(Auth::user()?->name ?? 'U', 0, 1) }}
                 </div>
@@ -109,7 +109,7 @@
                 <span>Review & Tindak Lanjut</span>
                 @php
                     $pendingReviewCount = \App\Models\RiskReport::where('branch_id', auth()->user()->branch_id)
-                        ->whereIn('status', ['pending_atasan', 'need_revision'])
+                        ->whereIn('status', ['pending_atasan', 'pending_revision', 'approved_in_progress'])
                         ->count();
                 @endphp
                 @if($pendingReviewCount > 0)
@@ -213,8 +213,8 @@
     <div id="main-content" class="lg:pl-60 min-h-screen flex flex-col">
 
         {{-- TOP NAVBAR --}}
-        <header class="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-slate-200 shadow-xs">
-            <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
+        <header class="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-slate-200 shadow-xs h-16">
+            <div class="flex items-center justify-between h-full px-4 sm:px-6 lg:px-8">
 
                 {{-- Left: Hamburger + Page Title --}}
                 <div class="flex items-center gap-3 min-w-0">
@@ -314,8 +314,8 @@
 
         {{-- PAGE HEADER --}}
         @isset($header)
-        <div class="bg-white border-b border-slate-100">
-            <div class="page-shell py-5 sm:py-6">
+        <div class="bg-white border-b border-slate-200 h-20 flex items-center">
+            <div class="page-shell w-full">
                 {{ $header }}
             </div>
         </div>

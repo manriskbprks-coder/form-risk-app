@@ -3,14 +3,17 @@
 @endphp
 
 <x-app-layout>
+    @section('page_title', 'Deklarasi')
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+    <div class="flex justify-between items-center">
+        <h2 class="font-semibold text-xl text-slate-900 leading-tight tracking-tight">
             {{ __('Riwayat Deklarasi Nihil Risiko') }}
         </h2>
-    </x-slot>
+    </div>
+</x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pt-4 pb-8 sm:pb-12">
+        <div class="max-w-full w-full px-4 sm:px-6 lg:px-8 mx-auto">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
 

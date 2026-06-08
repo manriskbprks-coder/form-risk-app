@@ -1,22 +1,15 @@
 <x-app-layout>
+    @section('page_title', 'Detail Laporan')
     <x-slot name="header">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 class="font-bold text-lg sm:text-xl text-gray-800 leading-tight">
-                {{ __('Detail Laporan Risiko') }}
-                @if($report->kode_laporan)
-                <span class="text-sm font-mono font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded border border-indigo-200 ml-2 align-middle">
-                    {{ $report->kode_laporan }}
-                </span>
-                @endif
-            </h2>
-            <a href="{{ url()->previous() }}" class="inline-flex w-full sm:w-auto justify-center bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded text-sm shadow">
-                &larr; Kembali
-            </a>
-        </div>
-    </x-slot>
+    <div class="flex justify-between items-center">
+        <h2 class="font-semibold text-xl text-slate-900 leading-tight tracking-tight">
+            {{ __('Detail Laporan Risiko') }}
+        </h2>
+    </div>
+</x-slot>
 
-    <div class="py-6 sm:py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="pt-4 pb-8 sm:pb-12">
+        <div class="max-w-full w-full px-4 sm:px-6 lg:px-8 mx-auto">
 
             {{-- BANNER AREA --}}
             @if($report->status === 'need_revision')

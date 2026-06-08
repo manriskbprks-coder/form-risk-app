@@ -45,8 +45,12 @@ class SummaryService
 
         $totalPending = (clone $reportQuery)
             ->where(function ($q) {
-                $q->where('status', RiskReportStatus::PendingAtasan->value)
-                  ->orWhere('status', 'pending_korwil');
+                $q->whereIn('status', [
+                    RiskReportStatus::PendingAtasan->value,
+                    RiskReportStatus::PendingRevision->value,
+                    RiskReportStatus::ApprovedInProgress->value
+                ])
+                ->orWhere('status', 'pending_korwil');
             })
             ->count();
 
@@ -87,7 +91,11 @@ class SummaryService
     {
         if ($roleCategory === RoleCategory::Checker->value) {
             return RiskReport::where('branch_id', $user->branch_id)
-                ->where('status', RiskReportStatus::PendingAtasan->value)
+                ->whereIn('status', [
+                    RiskReportStatus::PendingAtasan->value,
+                    RiskReportStatus::PendingRevision->value,
+                    RiskReportStatus::ApprovedInProgress->value
+                ])
                 ->count();
         } elseif ($roleCategory === RoleCategory::Viewer->value) {
             return RiskReport::whereIn('branch_id', $branchIds)

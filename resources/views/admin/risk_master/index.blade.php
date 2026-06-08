@@ -8,7 +8,7 @@
         </div>
     </x-slot>
 
-    <div class="py-6 sm:py-12" x-data="{ 
+    <div class="pt-4 pb-8 sm:pb-12" x-data="{ 
         filterRole: 'semua',
         filterKategori: 'semua',
         filterSumber: 'semua',
@@ -20,7 +20,7 @@
             this.editCauseModal = true;
         }
     }">
-        <div class="page-shell page-stack">
+        <div class="max-w-full w-full px-4 sm:px-6 lg:px-8 mx-auto page-stack">
 
             <div class="surface-card section-pad border-t-4 border-blue-600">
                 <div class="mb-6 space-y-1">

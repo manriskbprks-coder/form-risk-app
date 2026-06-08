@@ -1,12 +1,15 @@
 <x-app-layout>
+    @section('page_title', 'Form Laporan')
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Form Input Risiko Operasional (Maker)') }}
+    <div class="flex justify-between items-center">
+        <h2 class="font-semibold text-xl text-slate-900 leading-tight tracking-tight">
+            {{ __('Form Input Risiko Operasional (' . ($kategori === 'finansial' ? 'Finansial' : 'Non-Finansial') . ')') }}
         </h2>
-    </x-slot>
+    </div>
+</x-slot>
 
-    <div class="py-6 sm:py-12">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="pt-4 pb-8 sm:pb-12">
+        <div class="max-w-full w-full px-4 sm:px-6 lg:px-8 mx-auto">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 sm:p-6">
 
                 {{-- =============================================================

@@ -221,9 +221,6 @@
 
             {{-- CHECKER: TUGAS SAYA (To-Do List) --}}
             @if(Auth::user()->isChecker())
-            @php
-                $myTasks = $recentReports->whereIn('status', ['pending_atasan', 'approved_in_progress', 'pending_revision'])->take(10);
-            @endphp
             <div class="surface-card p-5 sm:p-6">
                 <h3 class="section-title mb-4">📋 Tugas Saya: Menunggu Review</h3>
                 <div class="space-y-4">
@@ -277,14 +274,11 @@
             
             {{-- MAKER: ALERT REVISI --}}
             @if(Auth::user()->isMaker())
-            @php
-                $revisions = $recentReports->where('status', 'need_revision');
-            @endphp
-            @if($revisions->count() > 0)
+            @if($makerRevisions->count() > 0)
             <div class="surface-card p-5 border-t-4 border-rose-500 shadow-sm bg-rose-50/30">
                 <h3 class="text-sm font-bold text-rose-700 flex items-center mb-3"><span class="mr-2">🚨</span> ALERT: BUTUH REVISI!</h3>
                 <div class="space-y-3">
-                    @foreach($revisions as $rev)
+                    @foreach($makerRevisions as $rev)
                     <div class="bg-white p-3 rounded-lg border border-rose-100 shadow-sm">
                         <p class="text-sm font-bold text-slate-800">{{ $rev->nomor_laporan }}</p>
                         <p class="text-xs text-slate-600 mt-1 line-clamp-2">Laporan ini ditolak oleh atasan dan membutuhkan perbaikan segera.</p>
