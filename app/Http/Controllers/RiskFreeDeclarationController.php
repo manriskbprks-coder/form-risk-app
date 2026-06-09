@@ -74,43 +74,48 @@ class RiskFreeDeclarationController extends Controller
             'statement_text' => 'required|string|min:10',
         ]);
 
-        $this->deklarasiNihilService->store($user, $request->all());
-
-        return redirect()->route('dashboard')
-            ->with('success', 'Deklarasi nihil risiko berhasil disimpan.');
-    }
-
-    /**
-     * Tolak deklarasi nihil risiko (ManRisk).
-     */
-    public function reject($id)
-    {
-        $user = Auth::user();
-        if (!$user->isAdmin()) {
-            abort(Response::HTTP_FORBIDDEN, 'Hanya Admin (ManRisk) yang bisa melakukan ini.');
-        }
-
         try {
-            $this->deklarasiNihilService->reject((string) $id, $user);
-            return back()->with('success', 'Deklarasi ditolak (rejected).');
-        } catch (\RuntimeException | \DomainException $e) {
-            return back()->with('error', $e->getMessage());
+            $this->deklarasiNihilService->store($user, $request->all());
+            
+            return redirect()->route('dashboard')
+                ->with('success', 'Deklarasi nihil risiko berhasil disimpan.');
+        } catch (\DomainException $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', $e->getMessage());
         }
     }
 
     /**
-     * Riwayat deklarasi (untuk Kacab & ManRisk).
+     * Riwayat deklarasi (hanya untuk Admin/ManRisk).
      */
-    public function history()
+    public function history(Request $request)
     {
         $user = Auth::user();
 
-        if (!$user || !in_array($user->roleCategory(), ['checker', 'viewer', 'admin'])) {
-            abort(Response::HTTP_FORBIDDEN, 'Akses ditolak.');
+        if (!$user || (!$user->isAdmin() && !$user->isChecker())) {
+            abort(Response::HTTP_FORBIDDEN, 'Akses ditolak. Anda tidak memiliki izin untuk halaman ini.');
         }
 
-        $declarations = $this->deklarasiNihilService->getHistory($user);
+        // Ambil filter bulan/tahun (default bulan/tahun ini)
+        $bulan = $request->input('bulan', now()->month);
+        $tahun = $request->input('tahun', now()->year);
 
-        return view('risk_free_declarations.history', compact('declarations'));
+        // Jika Kacab (Checker), hanya lihat cabang sendiri
+        $branchId = $user->isChecker() ? $user->branch_id : null;
+        $groupedData = $this->deklarasiNihilService->getHistoryGrouped($bulan, $tahun, $branchId);
+
+        // Siapkan opsi dropdown filter (1 tahun ke belakang)
+        $availableMonths = [];
+        for ($i = 0; $i < 12; $i++) {
+            $date = now()->subMonths($i);
+            $availableMonths[] = [
+                'bulan' => $date->month,
+                'tahun' => $date->year,
+                'label' => $date->translatedFormat('F Y'),
+            ];
+        }
+
+        return view('risk_free_declarations.history', compact('groupedData', 'bulan', 'tahun', 'availableMonths'));
     }
 }

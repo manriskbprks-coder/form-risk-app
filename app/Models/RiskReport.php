@@ -23,7 +23,8 @@ class RiskReport extends Model
         'kategori',
         'sumber_risiko',
         'status',
-        'revision_note'
+        'revision_note',
+        'tindakan_penyelesaian'
     ];
 
     public function user() {
@@ -44,6 +45,10 @@ class RiskReport extends Model
 
     public function logs() {
         return $this->hasMany(RiskReportLog::class)->latest();
+    }
+
+    public function skmrAnalysis() {
+        return $this->hasOne(SkmrAnalysis::class);
     }
 
     // ─── Status Helper Methods ───────────────────────────────────────

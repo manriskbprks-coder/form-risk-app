@@ -185,23 +185,23 @@
                         <div class="space-y-3">
                             <label class="flex items-center p-3 border border-gray-300 rounded hover:bg-white cursor-pointer transition @error('skala_dampak') border-red-500 bg-red-50 @enderror">
                                 <input type="radio" name="skala_dampak" value="Sangat Tinggi" required class="h-4 w-4 text-orange-600 focus:ring-orange-500" {{ old('skala_dampak') == 'Sangat Tinggi' ? 'checked' : '' }}>
-                                <span class="ml-3 text-sm font-bold text-gray-700">Sangat Tinggi</span>
+                                <x-skala-badge skala="Sangat Tinggi" class="ml-3 text-xs" />
                             </label>
                             <label class="flex items-center p-3 border border-gray-300 rounded hover:bg-white cursor-pointer transition">
                                 <input type="radio" name="skala_dampak" value="Tinggi" class="h-4 w-4 text-orange-600 focus:ring-orange-500" {{ old('skala_dampak') == 'Tinggi' ? 'checked' : '' }}>
-                                <span class="ml-3 text-sm font-bold text-gray-700">Tinggi</span>
+                                <x-skala-badge skala="Tinggi" class="ml-3 text-xs" />
                             </label>
                             <label class="flex items-center p-3 border border-gray-300 rounded hover:bg-white cursor-pointer transition">
                                 <input type="radio" name="skala_dampak" value="Sedang" class="h-4 w-4 text-orange-600 focus:ring-orange-500" {{ old('skala_dampak') == 'Sedang' ? 'checked' : '' }}>
-                                <span class="ml-3 text-sm font-bold text-gray-700">Sedang</span>
+                                <x-skala-badge skala="Sedang" class="ml-3 text-xs" />
                             </label>
                             <label class="flex items-center p-3 border border-gray-300 rounded hover:bg-white cursor-pointer transition">
                                 <input type="radio" name="skala_dampak" value="Rendah" class="h-4 w-4 text-orange-600 focus:ring-orange-500" {{ old('skala_dampak') == 'Rendah' ? 'checked' : '' }}>
-                                <span class="ml-3 text-sm font-bold text-gray-700">Rendah</span>
+                                <x-skala-badge skala="Rendah" class="ml-3 text-xs" />
                             </label>
                             <label class="flex items-center p-3 border border-gray-300 rounded hover:bg-white cursor-pointer transition">
                                 <input type="radio" name="skala_dampak" value="Sangat Rendah" class="h-4 w-4 text-orange-600 focus:ring-orange-500" {{ old('skala_dampak') == 'Sangat Rendah' ? 'checked' : '' }}>
-                                <span class="ml-3 text-sm font-bold text-gray-700">Sangat Rendah</span>
+                                <x-skala-badge skala="Sangat Rendah" class="ml-3 text-xs" />
                             </label>
                         </div>
                         @error('skala_dampak')

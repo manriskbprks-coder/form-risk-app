@@ -14,8 +14,8 @@ class AddRiskProgressRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'note' => ['required', 'string', 'min:5'],
-            'new_status' => ['nullable', 'in:approved_in_progress,closed'],
+            'note' => ['required_if:new_status,closed', 'nullable', 'string', 'min:5'],
+            'new_status' => ['nullable', 'in:in_progress,closed'],
         ];
     }
 }

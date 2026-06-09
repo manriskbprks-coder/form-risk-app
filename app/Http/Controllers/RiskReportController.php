@@ -212,10 +212,43 @@ class RiskReportController extends Controller
     // Nampilin Detail Laporan & Timeline
     public function show($id)
     {
-        $report = RiskReport::with(['user', 'item', 'branch', 'cause.mitigations', 'logs.user'])->findOrFail($id);
+        $report = RiskReport::with(['user', 'item', 'branch', 'cause.mitigations', 'logs.user', 'skmrAnalysis'])->findOrFail($id);
         Gate::authorize('view', $report);
 
         return view('risk_reports.show', compact('report'));
+    }
+
+    // ========================================================================
+    // FUNGSI ANALISA SKMR (MANRISK ONLY)
+    // ========================================================================
+
+    public function saveSkmrAnalysis(Request $request, $id)
+    {
+        $user = Auth::user();
+        if (!$user->isAdmin()) {
+            abort(403, 'Hanya ManRisk / Admin yang dapat menyimpan Analisa SKMR.');
+        }
+
+        $report = RiskReport::findOrFail($id);
+
+        $validated = $request->validate([
+            'catatan_skmr' => 'nullable|string',
+            'ketersediaan_kebijakan' => 'nullable|string',
+            'kesesuaian_sop' => 'nullable|string',
+            'rekomendasi_1' => 'nullable|string',
+            'rekomendasi_2' => 'nullable|string',
+            'dampak_rekomendasi_1' => 'nullable|string',
+            'dampak_rekomendasi_2' => 'nullable|string',
+        ]);
+
+        $validated['created_by'] = $user->id;
+
+        $report->skmrAnalysis()->updateOrCreate(
+            ['risk_report_id' => $report->id],
+            $validated
+        );
+
+        return back()->with('success', 'Analisa SKMR berhasil disimpan.');
     }
 
     // ========================================================================

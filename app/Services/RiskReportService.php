@@ -279,15 +279,28 @@ class RiskReportService
     /**
      * Tambah progress (note + status) ke laporan.
      */
-    public function addProgress(RiskReport $report, User $user, string $note, string $newStatus): void
+    public function addProgress(RiskReport $report, User $user, ?string $note, string $newStatus): void
     {
+        $logNote = $note;
+
+        if ($newStatus === RiskReportStatus::Closed->value) {
+            $report->update([
+                'status' => $newStatus,
+                'tindakan_penyelesaian' => $note
+            ]);
+            $logNote = 'Laporan telah ditutup. Tindakan penyelesaian akhir telah dicatat.';
+        } else {
+            $report->update(['status' => $newStatus]);
+            if (empty($logNote)) {
+                $logNote = 'Status diperbarui menjadi In Progress.';
+            }
+        }
+
         $report->logs()->create([
             'user_id' => $user->id,
-            'note' => $note,
+            'note' => $logNote,
             'status_after_note' => $newStatus,
         ]);
-
-        $report->update(['status' => $newStatus]);
 
         // Notifikasi ke Maker jika laporan di-closed
         if ($newStatus === RiskReportStatus::Closed->value) {

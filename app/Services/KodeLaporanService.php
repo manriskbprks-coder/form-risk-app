@@ -13,7 +13,7 @@ class KodeLaporanService
     protected array $roleMap = [
         'teller' => 'TL',
         'ca' => 'CA',
-        'csr' => 'CS',
+        'csr' => 'CSR',
         'security' => 'SC',
         'kacab' => 'KC',
     ];

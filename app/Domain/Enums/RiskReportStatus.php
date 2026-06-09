@@ -44,8 +44,8 @@ enum RiskReportStatus: string
             'pending_atasan' => [self::ApprovedInProgress, self::NeedRevision],
             'need_revision' => [self::PendingAtasan, self::PendingRevision],
             'pending_revision' => [self::ApprovedInProgress],
-            'approved_in_progress' => [self::Closed],
-            'closed' => [],
+            'approved_in_progress' => [self::Closed, self::NeedRevision],
+            'closed' => [self::NeedRevision],
         ];
     }
 

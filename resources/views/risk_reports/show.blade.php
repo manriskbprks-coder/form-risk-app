@@ -94,7 +94,7 @@
                                             $tglLapor = $report->created_at->startOfDay();
                                             $isLate = $tglDiketahui->diffInDays($tglLapor, false) > 7;
                                         @endphp
-                                        @if(auth()->user()?->hasRole('manrisk') && $isLate)
+                                        @if(auth()->user()?->isAdmin() && $isLate)
                                             <span class="px-2 py-0.5 text-[10px] font-bold text-red-700 bg-red-100 border border-red-200 rounded uppercase" title="Lebih dari 7 hari sejak tanggal diketahui">⚠️ Late Report</span>
                                         @endif
                                     </div>
@@ -138,7 +138,9 @@
                                 @else
                                 <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
                                     <p class="text-orange-600 font-bold text-xs uppercase mb-1">Skala Dampak</p>
-                                    <span class="inline-block mt-1 px-3 py-1 bg-gray-800 text-white text-xs font-bold rounded shadow">{{ $report->skala_dampak ?? 'Tidak ada skala' }}</span>
+                                    <div class="mt-1">
+                                        <x-skala-badge :skala="$report->skala_dampak" />
+                                    </div>
                                 </div>
                                 @endif
                             </div>
@@ -152,11 +154,11 @@
                         </div>
                     </div>
 
-                    {{-- SECTION 3: MITIGASI & PENANGANAN --}}
+                    {{-- SECTION 3: MITIGASI & PENYELESAIAN --}}
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-5 sm:p-6">
                             <h3 class="text-lg font-bold text-gray-900 border-b pb-3 mb-4 uppercase tracking-wider flex items-center gap-2">
-                                <span>🛡️</span> Mitigasi & Penanganan
+                                <span>🛡️</span> Mitigasi & Penyelesaian
                             </h3>
 
                             <div class="space-y-5">
@@ -190,9 +192,83 @@
                                     </div>
                                     @endif
                                 </div>
+
+                                @if($report->tindakan_penyelesaian)
+                                <div>
+                                    <p class="text-gray-500 font-bold text-xs uppercase mb-2">Tindakan Penyelesaian Akhir</p>
+                                    <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                                        <p class="text-sm font-semibold text-green-800 whitespace-pre-wrap">{{ $report->tindakan_penyelesaian }}</p>
+                                    </div>
+                                </div>
+                                @endif
                             </div>
                         </div>
                     </div>
+
+                    {{-- ANALISA SKMR (MANRISK ONLY) --}}
+                    @if(auth()->user()->isAdmin())
+                    <div class="bg-indigo-50 overflow-hidden shadow-inner sm:rounded-lg border-2 border-indigo-200 mt-6">
+                        <div class="p-5 sm:p-6">
+                            <h3 class="text-lg font-extrabold text-indigo-900 mb-4 uppercase tracking-wider flex items-center gap-2">
+                                <span>🕵️‍♂️</span> Analisa SKMR (Private Admin)
+                            </h3>
+                            <p class="text-sm text-indigo-700 mb-4 bg-indigo-100 p-3 rounded-lg border border-indigo-200">
+                                Bagian ini hanya dapat dilihat dan diisi oleh ManRisk / Admin. Catatan dan analisa di sini bersifat rahasia dan tidak akan tampil untuk cabang atau pembuat laporan.
+                            </p>
+
+                            <form action="{{ route('risk_reports.save_skmr_analysis', $report->id) }}" method="POST" class="space-y-4">
+                                @csrf
+                                @php
+                                    $skmr = $report->skmrAnalysis;
+                                @endphp
+
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Catatan SKMR</label>
+                                    <textarea name="catatan_skmr" rows="3" class="w-full rounded-md border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">{{ old('catatan_skmr', $skmr?->catatan_skmr) }}</textarea>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Ketersediaan Kebijakan</label>
+                                        <input type="text" name="ketersediaan_kebijakan" class="w-full rounded-md border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500" value="{{ old('ketersediaan_kebijakan', $skmr?->ketersediaan_kebijakan) }}">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Kesesuaian Proses Terhadap SOP</label>
+                                        <input type="text" name="kesesuaian_sop" class="w-full rounded-md border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500" value="{{ old('kesesuaian_sop', $skmr?->kesesuaian_sop) }}">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Rekomendasi SKMR 1</label>
+                                        <textarea name="rekomendasi_1" rows="2" class="w-full rounded-md border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">{{ old('rekomendasi_1', $skmr?->rekomendasi_1) }}</textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Dampak Rekomendasi 1</label>
+                                        <textarea name="dampak_rekomendasi_1" rows="2" class="w-full rounded-md border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">{{ old('dampak_rekomendasi_1', $skmr?->dampak_rekomendasi_1) }}</textarea>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Rekomendasi SKMR 2 <span class="text-gray-400 font-normal">(Opsional)</span></label>
+                                        <textarea name="rekomendasi_2" rows="2" class="w-full rounded-md border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">{{ old('rekomendasi_2', $skmr?->rekomendasi_2) }}</textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Dampak Rekomendasi 2 <span class="text-gray-400 font-normal">(Opsional)</span></label>
+                                        <textarea name="dampak_rekomendasi_2" rows="2" class="w-full rounded-md border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">{{ old('dampak_rekomendasi_2', $skmr?->dampak_rekomendasi_2) }}</textarea>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 pt-4 border-t border-indigo-200">
+                                    <button type="submit" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-sm transition">
+                                        💾 Simpan Analisa SKMR
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    @endif
 
                     {{-- AREA AKSI FORM (REVISI / UPDATE PROGRESS) --}}
                     @php
@@ -206,10 +282,10 @@
                             (auth()->user()->roleCategory() === 'checker' && (string) $report->branch_id === (string) auth()->user()->branch_id)
                         );
 
-                        $isManRisk = auth()->user()?->hasRole('manrisk');
+                        $isManRisk = auth()->user()?->isAdmin() ?? false;
                     @endphp
 
-                    @if($canRevise || $showUpdateForm || ($isManRisk && in_array($report->status, ['approved', 'pending_revision'])))
+                    @if($canRevise || $showUpdateForm || ($isManRisk && in_array($report->status, ['approved_in_progress', 'closed', 'pending_revision'])))
                     <div class="bg-slate-50 overflow-hidden shadow-inner sm:rounded-lg border-2 border-dashed border-slate-300">
                         <div class="p-5 sm:p-6">
                             <h3 class="text-lg font-extrabold text-slate-800 mb-4 uppercase tracking-wider flex items-center gap-2">
@@ -323,7 +399,7 @@
                             @endif
 
                             {{-- TOMBOL MANRISK --}}
-                            @if($isManRisk && $report->status === 'approved')
+                            @if($isManRisk && in_array($report->status, ['approved_in_progress', 'closed']))
                             <div class="bg-white p-5 rounded-lg border border-purple-200 shadow-sm">
                                 <h4 class="text-sm font-bold text-purple-800 uppercase mb-3">🔁 Minta Revisi (ManRisk)</h4>
                                 <form action="{{ route('risk_reports.request_revision', $report->id) }}" method="POST">

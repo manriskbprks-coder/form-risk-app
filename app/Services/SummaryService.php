@@ -264,6 +264,8 @@ class SummaryService
         
         $cabangBelumDeklarasi = [];
 
+        $allBranches = $allBranches->sortBy('kode_cabang');
+
         foreach ($allBranches as $branch) {
             $branchDeklarasi = $allDeklarasi->get($branch->id, collect());
 
@@ -276,7 +278,7 @@ class SummaryService
             $rejected = $adaLaporan && $total > 0;
 
             if (!$adaLaporan && $total == 0) {
-                $cabangBelumDeklarasi[] = $branch->nama_cabang;
+                $cabangBelumDeklarasi[] = $branch->kode_cabang . ' ' . $branch->nama_cabang;
             }
 
             $deklarasiSummaries[] = [

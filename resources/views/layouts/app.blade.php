@@ -157,6 +157,14 @@
 
 
             @if(Auth::check() && Auth::user()->isAdmin())
+            <a href="{{ route('risk_free_declarations.history') }}"
+               class="{{ request()->routeIs('risk_free_declarations.history') ? 'sidebar-link-active' : 'sidebar-link' }}">
+                <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Riwayat Deklarasi</span>
+            </a>
+
             <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-[0.14em] mb-2 mt-6">Administrasi</p>
 
             <a href="{{ route('admin.risk_master.index') }}"

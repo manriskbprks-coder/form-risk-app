@@ -76,25 +76,21 @@
  </div>
  </td>
 
- <td class="px-4 py-3 border-b text-sm text-gray-800 text-center align-middle">
+ @php
+     $dampakSort = 0;
+     if($report->kategori === 'finansial') {
+         $dampakSort = (int) $report->dampak_finansial;
+     } else {
+         $skalaMap = ['Sangat Rendah' => 1, 'Rendah' => 2, 'Sedang' => 3, 'Tinggi' => 4, 'Sangat Tinggi' => 5];
+         $dampakSort = $skalaMap[$report->skala_dampak] ?? 0;
+     }
+ @endphp
+ <td class="px-4 py-3 border-b text-sm text-gray-800 text-center align-middle whitespace-nowrap" data-sort-value="{{ $dampakSort }}">
  @if($report->kategori === 'finansial')
- <span class="font-bold whitespace-nowrap whitespace-nowrap">Rp {{ number_format($report->dampak_finansial, 0, ',', '.') }}</span>
+ <span class="font-bold whitespace-nowrap">Rp {{ number_format($report->dampak_finansial, 0, ',', '.') }}</span>
  @else
  <div class="flex flex-col items-center gap-1">
- @php
- $skalaDampak = $report->skala_dampak ?? '';
- $skalaColors = [
- 'Sangat Tinggi' => 'bg-red-700 text-white',
- 'Tinggi' => 'bg-orange-500 text-white',
- 'Sedang' => 'bg-yellow-500 text-white',
- 'Rendah' => 'bg-blue-500 text-white',
- 'Sangat Rendah' => 'bg-green-600 text-white',
- ];
- $skalaColor = $skalaColors[$skalaDampak] ?? 'bg-gray-500 text-white';
- @endphp
- <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded {{ $skalaColor }}">
- {{ $skalaDampak ?: '—' }}
- </span>
+ <x-skala-badge :skala="$report->skala_dampak" />
  </div>
  @endif
  </td>
@@ -127,7 +123,7 @@
  </div>
 
  <div class="surface-card overflow-hidden p-4 sm:p-6 border-l-4 border-blue-500">
- <h3 class="text-lg font-bold border-b pb-2 mb-4 text-gray-800">2. Menunggu Tindah Lanjut (penyelesaian)</h3>
+ <h3 class="text-lg font-bold border-b pb-2 mb-4 text-gray-800">2. Menunggu Tindak Lanjut (Penyelesaian)</h3>
 
  @if($tindakLanjut->isEmpty())
  <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
@@ -145,8 +141,7 @@
  <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider sortable" data-sort="kategori">Kategori</th>
  <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider">Risiko</th>
  <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider sortable" data-sort="status">Status Tindak Lanjut</th>
- <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider  whitespace-nowrap">Detail</th>
- <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider  whitespace-nowrap">Update Status</th>
+ <th class="px-4 py-3 border-b text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider  whitespace-nowrap">Aksi</th>
  </tr>
  </thead>
  <tbody>
@@ -209,36 +204,10 @@
  </td>
 
  <td class="px-4 py-3 border-b text-center align-middle ">
- <button type="button" onclick="openDetailModal('{{ $tl->id }}')" class="inline-flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1.5 px-2.5 rounded text-xs border border-indigo-200 transition">
- <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
- Detail
+ <button type="button" onclick="openDetailModal('{{ $tl->id }}', true)" class="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-800 text-white font-bold py-1.5 px-3 rounded text-xs shadow transition whitespace-nowrap">
+ <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+ Tindak Lanjut
  </button>
- </td>
-
- <td class="px-4 py-3 border-b align-middle">
- <div class="flex flex-col items-center justify-center gap-2">
- <form action="{{ route('risk_reports.add_progress', $tl->id) }}" method="POST" class="w-full flex flex-col items-center gap-2">
- @csrf
-
- <input type="hidden" name="note" value="Update status dari halaman Review">
-
- @php
- $canClose = (auth()->user()->roleCategory() === 'checker');
- @endphp
-
- <select name="new_status" class="w-full max-w-[150px] text-xs border-gray-300 rounded shadow-sm focus:ring-blue-500">
- <option value="approved_in_progress" {{ $tl->status == 'approved_in_progress' ? 'selected' : '' }}>In Progress</option>
-
- @if($canClose)
- <option value="closed">Selesai (Closed)</option>
- @endif
- </select>
-
- <button type="submit" class="w-full max-w-[150px] bg-blue-600 hover:bg-blue-800 text-white font-bold py-1.5 px-3 rounded text-xs shadow transition whitespace-nowrap">
- Simpan Status
- </button>
- </form>
- </div>
  </td>
  </tr>
  @endforeach
@@ -480,6 +449,36 @@
  </div>
  </div>
  </div>
+ 
+ <!-- ACTION SECTION & PENYELESAIAN -->
+ <hr class="border-gray-200 my-4">
+ <div id="detailActionSection" class="hidden">
+ <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Tindak Lanjut & Penyelesaian</h4>
+ <form id="actionForm" method="POST" action="">
+ @csrf
+ <div class="mb-3">
+ <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Status Laporan</label>
+ <select id="actionStatus" name="new_status" class="w-full text-sm border-gray-300 rounded shadow-sm focus:ring-blue-500" required onchange="toggleActionNoteLabel()">
+ <option value="approved_in_progress">In Progress</option>
+ <option value="closed">Selesai (Closed)</option>
+ </select>
+ </div>
+ <div class="mb-3">
+ <label id="actionNoteLabel" class="block text-xs font-bold text-gray-700 uppercase mb-1">Catatan Progress</label>
+ <textarea name="note" id="actionNote" rows="3" class="w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ketik catatan di sini..."></textarea>
+ </div>
+ <button type="submit" class="w-full bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded text-sm shadow transition">
+ Simpan Status
+ </button>
+ </form>
+ </div>
+ 
+ <div id="detailTindakanPenyelesaianContainer" class="hidden">
+ <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Tindakan Penyelesaian Akhir</h4>
+ <p id="detailTindakanPenyelesaian" class="text-sm font-semibold text-green-800 bg-green-50 p-4 rounded-lg border border-green-200 shadow-sm whitespace-pre-wrap"></p>
+ </div>
+ <!-- END ACTION SECTION -->
+ 
  </div>
  </div>
  </div>
@@ -493,7 +492,7 @@
  // =============================================================
  // MODAL DETAIL
  // =============================================================
- function openDetailModal(reportId) {
+ function openDetailModal(reportId, isAction = false) {
  var modal = document.getElementById('detailModal');
  var loading = document.getElementById('detailLoading');
  var content = document.getElementById('detailContent');
@@ -510,7 +509,7 @@
  }
 
  // Populate data
- populateDetail(report);
+ populateDetail(report, isAction);
 
  // Hide loading, show content
  loading.classList.add('hidden');
@@ -521,7 +520,22 @@
  document.getElementById('detailModal').classList.add('hidden');
  }
 
- function populateDetail(r) {
+ function toggleActionNoteLabel() {
+ var status = document.getElementById('actionStatus').value;
+ var label = document.getElementById('actionNoteLabel');
+ var note = document.getElementById('actionNote');
+ if (status === 'closed') {
+ label.textContent = 'Tindakan Penyelesaian Akhir (Wajib Isi)';
+ note.placeholder = 'Jelaskan tindakan penyelesaian akhir secara detail...';
+ note.required = true;
+ } else {
+ label.textContent = 'Catatan Progress (Opsional)';
+ note.placeholder = 'Ketik catatan perkembangan...';
+ note.required = false;
+ }
+ }
+
+ function populateDetail(r, isAction) {
  // Helper: sumber risiko label
  var sumberLabels = {
  'manusia': { label: 'Manusia', color: 'bg-red-100 text-red-800 border-red-200' },
@@ -642,7 +656,17 @@
  '5': 'Sangat Tinggi'
  };
  var skala = r.skala_dampak || '';
- dampakValue.textContent = skalaMap[skala] || skala || 'Tidak ada skala';
+ var textSkala = skalaMap[skala] || skala || 'Tidak ada skala';
+ 
+ var skalaColors = {
+ 'Sangat Tinggi': 'bg-red-600 text-white border-red-900',
+ 'Tinggi': 'bg-red-100 text-red-800 border-red-400',
+ 'Sedang': 'bg-yellow-100 text-yellow-800 border-yellow-400',
+ 'Rendah': 'bg-green-100 text-green-700 border-green-400',
+ 'Sangat Rendah': 'bg-green-600 text-white border-green-900',
+ };
+ var colorClass = skalaColors[textSkala] || 'bg-gray-100 text-gray-800 border-gray-400';
+ dampakValue.innerHTML = '<span class="px-3 py-1 text-sm font-bold uppercase rounded border ' + colorClass + '">' + textSkala + '</span>';
 
  if (r.dampak_non_finansial) {
  dampakNonFinContainer.classList.remove('hidden');
@@ -650,6 +674,25 @@
  } else {
  dampakNonFinContainer.classList.add('hidden');
  }
+ }
+
+ // Logic for Action Section
+ var actionSection = document.getElementById('detailActionSection');
+ var tindakanPenyelesaianContainer = document.getElementById('detailTindakanPenyelesaianContainer');
+ var actionForm = document.getElementById('actionForm');
+
+ actionSection.classList.add('hidden');
+ tindakanPenyelesaianContainer.classList.add('hidden');
+
+ if (r.status === 'closed' && r.tindakan_penyelesaian) {
+ tindakanPenyelesaianContainer.classList.remove('hidden');
+ document.getElementById('detailTindakanPenyelesaian').textContent = r.tindakan_penyelesaian;
+ } else if (isAction && r.status !== 'closed') {
+ actionSection.classList.remove('hidden');
+ actionForm.action = '/risk-report/' + r.id + '/progress';
+ document.getElementById('actionStatus').value = 'approved_in_progress';
+ document.getElementById('actionNote').value = '';
+ toggleActionNoteLabel();
  }
  }
 

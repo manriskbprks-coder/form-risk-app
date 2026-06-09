@@ -59,6 +59,42 @@ class DeklarasiNihilService
     }
 
     /**
+     * Validasi kejujuran deklarasi: Kacab tidak boleh mencentang Nihil untuk jabatan 
+     * yang sebenarnya memiliki RiskReport pada periode tersebut.
+     */
+    public function validateJabatanHonesty(string $branchId, string $periode, int $bulan, int $tahun, array $jabatanData)
+    {
+        $dateRange = $this->declarationRule->getPeriodeDateRange($periode, $bulan, $tahun);
+        
+        $roleMapping = [
+            'Teller' => 'teller',
+            'CSR' => 'csr',
+            'CA' => 'ca',
+            'Security' => 'security',
+            'Kacab' => 'kacab'
+        ];
+
+        foreach ($jabatanData as $jabatan => $data) {
+            // Jika Kacab mencentang Nihil Risiko
+            if ($data['is_clean'] ?? false) {
+                $roleName = $roleMapping[$jabatan] ?? null;
+                
+                if ($roleName) {
+                    $hasReport = RiskReport::where('branch_id', $branchId)
+                        ->whereBetween('tanggal_kejadian', [$dateRange['start'], $dateRange['end']])
+                        ->whereHas('user.roles', function ($query) use ($roleName) {
+                            $query->where('name', $roleName);
+                        })->exists();
+
+                    if ($hasReport) {
+                        throw new \DomainException("Validasi Gagal: Anda tidak dapat mendeklarasikan posisi {$jabatan} sebagai Nihil Risiko, karena terdapat laporan yang masuk dari posisi tersebut pada periode ini.");
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Simpan deklarasi nihil risiko baru.
      *
      * @param User $user
@@ -75,6 +111,9 @@ class DeklarasiNihilService
         $this->declarationRule->validateNoDuplicateDeclaration(
             $this->sudahDeklarasi($user->branch_id, $periode, $bulan, $tahun)
         );
+
+        // Validasi Kejujuran per Jabatan
+        $this->validateJabatanHonesty($user->branch_id, $periode, $bulan, $tahun, $data['jabatan']);
 
         // Buat deklarasi header
         $declaration = RiskFreeDeclaration::create([
@@ -104,62 +143,70 @@ class DeklarasiNihilService
     }
 
     /**
-     * Tolak deklarasi nihil risiko (ManRisk).
-     *
-     * @param int $id Declaration ID
-     * @param User $user ManRisk user
-     * @return RiskFreeDeclaration
-     *
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     * Mendapatkan data riwayat yang digrouping per cabang dan periode untuk 1 bulan & tahun tertentu.
      */
-    public function reject(string $id, User $user): RiskFreeDeclaration
+    public function getHistoryGrouped(int $bulan, int $tahun, ?string $branchId = null): \Illuminate\Support\Collection
     {
-        $declaration = RiskFreeDeclaration::findOrFail($id);
+        // 1. Ambil semua cabang aktif, atau hanya cabang spesifik jika branchId diberikan
+        $query = \App\Models\Branch::where('is_active', true)->orderBy('kode_cabang', 'asc');
+        
+        if ($branchId) {
+            $query->where('id', $branchId);
+        }
+        
+        $branches = $query->get();
 
-        // Validasi reject duplikat via domain rule
-        $this->declarationRule->validateNotAlreadyRejected($declaration->status === 'rejected');
+        // 2. Ambil semua deklarasi untuk bulan & tahun yang dipilih beserta detailnya
+        $declarations = RiskFreeDeclaration::with('details')
+            ->where('bulan', $bulan)
+            ->where('tahun', $tahun)
+            ->get()
+            ->groupBy('branch_id');
 
-        $declaration->update([
-            'status' => 'rejected',
-            'rejected_at' => now(),
-            'rejected_by' => $user->id,
-        ]);
+        // 3. Kelompokkan data per cabang
+        $groupedData = collect();
 
-        // Catat aktivitas reject ke log harian
-        Log::channel('daily')->info('[AUDIT] Declaration rejected by ManRisk', [
-            'user_id' => $user->id,
-            'user_name' => $user->name,
-            'declaration_id' => $declaration->id,
-            'branch_id' => $declaration->branch_id,
-            'periode' => $declaration->periode,
-            'bulan' => $declaration->bulan,
-            'tahun' => $declaration->tahun,
-        ]);
+        foreach ($branches as $branch) {
+            $branchDecls = $declarations->get($branch->id, collect());
+            
+            // Helper function untuk mengambil data periode
+            $getPeriodeData = function($periodeNum) use ($branchDecls) {
+                $decl = $branchDecls->firstWhere('periode', (string)$periodeNum);
+                
+                if (!$decl) {
+                    return [
+                        'status' => 'belum',
+                        'jabatan_nihil' => '-',
+                        'keterangan' => 'Belum Lapor'
+                    ];
+                }
 
-        // Notifikasi ke Kacab
-        $this->notifyKacabRejected($declaration);
+                // Ambil daftar jabatan yang dicentang Nihil (is_clean = true)
+                $jabatanNihil = $decl->details->where('is_clean', true)->pluck('jabatan')->toArray();
+                $jabatanString = empty($jabatanNihil) ? '-' : implode(', ', $jabatanNihil);
 
-        return $declaration;
-    }
+                // Ambil keterangan dari jabatan yang berisiko (jika ada)
+                $risikoDetails = $decl->details->where('is_clean', false);
+                $keteranganString = $risikoDetails->isEmpty() 
+                    ? 'Aman semua' 
+                    : $risikoDetails->map(fn($d) => "{$d->jabatan}: {$d->keterangan}")->implode('; ');
 
-    /**
-     * Dapatkan riwayat deklarasi berdasarkan role user.
-     *
-     * @param User $user
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
-     */
-    public function getHistory(User $user)
-    {
-        $query = RiskFreeDeclaration::with(['branch', 'user', 'details']);
+                return [
+                    'status' => 'sudah',
+                    'jabatan_nihil' => $jabatanString,
+                    'keterangan' => $keteranganString
+                ];
+            };
 
-        if (RoleCategory::tryFrom($user->roleCategory() ?? '')?->isChecker()) {
-            $query->where('branch_id', $user->branch_id);
+            $groupedData->push([
+                'kode_cabang' => $branch->kode_cabang,
+                'nama_cabang' => $branch->nama_cabang,
+                'periode1' => $getPeriodeData(1),
+                'periode2' => $getPeriodeData(2),
+            ]);
         }
 
-        return $query->orderBy('tahun', 'desc')
-            ->orderBy('bulan', 'desc')
-            ->orderBy('periode', 'desc')
-            ->paginate(20);
+        return $groupedData;
     }
 
     // ========================================================================

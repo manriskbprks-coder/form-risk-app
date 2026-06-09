@@ -118,7 +118,7 @@ class ChartService
 
         foreach ($rankingRisiko as $item) {
             $namaAsli = $item->nama_risiko ?? 'Risiko #' . $item->risk_item_id;
-            $rankingRisikoLabels[] = Str::limit($namaAsli, 35);
+            $rankingRisikoLabels[] = Str::limit($namaAsli, 45);
             $rankingRisikoFullLabels[] = $namaAsli;
             $rankingRisikoData[] = (int) $item->total;
         }
@@ -263,5 +263,61 @@ class ChartService
         }
 
         return compact('trenTop5Labels', 'trenTop5Datasets');
+    }
+
+    /**
+     * Generate data Top Cabang Paling Berisiko (untuk Viewer/Korwil).
+     *
+     * @param array $branchIds
+     * @param \Carbon\Carbon $dateFilter
+     * @return array ['topCabangLabels' => [], 'topCabangData' => [], 'topCabangColors' => []]
+     */
+    public function getTopBerisikoBranches(array $branchIds, $dateFilter): array
+    {
+        $topCabang = RiskReport::selectRaw('branches.nama_cabang, COUNT(*) as total')
+            ->join('branches', 'risk_reports.branch_id', '=', 'branches.id')
+            ->whereIn('risk_reports.branch_id', $branchIds)
+            ->where('risk_reports.created_at', '>=', $dateFilter)
+            ->groupBy('branches.nama_cabang')
+            ->orderByDesc('total')
+            ->take(10)
+            ->get();
+
+        $topCabangLabels = [];
+        $topCabangData = [];
+        $topCabangColors = [];
+
+        // Generate colors (red to yellow gradient)
+        $count = count($topCabang);
+        foreach ($topCabang as $i => $row) {
+            $topCabangLabels[] = Str::limit($row->nama_cabang, 25);
+            $topCabangData[] = (int) $row->total;
+            
+            $ratio = $count > 1 ? $i / ($count - 1) : 0;
+            $r = 239;
+            $g = round(68 + (170 - 68) * $ratio);
+            $b = 68;
+            $topCabangColors[] = "rgba({$r}, {$g}, {$b}, 0.8)";
+        }
+
+        return compact('topCabangLabels', 'topCabangData', 'topCabangColors');
+    }
+
+    /**
+     * Generate data distribusi kategori risiko untuk laporan yang dibuat oleh Maker tertentu.
+     *
+     * @param string $userId
+     * @return array ['makerDistribusiLabels' => [], 'makerDistribusiData' => [], 'makerDistribusiColors' => []]
+     */
+    public function getDistribusiKategoriUser(string $userId): array
+    {
+        $finansial = RiskReport::where('user_id', $userId)->where('kategori', 'finansial')->count();
+        $nonFinansial = RiskReport::where('user_id', $userId)->where('kategori', 'non-finansial')->count();
+
+        return [
+            'makerDistribusiLabels' => ['Finansial', 'Non-Finansial'],
+            'makerDistribusiData' => [$finansial, $nonFinansial],
+            'makerDistribusiColors' => ['#ef4444', '#f97316'], // Red and Orange
+        ];
     }
 }

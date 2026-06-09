@@ -22,7 +22,7 @@ class KodeLaporan
     private const ROLE_MAP = [
         'teller' => 'TL',
         'ca' => 'CA',
-        'csr' => 'CS',
+        'csr' => 'CSR',
         'security' => 'SC',
         'kacab' => 'KC',
     ];

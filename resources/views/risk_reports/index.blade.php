@@ -51,7 +51,7 @@
  </a>
  @endif
 
- @if(Auth::user()->hasRole('manrisk'))
+ @if(Auth::user()->isAdmin())
  <a href="{{ route('risk.export', request()->query()) }}" class="w-full sm:w-auto inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition shadow-sm">
  <svg class="w-4 h-4 inline-block -mt-0.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -187,7 +187,7 @@
  $tglLapor = $report->created_at->startOfDay();
  $isLate = $tglDiketahui->diffInDays($tglLapor, false) > 7;
  @endphp
- @if(auth()->user()?->hasRole('manrisk') && $isLate)
+ @if(auth()->user()?->isAdmin() && $isLate)
  <div class="mt-1.5">
  <span class="px-1.5 py-0.5 text-[9px] font-bold text-red-700 bg-red-100 border border-red-200 rounded uppercase" title="Lebih dari 7 hari sejak tanggal diketahui">⚠️ Late Report</span>
  </div>
@@ -216,25 +216,21 @@
  </div>
  </td>
  {{-- Dampak --}}
- <td class="px-4 py-3 border-b text-sm text-gray-800 text-center align-middle">
+ @php
+     $dampakSort = 0;
+     if($report->kategori === 'finansial') {
+         $dampakSort = (int) $report->dampak_finansial;
+     } else {
+         $skalaMap = ['Sangat Rendah' => 1, 'Rendah' => 2, 'Sedang' => 3, 'Tinggi' => 4, 'Sangat Tinggi' => 5];
+         $dampakSort = $skalaMap[$report->skala_dampak] ?? 0;
+     }
+ @endphp
+ <td class="px-4 py-3 border-b text-sm text-gray-800 text-center align-middle whitespace-nowrap" data-sort-value="{{ $dampakSort }}">
  @if($report->kategori === 'finansial')
  <span class="font-bold whitespace-nowrap">Rp {{ number_format($report->dampak_finansial, 0, ',', '.') }}</span>
  @else
  <div class="flex flex-col items-center gap-1">
- @php
- $skalaDampak = $report->skala_dampak ?? '';
- $skalaColors = [
- 'Sangat Tinggi' => 'bg-red-600 text-white border-red-100',
- 'Tinggi' => 'bg-red-100 text-red-800 border-red-400',
- 'Sedang' => 'bg-yellow-100 text-yellow-800 border-yellow-400',
- 'Rendah' => 'bg-green-100 text-green-700 border-green-400',
- 'Sangat Rendah' => 'bg-green-600 text-white border-green-900',
- ];
- $skalaColor = $skalaColors[$skalaDampak] ?? 'bg-gray-500 text-white';
- @endphp
- <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded border {{ $skalaColor }}">
- {{ $skalaDampak ?: '—' }}
- </span>
+ <x-skala-badge :skala="$report->skala_dampak" />
  </div>
  @endif
  </td>
@@ -352,25 +348,21 @@
  </div>
  </td>
  {{-- Dampak --}}
- <td class="px-4 py-3 border-b text-sm text-gray-800 text-center align-middle">
+ @php
+     $dampakSort = 0;
+     if($report->kategori === 'finansial') {
+         $dampakSort = (int) $report->dampak_finansial;
+     } else {
+         $skalaMap = ['Sangat Rendah' => 1, 'Rendah' => 2, 'Sedang' => 3, 'Tinggi' => 4, 'Sangat Tinggi' => 5];
+         $dampakSort = $skalaMap[$report->skala_dampak] ?? 0;
+     }
+ @endphp
+ <td class="px-4 py-3 border-b text-sm text-gray-800 text-center align-middle whitespace-nowrap" data-sort-value="{{ $dampakSort }}">
  @if($report->kategori === 'finansial')
  <span class="font-bold whitespace-nowrap">Rp {{ number_format($report->dampak_finansial, 0, ',', '.') }}</span>
  @else
  <div class="flex flex-col items-center gap-1">
- @php
- $skalaDampak = $report->skala_dampak ?? '';
- $skalaColors = [
- 'Sangat Tinggi' => 'bg-red-600 text-white border-red-100',
- 'Tinggi' => 'bg-red-100 text-red-800 border-red-400',
- 'Sedang' => 'bg-yellow-100 text-yellow-800 border-yellow-400',
- 'Rendah' => 'bg-green-100 text-green-700 border-green-400',
- 'Sangat Rendah' => 'bg-green-600 text-white border-green-900',
- ];
- $skalaColor = $skalaColors[$skalaDampak] ?? 'bg-gray-500 text-white';
- @endphp
- <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded border {{ $skalaColor }}">
- {{ $skalaDampak ?: '—' }}
- </span>
+ <x-skala-badge :skala="$report->skala_dampak" />
  </div>
  @endif
  </td>

@@ -244,25 +244,75 @@
                     <a href="{{ route('risk.history') }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Buka Tabel Riwayat Lengkap &rarr;</a>
                 </div>
             </div>
+
+            {{-- CHECKER: LAPORAN IN PROGRESS --}}
+            <div class="surface-card p-5 sm:p-6 mt-6">
+                <h3 class="section-title mb-4">⚠️ Laporan Open/In Progress</h3>
+                <div class="space-y-4">
+                    @forelse($inProgressReports as $inProg)
+                    <div class="p-4 border border-slate-200 rounded-xl hover:border-orange-300 transition-colors">
+                        <div class="flex justify-between items-start gap-4">
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">{{ $inProg->nomor_laporan }} <span class="font-normal text-slate-500">— {{ $inProg->item->nama_item ?? 'Laporan' }}</span></p>
+                                <p class="text-xs text-slate-500 mt-1">Status: <span class="uppercase font-semibold text-orange-600">{{ str_replace('_', ' ', $inProg->status) }}</span></p>
+                            </div>
+                            <a href="{{ route('risk_reports.show', $inProg->id) }}" class="btn-secondary py-1 px-3 text-xs whitespace-nowrap border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100">Update Status &rarr;</a>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                        <p class="text-slate-500 text-sm">Tidak ada laporan yang menggantung/in progress saat ini. Mantap! 👍</p>
+                    </div>
+                    @endforelse
+                </div>
+            </div>
             @endif
 
             {{-- VIEWER / ADMIN: CHARTS --}}
             @if(Auth::user()->isViewer() || Auth::user()->isAdmin())
+                @if(Auth::user()->isViewer())
+                {{-- Frekuensi Cabang Lapor Risiko (Viewer Only) --}}
+                <div class="surface-card section-pad mb-6">
+                    <h3 class="section-title text-base mb-4">🏢 Frekuensi Cabang Lapor Risiko</h3>
+                    @if(count($topCabangData ?? []) > 0)
+                    <div class="relative" style="height: 300px;">
+                        <canvas id="topCabangChart" style="height: 100% !important; width: 100% !important;"></canvas>
+                    </div>
+                    @else
+                    <div class="flex items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50">
+                        <p class="text-sm font-semibold text-slate-400">Belum ada cabang yang melaporkan risiko bulan ini.</p>
+                    </div>
+                    @endif
+                </div>
+                @endif
+
                 {{-- Ranking Risiko (Bar) --}}
                 <div class="surface-card section-pad">
                     <h3 class="section-title text-base mb-4">🏆 Ranking Risiko (Terbanyak)</h3>
+                    @if(count($rankingRisikoData ?? []) > 0)
                     <div class="relative" style="height: 300px;">
                         <canvas id="rankingRisikoChart" style="height: 100% !important; width: 100% !important;"></canvas>
                     </div>
+                    @else
+                    <div class="flex items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50">
+                        <p class="text-sm font-semibold text-slate-400">Belum ada laporan risiko bulan ini.</p>
+                    </div>
+                    @endif
                 </div>
 
                 @if(Auth::user()->isAdmin())
                 {{-- Tren Risiko (Line) - Admin Only --}}
                 <div class="surface-card section-pad mt-6">
                     <h3 class="section-title text-base mb-4">📈 Tren Top-5 Risiko (6 Bulan)</h3>
+                    @if(count($trenTop5Datasets ?? []) > 0)
                     <div class="relative" style="height: 260px;">
                         <canvas id="trenTop5Chart" style="height: 100% !important; width: 100% !important;"></canvas>
                     </div>
+                    @else
+                    <div class="flex items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50">
+                        <p class="text-sm font-semibold text-slate-400">Belum ada tren data risiko dalam 6 bulan terakhir.</p>
+                    </div>
+                    @endif
                 </div>
                 @endif
             @endif
@@ -287,7 +337,26 @@
                     @endforeach
                 </div>
             </div>
+            @else
+            <div class="surface-card p-5 border-t-4 border-emerald-500 shadow-sm bg-emerald-50/30">
+                <h3 class="text-sm font-bold text-emerald-700 flex items-center mb-3"><span class="mr-2">✅</span> STATUS REVISI</h3>
+                <p class="text-xs text-emerald-600 font-semibold">Tidak ada laporan yang butuh revisi saat ini. Kerja bagus!</p>
+            </div>
             @endif
+
+            {{-- MAKER: DISTRIBUSI RISIKO SAYA (DONUT CHART) --}}
+            <div class="surface-card p-5 mt-6">
+                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">📈 Distribusi Risiko Saya</p>
+                @if(array_sum($makerDistribusiData ?? []) > 0)
+                <div style="height: 180px;">
+                    <canvas id="makerDistribusiChart" style="height: 100% !important; max-height: 180px; width: auto; max-width: 180px; margin: auto;"></canvas>
+                </div>
+                @else
+                <div class="flex items-center justify-center h-32 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50">
+                    <p class="text-xs font-semibold text-slate-400 text-center">Belum ada laporan yang Anda buat.</p>
+                </div>
+                @endif
+            </div>
             @endif
 
             {{-- CHECKER: INSIGHT CABANG BULAN INI --}}
@@ -311,9 +380,15 @@
                 {{-- Mini Chart Sumber Risiko --}}
                 <div class="mt-4 pt-4 border-t border-slate-100">
                     <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Sumber Risiko</p>
+                    @if(count($sumberRisikoData ?? []) > 0)
                     <div style="height: 150px;">
                         <canvas id="sumberRisikoChart" style="height: 100% !important; max-height: 150px; width: auto; max-width: 150px; margin: auto;"></canvas>
                     </div>
+                    @else
+                    <div class="flex items-center justify-center h-24 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50">
+                        <p class="text-xs font-semibold text-slate-400">Data kosong</p>
+                    </div>
+                    @endif
                 </div>
             </div>
             @endif
@@ -328,11 +403,23 @@
                         <div class="bg-white p-3 rounded-lg border border-rose-100 shadow-sm">
                             <p class="text-xs font-semibold text-slate-500">{{ $kr->branch->nama_cabang ?? 'Unknown' }}</p>
                             <p class="text-sm font-bold text-slate-800">{{ $kr->nomor_laporan }}</p>
-                            <p class="text-xs text-rose-600 font-bold mt-1">Dampak: Rp {{ number_format($kr->dampak_finansial, 0, ',', '.') }}</p>
+                            @if($kr->dampak_finansial > 0)
+                                <p class="text-xs text-rose-600 font-bold mt-1">Dampak: Rp {{ number_format($kr->dampak_finansial, 0, ',', '.') }}</p>
+                            @else
+                                <div class="mt-1 flex items-center gap-1 whitespace-nowrap">
+                                    <span class="text-xs text-rose-600 font-bold">Skala Dampak:</span>
+                                    <x-skala-badge :skala="$kr->skala_dampak" />
+                                </div>
+                            @endif
                             <a href="{{ route('risk_reports.show', $kr->id) }}" class="mt-2 inline-block text-xs font-semibold text-rose-600 hover:text-rose-800">Investigasi &rarr;</a>
                         </div>
                         @endforeach
                     </div>
+                </div>
+                @else
+                <div class="surface-card p-5 border-t-4 border-emerald-500 shadow-sm bg-emerald-50/30">
+                    <h3 class="text-sm font-bold text-emerald-700 flex items-center mb-3"><span class="mr-2">✅</span> INSIDEN KRITIS</h3>
+                    <p class="text-xs text-emerald-600 font-semibold">Belum ada insiden kritis atau laporan berisiko tinggi saat ini. Kondisi aman terkendali.</p>
                 </div>
                 @endif
                 
@@ -340,7 +427,7 @@
                 {{-- ADMIN: CABANG BELUM DEKLARASI --}}
                 <div class="surface-card p-5 mt-6 border-t-4 border-orange-400 bg-orange-50/30">
                     <h3 class="text-sm font-bold text-orange-700 flex items-center mb-3"><span class="mr-2">🏆</span> BELUM DEKLARASI NIHIL</h3>
-                    <p class="text-xs text-slate-500 mb-3">Cabang dengan 0 laporan namun belum mengirim deklarasi bulan ini:</p>
+                    <p class="text-xs text-slate-500 mb-3">Daftar cabang yang tidak memiliki laporan risiko namun belum mengirim deklarasi bulan ini:</p>
                     <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
                         @forelse($cabangBelumDeklarasi ?? [] as $namaCabang)
                         <div class="flex items-center text-sm text-slate-700 bg-white p-2 rounded-md border border-orange-100">
@@ -350,14 +437,23 @@
                         <p class="text-xs text-emerald-600 font-semibold bg-emerald-50 p-2 rounded border border-emerald-100">Semua cabang aman / sudah deklarasi!</p>
                         @endforelse
                     </div>
+                    <div class="mt-4 pt-3 border-t border-orange-200">
+                        <a href="{{ route('risk_free_declarations.history') }}" class="text-sm font-semibold text-orange-700 hover:text-orange-900">Lihat Semua Riwayat Deklarasi &rarr;</a>
+                    </div>
                 </div>
 
                 {{-- Chart Sumber Risiko for Admin (since Kacab has it above) --}}
                 <div class="surface-card p-5 mt-6">
                     <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">🎯 Distribusi Sumber Risiko</p>
+                    @if(count($sumberRisikoData ?? []) > 0)
                     <div style="height: 180px;">
                         <canvas id="sumberRisikoChart" style="height: 100% !important; max-height: 180px; width: auto; max-width: 180px; margin: auto;"></canvas>
                     </div>
+                    @else
+                    <div class="flex items-center justify-center h-32 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50">
+                        <p class="text-xs font-semibold text-slate-400">Data kosong</p>
+                    </div>
+                    @endif
                 </div>
                 @endif
 
@@ -365,9 +461,15 @@
                 {{-- Chart Sumber Risiko for Viewer --}}
                 <div class="surface-card p-5 mt-6">
                     <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">🎯 Distribusi Sumber Risiko</p>
+                    @if(count($sumberRisikoData ?? []) > 0)
                     <div style="height: 180px;">
                         <canvas id="sumberRisikoChart" style="height: 100% !important; max-height: 180px; width: auto; max-width: 180px; margin: auto;"></canvas>
                     </div>
+                    @else
+                    <div class="flex items-center justify-center h-32 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50">
+                        <p class="text-xs font-semibold text-slate-400">Data kosong</p>
+                    </div>
+                    @endif
                 </div>
                 @endif
             @endif
@@ -422,7 +524,7 @@
     @endif
 
     {{-- Chart.js Scripts --}}
-    @if(Auth::user()->isChecker() || Auth::user()->isViewer() || Auth::user()->isAdmin())
+    @if(Auth::user()->isMaker() || Auth::user()->isChecker() || Auth::user()->isViewer() || Auth::user()->isAdmin())
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -440,7 +542,21 @@
                             borderRadius: 4,
                         }]
                     },
-                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                    options: { 
+                        indexAxis: 'y', 
+                        responsive: true, 
+                        maintainAspectRatio: false, 
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        return rankingFullLabels[context[0].dataIndex];
+                                    }
+                                }
+                            }
+                        } 
+                    }
                 });
             }
 
@@ -469,6 +585,39 @@
                         datasets: {!! json_encode($trenTop5Datasets ?? []) !!}
                     },
                     options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+
+            const topCabangCtx = document.getElementById('topCabangChart');
+            if (topCabangCtx) {
+                new Chart(topCabangCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: {!! json_encode($topCabangLabels ?? []) !!},
+                        datasets: [{
+                            label: 'Jumlah Laporan',
+                            data: {!! json_encode($topCabangData ?? []) !!},
+                            backgroundColor: {!! json_encode($topCabangColors ?? []) !!},
+                            borderRadius: 4,
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+            }
+
+            const makerCtx = document.getElementById('makerDistribusiChart');
+            if (makerCtx) {
+                new Chart(makerCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: {!! json_encode($makerDistribusiLabels ?? []) !!},
+                        datasets: [{
+                            data: {!! json_encode($makerDistribusiData ?? []) !!},
+                            backgroundColor: {!! json_encode($makerDistribusiColors ?? []) !!},
+                            borderWidth: 3,
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: {font: {size: 11}, usePointStyle: true} } }, cutout: '60%' }
                 });
             }
         });

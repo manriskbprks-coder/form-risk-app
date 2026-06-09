@@ -74,7 +74,10 @@ class ApprovalRule
      */
     public function canRequestRevision(RiskReportStatus $currentStatus): bool
     {
-        return $currentStatus === RiskReportStatus::ApprovedInProgress;
+        return in_array($currentStatus, [
+            RiskReportStatus::ApprovedInProgress,
+            RiskReportStatus::Closed,
+        ]);
     }
 
     /**

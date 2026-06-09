@@ -112,6 +112,13 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
     $sumberRisikoColors = [];
     $trenTop5Labels = [];
     $trenTop5Datasets = [];
+    $topCabangLabels = [];
+    $topCabangData = [];
+    $topCabangColors = [];
+    $makerDistribusiLabels = [];
+    $makerDistribusiData = [];
+    $makerDistribusiColors = [];
+    $inProgressReports = collect();
 
     if ($roleCategory !== 'maker') {
         $branchIdsArray = $branchIds->toArray();
@@ -149,6 +156,20 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
         $trenTop5 = $chartService->getTrenTop5($branchIdsArray, $dateFilter, $bulanTren);
         $trenTop5Labels = $trenTop5['trenTop5Labels'];
         $trenTop5Datasets = $trenTop5['trenTop5Datasets'];
+
+        // 7. Top Cabang Paling Berisiko (Hanya untuk Viewer/Korwil)
+        if ($roleCategory === 'viewer') {
+            $topCabang = $chartService->getTopBerisikoBranches($branchIdsArray, $dateFilter);
+            $topCabangLabels = $topCabang['topCabangLabels'];
+            $topCabangData = $topCabang['topCabangData'];
+            $topCabangColors = $topCabang['topCabangColors'];
+        }
+    } else {
+        // MAKER ONLY CHARTS
+        $makerDistribusi = $chartService->getDistribusiKategoriUser($user->id);
+        $makerDistribusiLabels = $makerDistribusi['makerDistribusiLabels'];
+        $makerDistribusiData = $makerDistribusi['makerDistribusiData'];
+        $makerDistribusiColors = $makerDistribusi['makerDistribusiColors'];
     }
 
     // === DATA RINGKASAN WILAYAH (Khusus ManRisk) ===
@@ -170,7 +191,10 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
     if (in_array($roleCategory, ['viewer', 'admin'])) {
         $kritisReports = RiskReport::with(['user', 'branch'])
             ->whereIn('branch_id', $branchIds->toArray())
-            ->where('dampak_finansial', '>=', 100000000) // >= 100 Juta
+            ->where(function ($query) {
+                $query->where('dampak_finansial', '>=', 100000000) // >= 100 Juta
+                      ->orWhereIn('skala_dampak', ['Sangat Tinggi', 'Tinggi']);
+            })
             ->whereIn('status', ['pending_atasan', 'pending_korwil', 'pending_revision', 'approved_in_progress'])
             ->orderBy('dampak_finansial', 'desc')
             ->take(5)
@@ -183,7 +207,14 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
     if ($roleCategory === 'checker') {
         $myTasks = RiskReport::with(['user', 'item'])
             ->where('branch_id', $userBranchId)
-            ->whereIn('status', ['pending_atasan', 'approved_in_progress', 'pending_revision'])
+            ->where('status', 'pending_atasan')
+            ->orderBy('updated_at', 'desc')
+            ->take(10)
+            ->get();
+            
+        $inProgressReports = RiskReport::with(['user', 'item'])
+            ->where('branch_id', $userBranchId)
+            ->where('status', 'approved_in_progress')
             ->orderBy('updated_at', 'desc')
             ->take(10)
             ->get();
@@ -242,7 +273,14 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
         'cabangBelumDeklarasi',
         'kritisReports',
         'myTasks',
-        'makerRevisions'
+        'makerRevisions',
+        'topCabangLabels',
+        'topCabangData',
+        'topCabangColors',
+        'makerDistribusiLabels',
+        'makerDistribusiData',
+        'makerDistribusiColors',
+        'inProgressReports'
     ));
 })->middleware(['auth', 'verified', 'throttle:dashboard'])->name('dashboard');
 
@@ -277,6 +315,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/risk-reports/{id}/resolution', [RiskReportController::class, 'updateResolution'])
         ->middleware('throttle:resolution')
         ->name('risk_reports.update_resolution');
+
+    // Fitur Analisa SKMR (ManRisk / Admin)
+    Route::post('/risk-reports/{id}/skmr-analysis', [RiskReportController::class, 'saveSkmrAnalysis'])
+        ->name('risk_reports.save_skmr_analysis');
 
     // --- MENU 3: RIWAYAT KESELURUHAN ---
     Route::get('/riwayat-risiko', [RiskReportController::class, 'index'])->name('risk.history');

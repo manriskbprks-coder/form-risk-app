@@ -16,7 +16,7 @@ class DeclarationRule
     /**
      * Daftar jabatan yang wajib dideklarasikan setiap periode.
      */
-    private const JABATAN_LIST = ['Teller', 'CA', 'CS', 'Security', 'Kacab'];
+    private const JABATAN_LIST = ['Teller', 'CA', 'CSR', 'Security', 'Kacab'];
 
     /**
      * Tentukan periode saat ini berdasarkan tanggal.

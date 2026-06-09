@@ -54,6 +54,9 @@
                     }">
                         @csrf
 
+                        {{-- Hidden Input untuk memenuhi validasi backend --}}
+                        <input type="hidden" name="statement_text" value="Saya yang bertanda tangan di bawah ini, selaku Kepala Cabang, dengan ini menyatakan dengan sesungguhnya bahwa pada periode ini tidak terdapat kejadian risiko operasional pada seluruh jabatan di cabang saya. Apabila di kemudian hari terbukti terdapat kejadian risiko yang tidak dilaporkan, saya bersedia mempertanggungjawabkan sesuai dengan ketentuan yang berlaku.">
+
                         {{-- Tabel Checklist Per Jabatan --}}
                         <div class="mb-6">
                             <div class="flex items-center justify-between mb-3">
@@ -110,7 +113,7 @@
                                     Saya yang bertanda tangan di bawah ini, selaku <strong>Kepala Cabang</strong>, dengan ini menyatakan dengan sesungguhnya bahwa pada periode ini <strong>tidak terdapat kejadian risiko operasional (risk event / loss event)</strong> pada seluruh jabatan di cabang saya.
                                 </p>
                                 <p>
-                                    Apabila di kemudian hari terbukti terdapat <strong>risk event / loss event yang tidak dilaporkan</strong> pada periode ini, saya bersedia mempertanggungjawabkan sesuai dengan ketentuan dan peraturan yang berlaku di perusahaan.
+                                    Apabila di kemudian hari terbukti terdapat <strong>risk event / loss event yang tidak dilaporkan</strong> pada periode ini, <strong>saya bersedia mempertanggungjawabkan</strong> sesuai dengan ketentuan dan peraturan yang berlaku di perusahaan.
                                 </p>
                             </div>
                         </div>

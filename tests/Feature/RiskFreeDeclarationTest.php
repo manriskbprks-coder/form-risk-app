@@ -71,7 +71,7 @@ class RiskFreeDeclarationTest extends TestCase
         $response->assertSee('Deklarasi Nihil Risiko');
         $response->assertSee('Teller');
         $response->assertSee('CA');
-        $response->assertSee('CS');
+        $response->assertSee('CSR');
         $response->assertSee('Security');
         $response->assertSee('Kacab');
     }
@@ -123,7 +123,7 @@ class RiskFreeDeclarationTest extends TestCase
     #[Test]
     public function kacab_can_submit_declaration()
     {
-        $jabatanList = ['Teller', 'CA', 'CS', 'Security', 'Kacab'];
+        $jabatanList = ['Teller', 'CA', 'CSR', 'Security', 'Kacab'];
         $data = [
             'jabatan' => [],
             'statement_text' => 'Dengan ini menyatakan tidak ada risiko operasional pada periode ini.',
@@ -181,7 +181,7 @@ class RiskFreeDeclarationTest extends TestCase
             'jabatan' => [
                 'Teller' => ['is_clean' => '1', 'keterangan' => ''],
                 'CA' => ['is_clean' => '1', 'keterangan' => ''],
-                'CS' => ['is_clean' => '1', 'keterangan' => ''],
+                'CSR' => ['is_clean' => '1', 'keterangan' => ''],
                 'Security' => ['is_clean' => '1', 'keterangan' => ''],
                 'Kacab' => ['is_clean' => '1', 'keterangan' => ''],
             ],
@@ -257,7 +257,7 @@ class RiskFreeDeclarationTest extends TestCase
             'jabatan' => [
                 'Teller' => ['is_clean' => '1', 'keterangan' => ''],
                 'CA' => ['is_clean' => '1', 'keterangan' => ''],
-                'CS' => ['is_clean' => '1', 'keterangan' => ''],
+                'CSR' => ['is_clean' => '1', 'keterangan' => ''],
                 'Security' => ['is_clean' => '1', 'keterangan' => ''],
                 'Kacab' => ['is_clean' => '1', 'keterangan' => ''],
             ],
