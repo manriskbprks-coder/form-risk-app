@@ -144,7 +144,7 @@ class RiskReportQueryService
      */
     public function baseQuery(): Builder
     {
-        return RiskReport::with(['user', 'item', 'cause.mitigations', 'branch']);
+        return RiskReport::with(['user', 'item', 'cause.mitigations', 'branch', 'skmrAnalysis']);
     }
 
     /**

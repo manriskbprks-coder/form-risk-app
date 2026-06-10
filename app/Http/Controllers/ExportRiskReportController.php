@@ -78,6 +78,13 @@ class ExportRiskReportController extends Controller
                 'Durasi Satuan',
                 'Status Approval',
                 'Status Tindak Lanjut',
+                'Catatan SKMR',
+                'Ketersediaan Kebijakan',
+                'Kesesuaian Proses Terhadap SOP',
+                'Rekomendasi SKMR 1',
+                'Dampak Rekomendasi 1',
+                'Rekomendasi SKMR 2',
+                'Dampak Rekomendasi 2',
             ]);
 
             $no = 1;
@@ -120,6 +127,13 @@ class ExportRiskReportController extends Controller
                     $report->durasi_satuan ?? '-',
                     $report->status,
                     str_replace('_', ' ', $report->status ?? 'open'),
+                    $report->skmrAnalysis->catatan_skmr ?? '-',
+                    $report->skmrAnalysis->ketersediaan_kebijakan ?? '-',
+                    $report->skmrAnalysis->kesesuaian_sop ?? '-',
+                    $report->skmrAnalysis->rekomendasi_1 ?? '-',
+                    $report->skmrAnalysis->dampak_rekomendasi_1 ?? '-',
+                    $report->skmrAnalysis->rekomendasi_2 ?? '-',
+                    $report->skmrAnalysis->dampak_rekomendasi_2 ?? '-',
                 ]);
             }
 

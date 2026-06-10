@@ -11,7 +11,7 @@ RUN apt-get update -y && apt-get install -y \
 RUN a2enmod rewrite
 
 # 3. Ubah Document Root Apache ke folder /public milik Laravel dan atur Port dinamis untuk Render
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 RUN sed -i 's/80/${PORT}/g' /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf
@@ -34,7 +34,7 @@ RUN npm install
 RUN npm run build
 
 # 8. Hapus file sisa build biar Docker Image jadi ringan
-RUN rm -rf tests/ node_modules/ resources/css/ resources/js/ \
+RUN rm -rf tests/ node_modules/ resources/css/ resources/js/ public/hot \
     phpunit.xml phpunit.dusk.xml vite.config.js postcss.config.js tailwind.config.js \
     *.md _ide_helper*.php
 
