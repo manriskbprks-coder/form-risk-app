@@ -76,3 +76,8 @@ tests/Stress/k6_approval_concurrency.js
 tests/Stress/k6_form_submit.js
 Visualisasi Dashboard.md
 memory3.md
+docs/manual/Manual_Admin_ManRisk.md
+docs/manual/Manual_Checker_Kacab.md
+docs/manual/Manual_Maker_Staff.md
+docs/manual/Manual_Viewer_Korwil.md
+docs/manual/README.md
