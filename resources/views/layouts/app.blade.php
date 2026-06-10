@@ -59,7 +59,7 @@
             {{-- Dashboard — semua role --}}
             <a href="{{ route('dashboard') }}"
                class="{{ request()->routeIs('dashboard') ? 'sidebar-link-active' : 'sidebar-link' }}">
-                @if(Auth::user()->isAdmin())
+                @if(Auth::check() && Auth::user()->isAdmin())
                 <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
@@ -72,7 +72,7 @@
                 @endif
             </a>
 
-            @if(Auth::check() && Auth::user()->canCreateReport())
+            @if(Auth::check() && Auth::check() && Auth::user()->canCreateReport())
             <a href="{{ route('risk.history') }}"
                class="{{ request()->routeIs('risk.history') ? 'sidebar-link-active' : 'sidebar-link' }}">
                 <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,7 +145,7 @@
             </a>
             @endif
 
-            @if(Auth::check() && (Auth::user()->isViewer() || Auth::user()->isAdmin()))
+            @if(Auth::check() && (Auth::check() && Auth::user()->isViewer() || Auth::check() && Auth::user()->isAdmin()))
             <a href="{{ route('risk.history') }}"
                class="{{ request()->routeIs('risk.history') ? 'sidebar-link-active' : 'sidebar-link' }}">
                 <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,7 +156,7 @@
             @endif
 
 
-            @if(Auth::check() && Auth::user()->isAdmin())
+            @if(Auth::check() && Auth::check() && Auth::user()->isAdmin())
             <a href="{{ route('risk_free_declarations.history') }}"
                class="{{ request()->routeIs('risk_free_declarations.history') ? 'sidebar-link-active' : 'sidebar-link' }}">
                 <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">

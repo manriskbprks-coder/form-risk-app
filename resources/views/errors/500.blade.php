@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-guest-layout>
     <div class="min-h-[60vh] flex items-center justify-center">
         <div class="text-center max-w-md mx-auto px-4">
             <div class="text-6xl font-extrabold text-red-600 mb-4">500</div>
@@ -9,4 +9,4 @@
             </a>
         </div>
     </div>
-</x-app-layout>
+</x-guest-layout>

@@ -8,29 +8,31 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SecurityHeaders
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
     public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);
 
+        // --- TAMBAHAN ATURAN CSP (DAFTAR TAMU VIP) ---
+        $csp = "default-src 'self'; " . 
+               "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " . 
+               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " . 
+               "font-src 'self' https://fonts.gstatic.com; " .
+               "img-src 'self' data:;";
+        
+        $response->headers->set('Content-Security-Policy', $csp);
+        // ----------------------------------------------
+
+        // Aturan lama yang udah ada tetep dibiarin
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('X-XSS-Protection', '1; mode=block');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
-
-        // Permissions-Policy — batasi fitur browser yang tidak diperlukan
         $response->headers->set('Permissions-Policy', 'geolocation=(), camera=(), microphone=(), payment=(), usb=(), magnetometer=(), accelerometer=()');
 
-        // Hanya set HSTS jika koneksi sudah HTTPS
         if ($request->isSecure()) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }
 
-        // Hapus header yang membocorkan informasi server
         $response->headers->remove('X-Powered-By');
         $response->headers->remove('Server');
 

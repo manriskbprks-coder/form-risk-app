@@ -14,7 +14,7 @@ class UpdateRiskResolutionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', 'in:in_progress,closed'],
+            'status' => ['required', 'in:approved_in_progress,closed'],
         ];
     }
 }

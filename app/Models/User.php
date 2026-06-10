@@ -141,6 +141,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Cek apakah user adalah Kacab.
+     */
+    public function isKacab(): bool
+    {
+        return $this->hasRole('kacab');
+    }
+
+    /**
      * Cek apakah user bisa bikin laporan (maker + checker).
      */
     public function canCreateReport(): bool

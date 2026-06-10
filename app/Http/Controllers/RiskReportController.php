@@ -114,13 +114,17 @@ class RiskReportController extends Controller
 
         $user = Auth::user();
 
-        if ($request->status === 'need_revision') {
-            $this->riskReportService->requestRevisionFromKacab($report, $user, $request->alasan_reject);
-            return redirect()->back()->with('success', 'Laporan dikembalikan untuk direvisi. Alasan sudah dicatat.');
-        }
+        try {
+            if ($request->status === 'need_revision') {
+                $this->riskReportService->requestRevisionFromKacab($report, $user, $request->alasan_reject);
+                return redirect()->back()->with('success', 'Laporan dikembalikan untuk direvisi. Alasan sudah dicatat.');
+            }
 
-        $this->riskReportService->approve($report, $user);
-        return redirect()->back()->with('success', 'Status persetujuan diperbarui!');
+            $this->riskReportService->approve($report, $user);
+            return redirect()->back()->with('success', 'Status persetujuan diperbarui!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 
     // VIEW 3: RIWAYAT & MONITORING KESELURUHAN (DENGAN FILTER + SEARCH + PAGINATION)
@@ -180,10 +184,14 @@ class RiskReportController extends Controller
         $user = Auth::user();
         $report = RiskReport::findOrFail($id);
         Gate::authorize('updateProgress', $report);
+        
+        try {
+            $this->riskReportService->updateResolution($report, $user, $request->status);
 
-        $this->riskReportService->updateResolution($report, $user, $request->status);
-
-        return redirect()->back()->with('success', 'Status tindak lanjut diperbarui!');
+            return back()->with('success', 'Status tindak lanjut berhasil diperbarui!');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     // FUNGSI TAMBAHAN: CATAT PROGRESS TINDAK LANJUT (NOTE + STATUS)

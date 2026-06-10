@@ -118,4 +118,23 @@ class RiskFreeDeclarationController extends Controller
 
         return view('risk_free_declarations.history', compact('groupedData', 'bulan', 'tahun', 'availableMonths'));
     }
+
+    /**
+     * Reject deklarasi nihil risiko (ManRisk).
+     */
+    public function reject($id)
+    {
+        $user = Auth::user();
+
+        if (!$user || !$user->isAdmin()) {
+            abort(Response::HTTP_FORBIDDEN, 'Hanya ManRisk yang bisa menolak deklarasi.');
+        }
+
+        try {
+            $this->deklarasiNihilService->reject($id, $user);
+            return redirect()->back()->with('success', 'Deklarasi nihil risiko berhasil ditolak.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
 }

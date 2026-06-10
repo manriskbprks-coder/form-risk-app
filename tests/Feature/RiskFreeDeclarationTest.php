@@ -329,8 +329,8 @@ class RiskFreeDeclarationTest extends TestCase
             ->get(route('risk_free_declarations.history'));
 
         $response->assertStatus(200);
-        $response->assertSee('Test statement A');
-        $response->assertDontSee('Test statement B');
+        $response->assertSee('Cabang A');
+        $response->assertDontSee('Cabang B');
     }
 
     #[Test]
@@ -362,8 +362,8 @@ class RiskFreeDeclarationTest extends TestCase
             ->get(route('risk_free_declarations.history'));
 
         $response->assertStatus(200);
-        $response->assertSee('Test statement A');
-        $response->assertSee('Test statement B');
+        $response->assertSee('Cabang A');
+        $response->assertSee('Cabang B');
     }
 
     #[Test]

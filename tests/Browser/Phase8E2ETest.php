@@ -196,7 +196,7 @@ class Phase8E2ETest extends DuskTestCase
             $report = RiskReport::factory()->create([
                 'branch_id' => static::$branchA->id,
                 'user_id' => static::$tellerUser->id,
-                'status' => 'pending_kacab',
+                'status' => 'pending_atasan',
                 'kategori' => 'finansial',
                 'dampak_finansial' => 500000,
             ]);
@@ -224,7 +224,7 @@ class Phase8E2ETest extends DuskTestCase
             $report = RiskReport::factory()->create([
                 'branch_id' => static::$branchA->id,
                 'user_id' => static::$tellerUser->id,
-                'status' => 'pending_kacab',
+                'status' => 'pending_atasan',
                 'kategori' => 'finansial',
                 'dampak_finansial' => 250000,
             ]);
@@ -266,7 +266,7 @@ class Phase8E2ETest extends DuskTestCase
             $report = RiskReport::factory()->create([
                 'branch_id' => static::$branchA->id,
                 'user_id' => static::$tellerUser->id,
-                'status' => 'approved',
+                'status' => 'approved_in_progress',
                 'kategori' => 'finansial',
                 'dampak_finansial' => 1000000,
                 'kronologis_kejadian' => 'Nasabah melakukan transfer melalui mobile banking namun dana tidak masuk karena sistem error.',
@@ -472,10 +472,10 @@ class Phase8E2ETest extends DuskTestCase
             $report = RiskReport::factory()->create([
                 'branch_id' => static::$branchA->id,
                 'user_id' => static::$tellerUser->id,
-                'status' => 'approved',
+                'status' => 'approved_in_progress',
                 'kategori' => 'finansial',
                 'dampak_finansial' => 300000,
-                'status' => 'in_progress',
+                'status' => 'approved_in_progress',
             ]);
 
             $browser->loginAs(static::$kacabUser)
@@ -494,7 +494,7 @@ class Phase8E2ETest extends DuskTestCase
             $report = RiskReport::factory()->create([
                 'branch_id' => static::$branchA->id,
                 'user_id' => static::$tellerUser->id,
-                'status' => 'approved',
+                'status' => 'approved_in_progress',
                 'kategori' => 'finansial',
                 'dampak_finansial' => 200000,
             ]);
@@ -515,7 +515,7 @@ class Phase8E2ETest extends DuskTestCase
             $report = RiskReport::factory()->create([
                 'branch_id' => static::$branchA->id,
                 'user_id' => static::$tellerUser->id,
-                'status' => 'pending_kacab',
+                'status' => 'pending_atasan',
                 'kategori' => 'finansial',
                 'dampak_finansial' => 150000,
             ]);

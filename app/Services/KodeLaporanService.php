@@ -33,14 +33,29 @@ class KodeLaporanService
     }
 
     /**
-     * Hitung nomor urut berikutnya di bulan ini.
+     * Hitung nomor urut berikutnya di bulan ini secara atomik (thread-safe).
      */
     private function getNextSequence(): string
     {
-        $count = RiskReport::whereYear('created_at', now()->year)
-            ->whereMonth('created_at', now()->month)
-            ->count();
+        $cacheKey = 'laporan_seq_' . now()->format('Ym');
+        
+        // Atomic increment, aman dari Race Condition
+        // Expire cache 35 hari untuk memastikan awal bulan aman kereset
+        $count = \Illuminate\Support\Facades\Cache::remember($cacheKey . '_init', 60 * 60 * 24 * 35, function() {
+            // Sinkronisasi dengan database HANYA JIKA cache kosong (misal server restart)
+            return RiskReport::whereYear('created_at', now()->year)
+                ->whereMonth('created_at', now()->month)
+                ->count();
+        });
 
-        return str_pad($count + 1, 4, '0', STR_PAD_LEFT);
+        $nextVal = \Illuminate\Support\Facades\Cache::increment($cacheKey);
+        
+        // Jika cache increment belum ada isinya, kita set dengan nilai DB + 1
+        if ($nextVal === 1 && $count > 0) {
+            \Illuminate\Support\Facades\Cache::put($cacheKey, $count + 1, 60 * 60 * 24 * 35);
+            $nextVal = $count + 1;
+        }
+
+        return str_pad($nextVal, 4, '0', STR_PAD_LEFT);
     }
 }

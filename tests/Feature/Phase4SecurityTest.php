@@ -240,14 +240,13 @@ class Phase4SecurityTest extends TestCase
         
         $response = $this->post(route('form.risiko.store'), $this->validReportData([
             'tindakan_awal' => '<img src=x onerror=alert(1)>Tindakan awal dilakukan',
-            'status_awal' => 'in_progress',
         ]));
 
         $response->assertSessionHas('success');
 
         // tindakan_awal disimpan di log, bukan di kolom report
         $report = RiskReport::where('user_id', $this->teller->id)->first();
-        $log = $report->logs()->where('note', 'like', 'Penanganan Awal:%')->first();
+        $log = $report->logs()->where('note', 'like', '%penanganan awal :%')->first();
         
         $this->assertNotNull($log);
         // strip_tags() di StoreRiskReportRequest sudah strip <img> dan atributnya
@@ -422,7 +421,7 @@ class Phase4SecurityTest extends TestCase
             'risk_item_id' => $this->riskItem->id,
             'risk_cause_id' => $this->cause->id,
             'kategori' => 'finansial',
-            'status' => 'pending_kacab',
+            'status' => 'pending_atasan',
             'kode_laporan' => 'RISK-CBATL-202605-0001',
         ]);
     }
@@ -449,7 +448,6 @@ class Phase4SecurityTest extends TestCase
             'risk_item_id' => $this->riskItem->id,
             'risk_cause_id' => $this->cause->id,
             'kronologis_kejadian' => 'Kronologis kejadian yang panjang dan detail minimal dua puluh kata untuk memenuhi validasi min words yang sudah ditentukan oleh sistem.',
-            'status_awal' => 'open',
             'dampak_finansial' => 1000000,
         ], $overrides);
     }

@@ -1,12 +1,12 @@
 <x-app-layout>
-    @section('page_title', 'Riwayat Deklarasi')
+    @section('page_title', 'Deklarasi')
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-slate-900 leading-tight tracking-tight">
-                {{ __('Status Deklarasi Nihil Cabang') }}
-            </h2>
-        </div>
-    </x-slot>
+    <div class="flex justify-between items-center">
+        <h2 class="font-semibold text-xl text-slate-900 leading-tight tracking-tight">
+            {{ __('Riwayat Deklarasi Nihil Risiko') }}
+        </h2>
+    </div>
+</x-slot>
 
     <div class="pt-4 pb-8 sm:pb-12">
         <div class="max-w-full w-full px-4 sm:px-6 lg:px-8 mx-auto">

@@ -125,7 +125,7 @@ class Phase1ConfigTest extends TestCase
         
         // SESSION_SECURE_COOKIE=true — cookie hanya dikirim via HTTPS
         $this->assertTrue(
-            $secure,
+            filter_var($secure, FILTER_VALIDATE_BOOLEAN),
             'SESSION_SECURE_COOKIE harus true agar session cookie hanya dikirim via HTTPS'
         );
     }

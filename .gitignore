@@ -72,3 +72,5 @@ gitpush.md
 new_flowchart.md
 RCSA_PLAN.md
 promptdocker.md
+tests/Stress/k6_approval_concurrency.js
+tests/Stress/k6_form_submit.js

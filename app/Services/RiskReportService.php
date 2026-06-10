@@ -42,49 +42,51 @@ class RiskReportService
             'dampak_non_finansial' => isset($data['dampak_non_finansial']) ? strip_tags($data['dampak_non_finansial']) : null,
         ];
 
-        $report = RiskReport::create([
-            'kode_laporan' => $this->kodeLaporanService->generate($user),
-            'user_id' => $user->id,
-            'branch_id' => $user->branch_id,
-            'kategori' => $data['kategori'],
-            'tanggal_kejadian' => $data['tanggal_kejadian'],
-            'tanggal_diketahui' => $data['tanggal_diketahui'],
-            'risk_item_id' => $data['risk_item_id'],
-            'other_item_description' => $sanitized['other_item_description'],
-            'risk_cause_id' => $data['risk_cause_id'],
-            'other_cause_description' => $sanitized['other_cause_description'],
-            'kronologis_kejadian' => $sanitized['kronologis_kejadian'],
-            'mitigasi_tambahan' => $sanitized['mitigasi_tambahan'],
-            'durasi_penyelesaian' => $data['durasi_penyelesaian'] ?? null,
-            'durasi_satuan' => $data['durasi_satuan'] ?? null,
-            'dampak_finansial' => $data['dampak_finansial'] ?? 0,
-            'dampak_non_finansial' => $sanitized['dampak_non_finansial'],
-            'skala_dampak' => $data['skala_dampak'] ?? null,
-            'sumber_risiko' => $data['sumber_risiko'] ?? null,
-            'status' => $targetStatus->value,
-        ]);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($data, $user, $targetStatus, $sanitized) {
+            $report = RiskReport::create([
+                'kode_laporan' => $this->kodeLaporanService->generate($user),
+                'user_id' => $user->id,
+                'branch_id' => $user->branch_id,
+                'kategori' => $data['kategori'],
+                'tanggal_kejadian' => $data['tanggal_kejadian'],
+                'tanggal_diketahui' => $data['tanggal_diketahui'],
+                'risk_item_id' => $data['risk_item_id'],
+                'other_item_description' => $sanitized['other_item_description'],
+                'risk_cause_id' => $data['risk_cause_id'],
+                'other_cause_description' => $sanitized['other_cause_description'],
+                'kronologis_kejadian' => $sanitized['kronologis_kejadian'],
+                'mitigasi_tambahan' => $sanitized['mitigasi_tambahan'],
+                'durasi_penyelesaian' => $data['durasi_penyelesaian'] ?? null,
+                'durasi_satuan' => $data['durasi_satuan'] ?? null,
+                'dampak_finansial' => $data['dampak_finansial'] ?? 0,
+                'dampak_non_finansial' => $sanitized['dampak_non_finansial'],
+                'skala_dampak' => $data['skala_dampak'] ?? null,
+                'sumber_risiko' => $data['sumber_risiko'] ?? null,
+                'status' => $targetStatus->value,
+            ]);
 
-        // Log pertama: laporan dibuat (gabung dengan penanganan awal jika ada)
-        $noteText = 'notif system : laporan dibuat';
-        if (!empty($data['tindakan_awal'])) {
-            $noteText .= "\npenanganan awal : " . strip_tags($data['tindakan_awal']);
-        }
+            // Log pertama: laporan dibuat (gabung dengan penanganan awal jika ada)
+            $noteText = 'notif system : laporan dibuat';
+            if (!empty($data['tindakan_awal'])) {
+                $noteText .= "\npenanganan awal : " . strip_tags($data['tindakan_awal']);
+            }
 
-        $report->logs()->create([
-            'user_id' => $user->id,
-            'note' => $noteText,
-            'status_after_note' => $targetStatus->value,
-            'old_data' => null,
-        ]);
+            $report->logs()->create([
+                'user_id' => $user->id,
+                'note' => $noteText,
+                'status_after_note' => $targetStatus->value,
+                'old_data' => null,
+            ]);
 
-        // Notifikasi ke Kacab jika perlu approval
-        if ($targetStatus === RiskReportStatus::PendingAtasan) {
-            $this->notifyKacabBranch($report, $user, 'new_report',
-                "Laporan baru dari {$user->name}: {$report->kode_laporan}"
-            );
-        }
+            // Notifikasi ke Kacab jika perlu approval
+            if ($targetStatus === RiskReportStatus::PendingAtasan) {
+                $this->notifyKacabBranch($report, $user, 'new_report',
+                    "Laporan baru dari {$user->name}: {$report->kode_laporan}"
+                );
+            }
 
-        return $report;
+            return $report;
+        });
     }
 
     /**
@@ -92,28 +94,33 @@ class RiskReportService
      */
     public function approve(RiskReport $report, User $user): void
     {
-        $this->approvalRule->validateTransition(
-            RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::PendingAtasan,
-            RiskReportStatus::ApprovedInProgress
-        );
+        \Illuminate\Support\Facades\DB::transaction(function () use ($report, $user) {
+            // Lock the row for update to prevent concurrent approvals
+            $lockedReport = RiskReport::where('id', $report->id)->lockForUpdate()->first();
 
-        $report->update([
-            'status' => RiskReportStatus::ApprovedInProgress->value,
-            'revision_note' => null,
-        ]);
+            $this->approvalRule->validateTransition(
+                RiskReportStatus::tryFrom($lockedReport->status) ?? RiskReportStatus::PendingAtasan,
+                RiskReportStatus::ApprovedInProgress
+            );
 
-        RiskReportLog::create([
-            'risk_report_id' => $report->id,
-            'user_id' => $user->id,
-            'note' => 'Laporan disetujui oleh Kacab',
-            'status_after_note' => RiskReportStatus::ApprovedInProgress->value,
-            'old_data' => null,
-        ]);
+            $lockedReport->update([
+                'status' => RiskReportStatus::ApprovedInProgress->value,
+                'revision_note' => null,
+            ]);
 
-        $this->notificationService->notifyUser($report->user, 'approved',
-            "Laporan {$report->kode_laporan} telah disetujui oleh {$user->name}.",
-            $report->id
-        );
+            RiskReportLog::create([
+                'risk_report_id' => $lockedReport->id,
+                'user_id' => $user->id,
+                'note' => 'Laporan disetujui oleh Kacab',
+                'status_after_note' => RiskReportStatus::ApprovedInProgress->value,
+                'old_data' => null,
+            ]);
+
+            $this->notificationService->notifyUser($lockedReport->user, 'approved',
+                "Laporan {$lockedReport->kode_laporan} telah disetujui oleh {$user->name}.",
+                $lockedReport->id
+            );
+        });
     }
 
     /**
@@ -121,27 +128,31 @@ class RiskReportService
      */
     public function requestRevisionFromKacab(RiskReport $report, User $user, string $alasan): void
     {
-        $this->approvalRule->validateTransition(
-            RiskReportStatus::tryFrom($report->status) ?? RiskReportStatus::PendingAtasan,
-            RiskReportStatus::NeedRevision
-        );
+        \Illuminate\Support\Facades\DB::transaction(function () use ($report, $user, $alasan) {
+            $lockedReport = RiskReport::where('id', $report->id)->lockForUpdate()->first();
 
-        $report->update([
-            'status' => RiskReportStatus::NeedRevision->value,
-            'revision_note' => $alasan,
-        ]);
+            $this->approvalRule->validateTransition(
+                RiskReportStatus::tryFrom($lockedReport->status) ?? RiskReportStatus::PendingAtasan,
+                RiskReportStatus::NeedRevision
+            );
 
-        $report->logs()->create([
-            'user_id' => $user->id,
-            'note' => 'Revisi diminta oleh Kacab: ' . $alasan,
-            'status_after_note' => RiskReportStatus::NeedRevision->value,
-            'old_data' => null,
-        ]);
+            $lockedReport->update([
+                'status' => RiskReportStatus::NeedRevision->value,
+                'revision_note' => $alasan,
+            ]);
 
-        $this->notificationService->notifyUser($report->user, 'rejected',
-            "Laporan {$report->kode_laporan} perlu direvisi. Alasan: {$alasan}",
-            $report->id
-        );
+            $lockedReport->logs()->create([
+                'user_id' => $user->id,
+                'note' => 'Revisi diminta oleh Kacab: ' . $alasan,
+                'status_after_note' => RiskReportStatus::NeedRevision->value,
+                'old_data' => null,
+            ]);
+
+            $this->notificationService->notifyUser($lockedReport->user, 'revision',
+                "Laporan {$lockedReport->kode_laporan} dikembalikan untuk revisi oleh {$user->name}.",
+                $lockedReport->id
+            );
+        });
     }
 
     /**

@@ -93,7 +93,7 @@ class DashboardTest extends TestCase
         RiskReport::factory()->create([
             'user_id' => $this->teller->id,
             'branch_id' => $this->branch->id,
-            'status' => 'pending_kacab',
+            'status' => 'pending_atasan',
             'created_at' => now(),
         ]);
 
@@ -102,7 +102,7 @@ class DashboardTest extends TestCase
             'branch_id' => $this->branch->id,
             'kategori' => 'finansial',
             'dampak_finansial' => 2000000,
-            'status' => 'approved',
+            'status' => 'approved_in_progress',
             'created_at' => now(),
         ]);
 
@@ -110,7 +110,7 @@ class DashboardTest extends TestCase
         $response->assertOk();
 
         $this->assertEquals(1, $response->viewData('totalClosed'));
-        $this->assertEquals(1, $response->viewData('totalPending'));
+        $this->assertEquals(2, $response->viewData('totalPending'));
         $this->assertEquals(2000000, $response->viewData('totalLossApproved'));
     }
 
@@ -136,18 +136,18 @@ class DashboardTest extends TestCase
         RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'status' => 'pending_kacab',
+            'status' => 'pending_atasan',
         ]);
         RiskReport::factory()->create([
             'branch_id' => $this->branch->id,
             'user_id' => $this->teller->id,
-            'status' => 'approved',
+            'status' => 'approved_in_progress',
         ]);
 
         $response = $this->actingAs($this->kacab)->get(route('dashboard'));
         $response->assertOk();
 
-        $this->assertEquals(1, $response->viewData('pendingCount'));
+        $this->assertEquals(2, $response->viewData('pendingCount'));
     }
 
     // =======================================================================

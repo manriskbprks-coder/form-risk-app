@@ -165,7 +165,7 @@ class Phase2AuthTest extends TestCase
             'risk_item_id' => $this->riskItem->id,
             'risk_cause_id' => $this->cause->id,
             'kategori' => 'finansial',
-            'status' => 'pending_kacab',
+            'status' => 'pending_atasan',
             'status' => 'open',
             'kode_laporan' => 'RISK-CBATL-202605-0001',
         ]);
@@ -175,12 +175,12 @@ class Phase2AuthTest extends TestCase
         // Coba approve 15x — harusnya masih bisa
         for ($i = 0; $i < 15; $i++) {
             $response = $this->post(route('risk_reports.update_status', $report->id), [
-                'status' => 'approved',
-            ]);
+            'status' => 'approved',
+        ]);
 
             if ($response->status() !== 429) {
                 // Reset status biar bisa di-approve lagi
-                $report->update(['status' => 'pending_kacab']);
+                $report->update(['status' => 'pending_atasan']);
             }
         }
 

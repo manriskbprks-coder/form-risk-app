@@ -103,7 +103,7 @@ class Phase5LoggingTest extends TestCase
             'skala_dampak' => 'sedang',
             'durasi_penyelesaian' => 3,
             'durasi_satuan' => 'hari',
-            'status_awal' => 'open',
+            
         ]);
 
         $response->assertSessionHas('success');
@@ -112,7 +112,7 @@ class Phase5LoggingTest extends TestCase
         $this->assertNotNull($report);
 
         $log = RiskReportLog::where('risk_report_id', $report->id)
-            ->where('note', 'Laporan dibuat')
+            ->where('note', 'notif system : laporan dibuat')
             ->first();
 
         $this->assertNotNull($log, 'Log "Laporan dibuat" harus tercatat');
@@ -136,7 +136,7 @@ class Phase5LoggingTest extends TestCase
             'skala_dampak' => 'sedang',
             'durasi_penyelesaian' => 3,
             'durasi_satuan' => 'hari',
-            'status_awal' => 'open',
+            
         ]);
 
         $report = RiskReport::where('user_id', $this->teller->id)->first();
@@ -160,7 +160,7 @@ class Phase5LoggingTest extends TestCase
         $response->assertSessionHas('success');
 
         $log = RiskReportLog::where('risk_report_id', $report->id)
-            ->where('status_after_note', 'approved')
+            ->where('status_after_note', 'approved_in_progress')
             ->first();
 
         $this->assertNotNull($log, 'Log approval harus tercatat');
@@ -262,7 +262,7 @@ class Phase5LoggingTest extends TestCase
 
         $this->assertNotNull($log, 'Log approve revision harus tercatat');
         $this->assertEquals($this->manrisk->id, $log->user_id);
-        $this->assertEquals('approved', $log->status_after_note);
+        $this->assertEquals('approved_in_progress', $log->status_after_note);
     }
 
     #[Test]
@@ -273,7 +273,7 @@ class Phase5LoggingTest extends TestCase
         $this->actingAs($this->teller);
         $response = $this->post(route('risk_reports.add_progress', $report->id), [
             'note' => 'Sedang melakukan investigasi penyebab kejadian.',
-            'new_status' => 'in_progress',
+            'new_status' => 'approved_in_progress',
         ]);
 
         $response->assertSessionHas('success');
@@ -284,7 +284,7 @@ class Phase5LoggingTest extends TestCase
 
         $this->assertNotNull($log, 'Log add progress harus tercatat');
         $this->assertEquals($this->teller->id, $log->user_id);
-        $this->assertEquals('in_progress', $log->status_after_note);
+        $this->assertEquals('approved_in_progress', $log->status_after_note);
     }
 
     #[Test]
@@ -395,7 +395,7 @@ class Phase5LoggingTest extends TestCase
                     && $context['report_id'] === $report->id
                     && isset($context['old_status'])
                     && isset($context['new_status'])
-                    && $context['new_status'] === 'in_progress';
+                    && $context['new_status'] === 'closed';
             });
 
         Log::shouldReceive('error')
@@ -403,7 +403,7 @@ class Phase5LoggingTest extends TestCase
 
         $this->actingAs($this->kacab);
         $response = $this->post(route('risk_reports.update_resolution', $report->id), [
-            'status' => 'in_progress',
+            'status' => 'closed',
         ]);
 
         $response->assertSessionHas('success');
@@ -436,7 +436,7 @@ class Phase5LoggingTest extends TestCase
             'skala_dampak' => 'sedang',
             'durasi_penyelesaian' => 3,
             'durasi_satuan' => 'hari',
-            'status_awal' => 'open',
+            
         ]);
 
         // Harusnya redirect back dengan validation error (karena store gagal)
@@ -463,7 +463,7 @@ class Phase5LoggingTest extends TestCase
             'skala_dampak' => 'sedang',
             'durasi_penyelesaian' => 3,
             'durasi_satuan' => 'hari',
-            'status_awal' => 'open',
+            
         ]);
 
         // Validasi gagal karena risk_item_id tidak valid
@@ -555,7 +555,7 @@ class Phase5LoggingTest extends TestCase
 
         $this->actingAs($this->kacab);
         $response = $this->post(route('risk_reports.update_resolution', $report->id), [
-            'status' => 'in_progress',
+            'status' => 'closed',
         ]);
         $response->assertSessionHas('success');
     }
@@ -578,7 +578,7 @@ class Phase5LoggingTest extends TestCase
             'skala_dampak' => 'sedang',
             'durasi_penyelesaian' => 3,
             'durasi_satuan' => 'hari',
-            'status_awal' => 'open',
+            
         ]);
 
         return RiskReport::where('user_id', $this->teller->id)->first();

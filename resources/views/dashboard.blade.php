@@ -319,6 +319,66 @@
 
         </div>
 
+        {{-- ============================================================
+         DEKLARASI NIHIL RISIKO (Khusus Kacab)
+         ============================================================ --}}
+    @if(Auth::user()->isKacab())
+    @php
+        $hariIni = now()->day;
+        $periodeSekarang = $hariIni <= 14 ? '1' : '2';
+        $periodeLabel = $periodeSekarang === '1' ? '1 - 14' : '15 - ' . now()->daysInMonth;
+        $sudahDeklarasi = \App\Models\RiskFreeDeclaration::where('branch_id', Auth::user()->branch_id)
+            ->where('periode', $periodeSekarang)
+            ->where('bulan', now()->month)
+            ->where('tahun', now()->year)
+            ->exists();
+        $deklarasiAktif = \App\Models\RiskFreeDeclaration::where('branch_id', Auth::user()->branch_id)
+            ->where('status', 'active')
+            ->count();
+    @endphp
+    <div class="mb-8">
+        <div class="flex items-center gap-3 mb-5">
+            <div class="w-1 h-6 bg-green-500 rounded-full"></div>
+            <h3 class="section-title">Deklarasi Nihil Risiko</h3>
+        </div>
+        <div class="surface-card section-pad">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <p class="text-sm text-slate-500">
+                        Periode <strong>{{ $periodeSekarang }}</strong> (Tanggal {{ $periodeLabel }} {{ now()->translatedFormat('F Y') }})
+                    </p>
+                    @if ($sudahDeklarasi)
+                        <p class="text-sm text-green-600 font-medium mt-1">
+                            ✅ Deklarasi untuk periode ini sudah dilakukan.
+                        </p>
+                    @else
+                        <p class="text-sm text-amber-600 font-medium mt-1">
+                            ⏳ Belum melakukan deklarasi untuk periode ini.
+                        </p>
+                    @endif
+                    @if ($deklarasiAktif > 0)
+                        <p class="text-xs text-slate-400 mt-1">
+                            Total {{ $deklarasiAktif }} deklarasi aktif tersimpan.
+                        </p>
+                    @endif
+                </div>
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('risk_free_declarations.create') }}" 
+                       class="btn-primary btn-sm {{ $sudahDeklarasi ? 'opacity-50 pointer-events-none' : '' }}">
+                        <svg class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {{ $sudahDeklarasi ? 'Sudah Dideklarasikan' : 'Deklarasi Nihil' }}
+                    </a>
+                    <a href="{{ route('risk_free_declarations.history') }}" class="btn-ghost btn-sm text-slate-500">
+                        Riwayat
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
         {{-- ================= SIDEBAR (KANAN 30%) ================= --}}
         <div class="space-y-6">
             
@@ -424,6 +484,59 @@
                 @endif
                 
                 @if(Auth::user()->isAdmin())
+                {{-- Tabel Rekap Deklarasi Nihil Risiko --}}
+        @if(count($deklarasiSummaries) > 0)
+        <div class="surface-card overflow-hidden">
+            <div class="flex items-center gap-3 mb-4 px-5 pt-5">
+                <div class="w-1 h-5 bg-green-500 rounded-full"></div>
+                <h3 class="section-title text-base">✅ Rekap Deklarasi Nihil Risiko</h3>
+            </div>
+            <div class="table-wrap">
+                <table class="table-min">
+                    <thead>
+                        <tr>
+                            <th class="table-th">Cabang</th>
+                            <th class="table-th text-center">Periode 1</th>
+                            <th class="table-th text-center">Periode 2</th>
+                            <th class="table-th text-center">Total</th>
+                            <th class="table-th text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        @foreach($deklarasiSummaries as $d)
+                        <tr class="table-tr">
+                            <td class="table-td font-semibold text-slate-800">{{ $d['nama'] }}</td>
+                            <td class="table-td text-center">
+                                @if($d['periode1'])
+                                    <span class="text-emerald-600 font-semibold">✅</span>
+                                @else
+                                    <span class="text-slate-300">—</span>
+                                @endif
+                            </td>
+                            <td class="table-td text-center">
+                                @if($d['periode2'])
+                                    <span class="text-emerald-600 font-semibold">✅</span>
+                                @else
+                                    <span class="text-slate-300">—</span>
+                                @endif
+                            </td>
+                            <td class="table-td text-center font-bold text-slate-700">
+                                {{ ($d['periode1'] ? 1 : 0) + ($d['periode2'] ? 1 : 0) }} / 2
+                            </td>
+                            <td class="table-td text-center">
+                                @if($d['periode1'] && $d['periode2'])
+                                    <span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded">LENGKAP</span>
+                                @else
+                                    <span class="px-2 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded">BELUM LENGKAP</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
                 {{-- ADMIN: CABANG BELUM DEKLARASI --}}
                 <div class="surface-card p-5 mt-6 border-t-4 border-orange-400 bg-orange-50/30">
                     <h3 class="text-sm font-bold text-orange-700 flex items-center mb-3"><span class="mr-2">🏆</span> BELUM DEKLARASI NIHIL</h3>

@@ -214,6 +214,36 @@ class DeklarasiNihilService
     // ========================================================================
 
     /**
+     * Reject deklarasi nihil risiko (ManRisk).
+     */
+    public function reject(string $id, User $user): void
+    {
+        $declaration = RiskFreeDeclaration::findOrFail($id);
+
+        if ($declaration->status === 'rejected') {
+            throw new \DomainException('Deklarasi ini sudah dalam status ditolak.');
+        }
+
+        $declaration->update([
+            'status' => 'rejected',
+            'rejected_by' => $user->id,
+            'rejected_at' => now(),
+        ]);
+
+        $this->notifyKacabRejected($declaration);
+        Log::channel('daily')->info('[AUDIT] Declaration rejected by ManRisk', [
+            'action' => 'reject_declaration',
+            'declaration_id' => $declaration->id,
+            'branch_id' => $declaration->branch_id,
+            'periode' => $declaration->periode,
+            'bulan' => $declaration->bulan,
+            'tahun' => $declaration->tahun,
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+        ]);
+    }
+
+    /**
      * Kirim notifikasi ke semua user ManRisk.
      */
     private function notifyManRisk(RiskFreeDeclaration $declaration, User $user): void
