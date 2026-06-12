@@ -30,6 +30,7 @@ class User extends Authenticatable
         'branch_id',
         'is_active',
         'password_changed_at',
+        'has_seen_tour',
     ];
 
     /**
@@ -53,6 +54,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'password_changed_at' => 'datetime',
+            'has_seen_tour' => 'boolean',
         ];
     }
 

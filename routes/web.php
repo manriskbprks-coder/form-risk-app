@@ -293,6 +293,18 @@ Route::middleware('auth')->group(function () {
 
     // --- Profile (Ganti Password) — throttle 5 per menit ---
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+
+    // --- Glosarium (Kamus Istilah Manajemen Risiko) ---
+    Route::get('/glosarium', function () {
+        return view('glosarium');
+    })->name('glosarium');
+
+    // --- Onboarding Tour: Tandai user sudah selesai tour ---
+    Route::post('/user/finish-tour', function () {
+        auth()->user()->update(['has_seen_tour' => true]);
+        return response()->json(['status' => 'ok']);
+    })->name('user.finish_tour');
+
     Route::match(['post', 'patch'], '/profile', [ProfileController::class, 'update'])
         ->middleware('throttle:profile')
         ->name('profile.update');

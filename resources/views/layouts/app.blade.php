@@ -15,6 +15,9 @@
     <!-- Scripts & Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    {{-- Driver.js CDN (Onboarding Tour) --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css">
+
     @stack('styles')
 </head>
 <body class="font-sans antialiased overflow-x-hidden text-slate-800 bg-slate-50">
@@ -200,6 +203,23 @@
                 <span>Manajemen Cabang</span>
             </a>
             @endif
+
+            <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-[0.14em] mb-2 mt-6">Bantuan</p>
+
+            <a href="{{ route('glosarium') }}"
+               class="{{ request()->routeIs('glosarium') ? 'sidebar-link-active' : 'sidebar-link' }}">
+                <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                <span>Glosarium</span>
+            </a>
+
+            <button type="button" onclick="startOnboardingTour()" class="sidebar-link w-full text-left">
+                <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+                </svg>
+                <span>Panduan Aplikasi</span>
+            </button>
         </nav>
 
     </aside>
@@ -238,6 +258,13 @@
 
                 {{-- Right: Notifications + Profile --}}
                 <div class="flex items-center gap-3">
+                    {{-- Tour Button (Header) --}}
+                    <button onclick="startOnboardingTour()" class="p-2 rounded-lg hover:bg-slate-100 transition group" title="Panduan Aplikasi">
+                        <svg class="w-5 h-5 text-slate-500 group-hover:text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+                        </svg>
+                    </button>
+
                     {{-- Bell Icon --}}
                     <a href="{{ route('notifications.index') }}" 
                        class="relative p-2 rounded-lg hover:bg-slate-100 transition group"
@@ -386,6 +413,290 @@
             }
         }
     </script>
+
+    {{-- Driver.js Library --}}
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
+
+    {{-- Onboarding Tour Script --}}
+    <script>
+        function getTourSteps() {
+            const role = @js(auth()->user()?->roleCategory() ?? 'maker');
+            const roleName = @js(auth()->user()?->primaryRoleName() ?? 'Pengguna');
+
+            const commonSteps = [
+                {
+                    element: '#sidebar',
+                    popover: {
+                        title: '📌 Menu Navigasi',
+                        description: 'Ini adalah menu utama aplikasi. Semua halaman penting bisa diakses dari sini.',
+                        side: 'right',
+                        align: 'start'
+                    }
+                }
+            ];
+
+            if (role === 'maker') {
+                return [
+                    ...commonSteps,
+                    {
+                        popover: {
+                            title: '👋 Selamat Datang, ' + roleName + '!',
+                            description: 'Anda berperan sebagai ' + roleName + '. Tugas utama Anda adalah melaporkan setiap kejadian risiko yang terjadi di cabang, baik yang berdampak uang (Finansial) maupun tidak (Non-Finansial).',
+                        }
+                    },
+                    {
+                        element: 'a[href*="form-risiko/finansial"]',
+                        popover: {
+                            title: '💸 Lapor Risiko Finansial',
+                            description: 'Klik menu ini jika terjadi kejadian yang merugikan bank secara uang. Contoh: uang palsu masuk, selisih kas, kredit macet.',
+                            side: 'right'
+                        }
+                    },
+                    {
+                        element: 'a[href*="form-risiko/non-finansial"]',
+                        popover: {
+                            title: '⚠️ Lapor Risiko Non-Finansial',
+                            description: 'Klik menu ini jika terjadi kejadian yang tidak merugikan uang tapi mempengaruhi operasional. Contoh: mesin rusak, komplain nasabah.',
+                            side: 'right'
+                        }
+                    },
+                    {
+                        element: 'a[href*="riwayat-risiko"]',
+                        popover: {
+                            title: '📋 Riwayat Laporan Saya',
+                            description: 'Pantau status semua laporan yang pernah Anda buat di sini. Anda bisa melihat apakah laporan sudah di-approve, butuh revisi, atau sudah selesai.',
+                            side: 'right'
+                        }
+                    },
+                    {
+                        popover: {
+                            title: '🚨 Perhatikan Alert Revisi!',
+                            description: 'Jika atasan Anda menolak laporan, akan muncul kotak merah di Dashboard bertuliskan "BUTUH REVISI". Segera klik untuk memperbaiki laporan Anda.',
+                        }
+                    },
+                    {
+                        popover: {
+                            title: '✅ Panduan Selesai!',
+                            description: 'Anda siap menggunakan aplikasi ini. Jika butuh bantuan, klik tombol "Panduan Aplikasi" di sidebar atau ikon (?) di kanan atas kapan saja. Selamat bekerja!',
+                        }
+                    }
+                ];
+            }
+
+            if (role === 'checker') {
+                return [
+                    ...commonSteps,
+                    {
+                        popover: {
+                            title: '👋 Selamat Datang, ' + roleName + '!',
+                            description: 'Anda berperan sebagai ' + roleName + '. Selain me-review laporan dari Staff, Anda juga bisa langsung melaporkan kejadian risiko sendiri.',
+                        }
+                    },
+                    {
+                        element: 'a[href*="form-risiko/finansial"]',
+                        popover: {
+                            title: '💸 Lapor Risiko Finansial',
+                            description: 'Anda juga bisa langsung membuat laporan jika terjadi kejadian yang merugikan bank secara uang. Contoh: uang palsu, selisih kas.',
+                            side: 'right'
+                        }
+                    },
+                    {
+                        element: 'a[href*="form-risiko/non-finansial"]',
+                        popover: {
+                            title: '⚠️ Lapor Risiko Non-Finansial',
+                            description: 'Atau buat laporan kejadian yang tidak merugikan uang tapi mempengaruhi operasional. Contoh: mesin rusak, komplain nasabah.',
+                            side: 'right'
+                        }
+                    },
+                    {
+                        element: 'a[href*="review-laporan"]',
+                        popover: {
+                            title: '✅ Review & Tindak Lanjut',
+                            description: 'Di sini Anda bisa melihat daftar laporan yang menunggu review. Klik "Review Cepat" untuk membaca detail dan melakukan Approve atau Reject.',
+                            side: 'right'
+                        }
+                    },
+                    {
+                        element: 'a[href*="deklarasi-nihil"]',
+                        popover: {
+                            title: '🛡️ Deklarasi Nihil Risiko (WAJIB!)',
+                            description: 'Jika tidak ada insiden dalam 2 minggu, Anda WAJIB menekan tombol ini untuk mendeklarasikan bahwa cabang Anda aman. Dilakukan 2x sebulan (Periode 1: tgl 1-14, Periode 2: tgl 15-akhir bulan).',
+                            side: 'right'
+                        }
+                    },
+                    {
+                        popover: {
+                            title: '⚠️ Jangan Lupa Close Laporan!',
+                            description: 'Setelah masalah di lapangan selesai, jangan lupa update status laporan menjadi "Closed". Laporan yang menggantung (In Progress) akan terus muncul di Dashboard Anda.',
+                        }
+                    },
+                    {
+                        popover: {
+                            title: '✅ Panduan Selesai!',
+                            description: 'Anda siap menggunakan aplikasi ini. Jika butuh bantuan, klik tombol "Panduan Aplikasi" di sidebar atau ikon (?) di kanan atas kapan saja. Selamat bekerja!',
+                        }
+                    }
+                ];
+            }
+
+            if (role === 'viewer') {
+                return [
+                    ...commonSteps,
+                    {
+                        popover: {
+                            title: '👋 Selamat Datang, ' + roleName + '!',
+                            description: 'Anda berperan sebagai ' + roleName + '. Tugas Anda adalah memantau tren risiko dan insiden kritis dari cabang-cabang di bawah wilayah Anda.',
+                        }
+                    },
+                    {
+                        element: 'a[href*="riwayat-risiko"]',
+                        popover: {
+                            title: '📊 Monitoring Wilayah',
+                            description: 'Klik menu ini untuk melihat seluruh daftar laporan risiko dari cabang-cabang Anda dalam bentuk tabel lengkap. Anda bisa filter berdasarkan status, cabang, dan waktu.',
+                            side: 'right'
+                        }
+                    },
+                    {
+                        popover: {
+                            title: '🚨 Perhatikan Red Alert!',
+                            description: 'Di sisi kanan Dashboard, akan muncul kotak merah jika ada insiden kritis (kerugian > Rp 100 Juta atau skala dampak Tinggi/Sangat Tinggi) dari cabang Anda. Segera koordinasi dengan Kacab terkait.',
+                        }
+                    },
+                    {
+                        popover: {
+                            title: '✅ Panduan Selesai!',
+                            description: 'Anda siap menggunakan aplikasi ini. Jika butuh bantuan, klik tombol "Panduan Aplikasi" di sidebar atau ikon (?) di kanan atas kapan saja. Selamat bekerja!',
+                        }
+                    }
+                ];
+            }
+
+            // admin
+            return [
+                ...commonSteps,
+                {
+                    popover: {
+                        title: '👋 Selamat Datang, ' + roleName + '!',
+                        description: 'Anda berperan sebagai ' + roleName + '. Anda memiliki akses penuh ke seluruh fitur: analisis data, kelola Master Data, User Management, dan pengawasan kepatuhan Deklarasi Nihil.',
+                    }
+                },
+                {
+                    element: 'a[href*="risk-master"]',
+                    popover: {
+                        title: '⚙️ Master Data Risiko',
+                        description: 'Kelola Bank Soal Risiko di sini: tambah Item Risiko, Penyebab, dan Mitigasi. Data ini akan menjadi pilihan dropdown saat Staff mengisi form laporan.',
+                        side: 'right'
+                    }
+                },
+                {
+                    element: 'a[href*="admin/users"]',
+                    popover: {
+                        title: '👥 Manajemen Pengguna',
+                        description: 'Buat akun baru, nonaktifkan akun user yang resign, atau reset password user yang lupa sandi.',
+                        side: 'right'
+                    }
+                },
+                {
+                    element: 'a[href*="riwayat-risiko"]',
+                    popover: {
+                        title: '📊 Monitoring Seluruh Cabang',
+                        description: 'Lihat daftar semua laporan risiko dari seluruh cabang dalam bentuk tabel. Anda juga bisa mengekspor data ke CSV/Excel untuk bahan rapat Direksi.',
+                        side: 'right'
+                    }
+                },
+                {
+                    popover: {
+                        title: '✅ Panduan Selesai!',
+                        description: 'Anda siap menggunakan aplikasi ini. Jika butuh bantuan, klik tombol "Panduan Aplikasi" di sidebar atau ikon (?) di kanan atas kapan saja. Selamat bekerja!',
+                    }
+                }
+            ];
+        }
+
+        function startOnboardingTour() {
+            const driverObj = window.driver.js.driver({
+                showProgress: true,
+                showButtons: ['next', 'previous', 'close'],
+                nextBtnText: 'Selanjutnya →',
+                prevBtnText: '← Sebelumnya',
+                doneBtnText: 'Selesai ✅',
+                progressText: 'Langkah @{{current}} dari @{{total}}',
+                popoverClass: 'driverjs-theme-custom',
+                steps: getTourSteps(),
+                onDestroyStarted: () => {
+                    if (!driverObj.hasNextStep() || confirm('Apakah Anda yakin ingin melewati panduan ini?')) {
+                        driverObj.destroy();
+                        markTourAsCompleted();
+                    }
+                }
+            });
+            driverObj.drive();
+        }
+
+        function markTourAsCompleted() {
+            fetch('{{ route("user.finish_tour") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            }).catch(err => console.log('Tour status update error:', err));
+        }
+
+        // Auto-trigger tour for new users
+        document.addEventListener('DOMContentLoaded', function() {
+            const hasSeenTour = @js(auth()->user()?->has_seen_tour ?? false);
+            const isOnDashboard = window.location.pathname === '/dashboard';
+            if (!hasSeenTour && isOnDashboard) {
+                setTimeout(() => startOnboardingTour(), 800);
+            }
+        });
+    </script>
+
+    {{-- Custom Driver.js Styling --}}
+    <style>
+        .driver-popover.driverjs-theme-custom {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+            max-width: 380px;
+        }
+        .driver-popover.driverjs-theme-custom .driver-popover-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .driver-popover.driverjs-theme-custom .driver-popover-description {
+            font-size: 13px;
+            color: #475569;
+            line-height: 1.6;
+        }
+        .driver-popover.driverjs-theme-custom .driver-popover-progress-text {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+        .driver-popover.driverjs-theme-custom button {
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 14px;
+        }
+        .driver-popover.driverjs-theme-custom .driver-popover-navigation-btns .driver-popover-next-btn {
+            background-color: #4f46e5;
+            color: #fff;
+            border: none;
+            text-shadow: none;
+        }
+        .driver-popover.driverjs-theme-custom .driver-popover-navigation-btns .driver-popover-next-btn:hover {
+            background-color: #4338ca;
+        }
+        .driver-popover.driverjs-theme-custom .driver-popover-navigation-btns .driver-popover-prev-btn {
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+    </style>
 
     @stack('scripts')
 </body>
