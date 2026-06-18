@@ -44,8 +44,27 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
+        $user = \App\Models\User::where('username', $this->input('username'))->first();
+
+        // Cek jika akun sudah terkunci duluan sebelum mencoba login
+        if ($user && $user->failed_login_attempts >= 5) {
+            throw ValidationException::withMessages([
+                'username' => 'Akun Anda telah dikunci karena gagal login 5 kali. Silakan hubungi Admin untuk melakukan Reset Password.',
+            ]);
+        }
+
         if (! Auth::attempt($this->only('username', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
+
+            // Tambah failed login attempts
+            if ($user) {
+                $user->increment('failed_login_attempts');
+                if ($user->failed_login_attempts >= 5) {
+                    throw ValidationException::withMessages([
+                        'username' => 'Akun Anda telah dikunci karena gagal login 5 kali. Silakan hubungi Admin untuk melakukan Reset Password.',
+                    ]);
+                }
+            }
 
             // 🔐 Catat percobaan login gagal untuk security monitoring
             Log::warning('🔐 Login gagal', [
@@ -56,19 +75,24 @@ class LoginRequest extends FormRequest
             ]);
 
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'username' => trans('auth.failed'),
             ]);
         }
 
-        // --- SATPAM STATUS AKTIF (TAMBAHIN BLOK INI) ---
+        // --- SATPAM STATUS AKTIF ---
         if (! Auth::user()->is_active) {
             Auth::logout(); // Tendang keluar lagi
 
             throw ValidationException::withMessages([
-                'email' => 'Akun Anda telah dinonaktifkan. Silakan hubungi HR atau Admin.',
+                'username' => 'Akun Anda telah dinonaktifkan. Silakan hubungi HR atau Admin.',
             ]);
         }
         // ----------------------------------------------
+
+        // Reset failed_login_attempts jika berhasil masuk
+        if (Auth::user()->failed_login_attempts > 0) {
+            Auth::user()->update(['failed_login_attempts' => 0]);
+        }
 
         RateLimiter::clear($this->throttleKey());
     }

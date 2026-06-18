@@ -31,6 +31,7 @@ class User extends Authenticatable
         'is_active',
         'password_changed_at',
         'has_seen_tour',
+        'failed_login_attempts',
     ];
 
     /**

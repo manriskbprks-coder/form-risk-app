@@ -97,9 +97,11 @@ class AdminUserController extends Controller
         $tempPassword = Str::random(12);
 
         // Update password + reset password_changed_at biar user WAJIB ganti pas login
+        // Juga reset failed_login_attempts agar gembok terbuka
         $user->update([
             'password' => Hash::make($tempPassword),
             'password_changed_at' => null,
+            'failed_login_attempts' => 0,
         ]);
 
         // Log aktivitas
