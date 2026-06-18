@@ -6,18 +6,14 @@ namespace App\Domain\Rules;
  * Domain rule untuk deklarasi nihil risiko.
  *
  * Rule ini PURE LOGIC — tidak ada dependency ke Laravel, database, atau service.
- * Mengatur logika periode, jabatan wajib, dan validasi deklarasi.
+ * Mengatur logika periode dan validasi deklarasi.
  *
- * Analogi: Ini kayak "SOP deklarasi nihil" — aturan mainnya aja,
- * tanpa tau gimana cara nyimpen datanya.
+ * NOTE: JABATAN_LIST sudah dihapus. Daftar jabatan sekarang
+ * diambil secara dinamis dari database (tabel roles) berdasarkan
+ * divisi yang sama dengan pejabat (Checker) yang melakukan deklarasi.
  */
 class DeclarationRule
 {
-    /**
-     * Daftar jabatan yang wajib dideklarasikan setiap periode.
-     */
-    private const JABATAN_LIST = ['Teller', 'CA', 'CSR', 'Security', 'Kacab'];
-
     /**
      * Tentukan periode saat ini berdasarkan tanggal.
      *
@@ -30,16 +26,6 @@ class DeclarationRule
     public function getCurrentPeriode(int $day): string
     {
         return $day <= 14 ? '1' : '2';
-    }
-
-    /**
-     * Dapatkan daftar jabatan yang wajib dideklarasikan.
-     *
-     * @return array<int, string>
-     */
-    public function getJabatanList(): array
-    {
-        return self::JABATAN_LIST;
     }
 
     /**

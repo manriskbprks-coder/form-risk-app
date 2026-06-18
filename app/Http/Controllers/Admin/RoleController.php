@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Spatie\Permission\Models\Role;
+use App\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -12,10 +12,11 @@ class RoleController extends Controller
 {
     public function index()
     {
-        $roles = Role::with('permissions')->withCount('users')->orderBy('name')->get();
+        $roles = Role::with('permissions', 'division')->withCount('users')->orderBy('name')->get();
         $permissions = Permission::orderBy('name')->get();
+        $divisions = \App\Models\Division::orderBy('nama_divisi')->get();
 
-        return view('admin.roles.index', compact('roles', 'permissions'));
+        return view('admin.roles.index', compact('roles', 'permissions', 'divisions'));
     }
 
     public function store(Request $request)
@@ -23,11 +24,18 @@ class RoleController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:roles,name'],
             'role_category' => ['required', 'in:maker,checker,viewer,admin'],
+            'division_id' => ['nullable', 'exists:divisions,id'],
+            'kode_role' => ['nullable', 'string', 'max:5'],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['exists:permissions,name'],
         ]);
 
-        $role = Role::create(['name' => $request->name, 'role_category' => $request->role_category]);
+        $role = Role::create([
+            'name' => $request->name, 
+            'role_category' => $request->role_category,
+            'division_id' => $request->division_id,
+            'kode_role' => $request->kode_role ? strtoupper($request->kode_role) : null,
+        ]);
 
         if ($request->filled('permissions')) {
             $role->syncPermissions($request->permissions);
@@ -41,11 +49,18 @@ class RoleController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('roles')->ignore($role->id)],
             'role_category' => ['required', 'in:maker,checker,viewer,admin'],
+            'division_id' => ['nullable', 'exists:divisions,id'],
+            'kode_role' => ['nullable', 'string', 'max:5'],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['exists:permissions,name'],
         ]);
 
-        $role->update(['name' => $request->name, 'role_category' => $request->role_category]);
+        $role->update([
+            'name' => $request->name, 
+            'role_category' => $request->role_category,
+            'division_id' => $request->division_id,
+            'kode_role' => $request->kode_role ? strtoupper($request->kode_role) : null,
+        ]);
 
         if ($request->has('permissions')) {
             $role->syncPermissions($request->permissions ?? []);

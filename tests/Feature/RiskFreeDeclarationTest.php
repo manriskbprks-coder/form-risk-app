@@ -28,12 +28,16 @@ class RiskFreeDeclarationTest extends TestCase
     {
         parent::setUp();
 
-        // Buat roles dengan role_category
+        $divOperasional = \App\Models\Division::firstOrCreate(['nama_divisi' => 'Operasional', 'kode_divisi' => 'OPR']);
+
+        // Buat roles dengan role_category dan division
         $roleMapping = [
-            'teller' => 'maker', 'kacab' => 'checker', 'korwil' => 'viewer', 'manrisk' => 'admin',
+            'teller' => 'maker', 'ca' => 'maker', 'csr' => 'maker', 'security' => 'maker',
+            'kacab' => 'checker', 'korwil' => 'viewer', 'manrisk' => 'admin',
         ];
         foreach ($roleMapping as $name => $category) {
-            Role::firstOrCreate(['name' => $name], ['role_category' => $category]);
+            $divId = in_array($name, ['teller', 'ca', 'csr', 'security', 'kacab']) ? $divOperasional->id : null;
+            Role::firstOrCreate(['name' => $name], ['role_category' => $category, 'division_id' => $divId]);
         }
 
         // Buat branch
@@ -70,8 +74,8 @@ class RiskFreeDeclarationTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Deklarasi Nihil Risiko');
         $response->assertSee('Teller');
-        $response->assertSee('CA');
-        $response->assertSee('CSR');
+        $response->assertSee('Ca');
+        $response->assertSee('Csr');
         $response->assertSee('Security');
         $response->assertSee('Kacab');
     }
@@ -123,7 +127,7 @@ class RiskFreeDeclarationTest extends TestCase
     #[Test]
     public function kacab_can_submit_declaration()
     {
-        $jabatanList = ['Teller', 'CA', 'CSR', 'Security', 'Kacab'];
+        $jabatanList = ['Teller', 'Ca', 'Csr', 'Security', 'Kacab'];
         $data = [
             'jabatan' => [],
             'statement_text' => 'Dengan ini menyatakan tidak ada risiko operasional pada periode ini.',
@@ -180,8 +184,8 @@ class RiskFreeDeclarationTest extends TestCase
         $data = [
             'jabatan' => [
                 'Teller' => ['is_clean' => '1', 'keterangan' => ''],
-                'CA' => ['is_clean' => '1', 'keterangan' => ''],
-                'CSR' => ['is_clean' => '1', 'keterangan' => ''],
+                'Ca' => ['is_clean' => '1', 'keterangan' => ''],
+                'Csr' => ['is_clean' => '1', 'keterangan' => ''],
                 'Security' => ['is_clean' => '1', 'keterangan' => ''],
                 'Kacab' => ['is_clean' => '1', 'keterangan' => ''],
             ],
@@ -256,8 +260,8 @@ class RiskFreeDeclarationTest extends TestCase
         $data = [
             'jabatan' => [
                 'Teller' => ['is_clean' => '1', 'keterangan' => ''],
-                'CA' => ['is_clean' => '1', 'keterangan' => ''],
-                'CSR' => ['is_clean' => '1', 'keterangan' => ''],
+                'Ca' => ['is_clean' => '1', 'keterangan' => ''],
+                'Csr' => ['is_clean' => '1', 'keterangan' => ''],
                 'Security' => ['is_clean' => '1', 'keterangan' => ''],
                 'Kacab' => ['is_clean' => '1', 'keterangan' => ''],
             ],

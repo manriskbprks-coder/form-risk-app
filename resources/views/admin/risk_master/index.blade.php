@@ -32,12 +32,9 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Target Jabatan (Role)</label>
                             <select name="role_target" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm uppercase">
-                                <option value="teller">Teller</option>
-                                <option value="ca">Customer Assistant (CA)</option>
-                                <option value="csr">CSR</option>
-                                <option value="security">Security</option>
-                                <option value="kacab">Kepala Cabang (Kacab)</option>
-                                <option value="korwil">Korwil</option>
+                                @foreach(\Spatie\Permission\Models\Role::whereIn('role_category', ['maker', 'checker'])->orderBy('name')->get() as $roleOption)
+                                    <option value="{{ $roleOption->name }}">{{ ucfirst($roleOption->name) }}</option>
+                                @endforeach
                             </select>
                     </div>
                     <div class="md:col-span-2">

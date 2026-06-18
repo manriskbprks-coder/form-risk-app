@@ -24,7 +24,7 @@ class RiskMasterController extends Controller
             'nama_risiko' => 'required|string|max:255',
             'kategori' => 'required|in:finansial,non-finansial',
             'sumber_risiko' => 'required|in:manusia,proses_internal,sistem_teknologi,faktor_eksternal',
-            'role_target' => 'required|in:teller,ca,csr,security,kacab,korwil',
+            'role_target' => 'required|exists:roles,name',
         ]);
 
         RiskItem::create($request->only(['nama_risiko', 'kategori', 'sumber_risiko', 'role_target']));

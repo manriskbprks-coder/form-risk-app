@@ -85,7 +85,7 @@
  <div>
  <select name="jabatan" class="w-full rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
  <option value="">Semua Jabatan</option>
- @foreach(['teller', 'ca', 'csr', 'security', 'kacab'] as $jabatan)
+ @foreach(\Spatie\Permission\Models\Role::whereIn('role_category', ['maker', 'checker'])->pluck('name') as $jabatan)
  <option value="{{ $jabatan }}" {{ request('jabatan') == $jabatan ? 'selected' : '' }}>{{ ucfirst($jabatan) }}</option>
  @endforeach
  </select>

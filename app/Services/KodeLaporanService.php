@@ -8,24 +8,20 @@ use App\Models\User;
 class KodeLaporanService
 {
     /**
-     * Mapping role name ke kode singkat untuk kode laporan.
-     */
-    protected array $roleMap = [
-        'teller' => 'TL',
-        'ca' => 'CA',
-        'csr' => 'CSR',
-        'security' => 'SC',
-        'kacab' => 'KC',
-    ];
-
-    /**
      * Generate kode laporan dengan format:
      * RISK-{kodeCabang}{kodeRole}-{YYYYMM}-{0001}
+     *
+     * kode_role sekarang diambil langsung dari kolom kode_role di tabel roles (database),
+     * bukan dari hardcode mapping lagi.
      */
     public function generate(User $user): string
     {
         $kodeCabang = $user->branch->kode_cabang ?? 'HQ';
-        $kodeRole = $this->roleMap[$user->primaryRoleName()] ?? 'XX';
+
+        // Ambil kode_role dari database (kolom baru di tabel roles)
+        $role = $user->roles->first();
+        $kodeRole = $role?->kode_role ?? 'XX';
+
         $tahunBulan = now()->format('Ym');
         $nomorUrut = $this->getNextSequence();
 

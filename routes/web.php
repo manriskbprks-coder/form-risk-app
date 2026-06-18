@@ -9,6 +9,7 @@ use App\Http\Controllers\RiskFreeDeclarationController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\Admin\RiskMasterController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\DivisionController;
 use App\Models\Branch;
 use App\Models\RiskReport;
 use App\Services\ChartService;
@@ -398,6 +399,12 @@ Route::middleware(['auth', 'admin', 'throttle:admin'])->group(function () {
     Route::post('/admin/roles', [RoleController::class, 'store'])->name('admin.roles.store');
     Route::patch('/admin/roles/{role}', [RoleController::class, 'update'])->name('admin.roles.update');
     Route::delete('/admin/roles/{role}', [RoleController::class, 'destroy'])->name('admin.roles.destroy');
+
+    // CRUD Division Management
+    Route::get('/admin/divisions', [DivisionController::class, 'index'])->name('admin.divisions.index');
+    Route::post('/admin/divisions', [DivisionController::class, 'store'])->name('admin.divisions.store');
+    Route::patch('/admin/divisions/{division}', [DivisionController::class, 'update'])->name('admin.divisions.update');
+    Route::delete('/admin/divisions/{division}', [DivisionController::class, 'destroy'])->name('admin.divisions.destroy');
 
     // Rute buat update penyebab & mitigasi
     Route::patch('/admin/risk-master/cause/{id}', [\App\Http\Controllers\Admin\RiskMasterController::class, 'updateCause'])->name('admin.risk_master.update_cause');

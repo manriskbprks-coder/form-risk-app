@@ -10,22 +10,15 @@ namespace App\Domain\ValueObjects;
  *
  * Value Object bersifat immutable — sekali dibuat, tidak bisa diubah.
  * Self-validating — constructor akan throw exception jika format tidak valid.
+ *
+ * NOTE: ROLE_MAP sudah dihapus. Kode role sekarang disimpan di kolom
+ * `kode_role` di tabel `roles` (database). Value Object ini hanya
+ * bertanggung jawab untuk validasi format string.
  */
 class KodeLaporan
 {
     private const PREFIX = 'RISK';
     private const PATTERN = '/^RISK-([A-Z0-9]+)-(\d{6})-(\d{4})$/';
-
-    /**
-     * Mapping role name ke kode singkat.
-     */
-    private const ROLE_MAP = [
-        'teller' => 'TL',
-        'ca' => 'CA',
-        'csr' => 'CSR',
-        'security' => 'SC',
-        'kacab' => 'KC',
-    ];
 
     public function __construct(
         public readonly string $kodeCabang,
@@ -75,10 +68,10 @@ class KodeLaporan
 
     /**
      * Buat KodeLaporan baru dengan nomor urut berikutnya.
+     * Parameter $kodeRole sekarang diterima langsung dari pemanggil (diambil dari DB).
      */
-    public static function generate(string $kodeCabang, string $roleName, int $nextSequence): self
+    public static function generate(string $kodeCabang, string $kodeRole, int $nextSequence): self
     {
-        $kodeRole = self::ROLE_MAP[$roleName] ?? 'XX';
         $tahunBulan = now()->format('Ym');
         $nomorUrut = str_pad((string) $nextSequence, 4, '0', STR_PAD_LEFT);
 
@@ -104,13 +97,5 @@ class KodeLaporan
     public function __toString(): string
     {
         return $this->toString();
-    }
-
-    /**
-     * Dapatkan role map (untuk referensi).
-     */
-    public static function getRoleMap(): array
-    {
-        return self::ROLE_MAP;
     }
 }

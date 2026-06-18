@@ -143,13 +143,7 @@ class User extends Authenticatable
         return $this->roleCategoryEnum()?->isAdmin() ?? false;
     }
 
-    /**
-     * Cek apakah user adalah Kacab.
-     */
-    public function isKacab(): bool
-    {
-        return $this->hasRole('kacab');
-    }
+
 
     /**
      * Cek apakah user bisa bikin laporan (maker + checker).

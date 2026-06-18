@@ -55,7 +55,8 @@ class Phase7PenetrationTest extends TestCase
             'kacab' => 'checker', 'korwil' => 'viewer', 'manrisk' => 'admin',
         ];
         foreach ($roleMapping as $name => $category) {
-            Role::firstOrCreate(['name' => $name], ['role_category' => $category]);
+            $kode = $name === 'teller' ? 'TL' : null;
+            Role::firstOrCreate(['name' => $name], ['role_category' => $category, 'kode_role' => $kode]);
         }
 
         // Buat 2 cabang berbeda
@@ -282,26 +283,28 @@ class Phase7PenetrationTest extends TestCase
     // ========================================================================
 
     #[Test]
-    public function brute_force_login_kena_throttle_setelah_10_percobaan()
+    public function brute_force_login_kena_throttle_setelah_5_percobaan()
     {
-        // 10 percobaan login gagal — harusnya masih bisa
-        for ($i = 0; $i < 10; $i++) {
+        // 5 percobaan login gagal — harusnya error auth.failed
+        for ($i = 0; $i < 5; $i++) {
             $response = $this->post(route('login'), [
                 'username' => $this->tellerA->username,
                 'password' => 'wrong-password-' . $i,
             ]);
             // Harusnya redirect back dengan error (bukan throttle)
-            // LoginRequest pake key 'email' untuk error message
-            $response->assertSessionHasErrors('email');
+            $response->assertSessionHasErrors('username');
+            $this->assertStringContainsString('kredensial', strtolower(session('errors')->get('username')[0] ?? ''));
         }
 
-        // Percobaan ke-11 — harus kena throttle 429
+        // Percobaan ke-6 — harus kena throttle (redirect dengan pesan throttle)
         $response = $this->post(route('login'), [
             'username' => $this->tellerA->username,
-            'password' => 'wrong-password-11',
+            'password' => 'wrong-password-6',
         ]);
 
-        $response->assertStatus(429);
+        $response->assertStatus(302);
+        $response->assertSessionHasErrors('username');
+        $this->assertStringContainsString('login', strtolower(session('errors')->get('username')[0] ?? ''));
     }
 
     #[Test]

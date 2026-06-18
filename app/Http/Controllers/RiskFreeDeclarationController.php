@@ -34,7 +34,7 @@ class RiskFreeDeclarationController extends Controller
                 ->with('info', 'Deklarasi nihil risiko untuk periode ini sudah dilakukan.');
         }
 
-        $jabatanList = $this->deklarasiNihilService->getJabatanList();
+        $jabatanList = $this->deklarasiNihilService->getJabatanList($user);
         $adaLaporan = $this->deklarasiNihilService->adaLaporanDiPeriode($user->branch_id, $periode, $bulan, $tahun);
 
         return view('risk_free_declarations.create', compact(

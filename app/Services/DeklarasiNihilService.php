@@ -9,6 +9,7 @@ use App\Models\RiskFreeDeclarationDetail;
 use App\Models\RiskReport;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use Spatie\Permission\Models\Role;
 
 class DeklarasiNihilService
 {
@@ -27,11 +28,37 @@ class DeklarasiNihilService
     }
 
     /**
-     * Daftar jabatan yang wajib dideklarasikan.
+     * Daftar jabatan yang wajib dideklarasikan — DINAMIS dari database.
+     *
+     * Logikanya:
+     * 1. Ambil divisi dari role si pejabat (Checker) yang sedang login.
+     * 2. Tarik semua Role yang ada di divisi tersebut dengan kategori 'maker'.
+     * 3. Tambahkan juga jabatan si pejabat itu sendiri (Checker).
+     *
+     * Hasilnya: ['Teller', 'CA', 'CSR', 'Security', 'Kacab'] (misalnya untuk Divisi Operasional)
+     * Tapi kalau Manager Akunting yang login: ['Staff Akunting', 'Manager Akunting']
      */
-    public function getJabatanList(): array
+    public function getJabatanList(User $user): array
     {
-        return $this->declarationRule->getJabatanList();
+        $userRole = $user->roles->first();
+        
+        if (!$userRole || !$userRole->division_id) {
+            return [];
+        }
+
+        $divisionId = $userRole->division_id;
+
+        // Ambil semua role (maker) yang satu divisi + role si Checker itu sendiri
+        $roles = Role::where('division_id', $divisionId)
+            ->where(function ($query) use ($userRole) {
+                $query->where('role_category', 'maker')
+                      ->orWhere('id', $userRole->id);
+            })
+            ->pluck('name')
+            ->map(fn($name) => ucfirst($name))
+            ->toArray();
+
+        return $roles;
     }
 
     /**
@@ -61,34 +88,28 @@ class DeklarasiNihilService
     /**
      * Validasi kejujuran deklarasi: Kacab tidak boleh mencentang Nihil untuk jabatan 
      * yang sebenarnya memiliki RiskReport pada periode tersebut.
+     *
+     * NOTE: Sekarang DINAMIS — tidak lagi pakai hardcode roleMapping.
+     * Sistem langsung mencocokkan nama jabatan dari form (ucfirst) ke nama role (lowercase) di database.
      */
     public function validateJabatanHonesty(string $branchId, string $periode, int $bulan, int $tahun, array $jabatanData)
     {
         $dateRange = $this->declarationRule->getPeriodeDateRange($periode, $bulan, $tahun);
-        
-        $roleMapping = [
-            'Teller' => 'teller',
-            'CSR' => 'csr',
-            'CA' => 'ca',
-            'Security' => 'security',
-            'Kacab' => 'kacab'
-        ];
 
         foreach ($jabatanData as $jabatan => $data) {
             // Jika Kacab mencentang Nihil Risiko
             if ($data['is_clean'] ?? false) {
-                $roleName = $roleMapping[$jabatan] ?? null;
+                // Konversi nama jabatan ke lowercase (sesuai format di tabel roles)
+                $roleName = strtolower($jabatan);
                 
-                if ($roleName) {
-                    $hasReport = RiskReport::where('branch_id', $branchId)
-                        ->whereBetween('tanggal_kejadian', [$dateRange['start'], $dateRange['end']])
-                        ->whereHas('user.roles', function ($query) use ($roleName) {
-                            $query->where('name', $roleName);
-                        })->exists();
+                $hasReport = RiskReport::where('branch_id', $branchId)
+                    ->whereBetween('tanggal_kejadian', [$dateRange['start'], $dateRange['end']])
+                    ->whereHas('user.roles', function ($query) use ($roleName) {
+                        $query->where('name', $roleName);
+                    })->exists();
 
-                    if ($hasReport) {
-                        throw new \DomainException("Validasi Gagal: Anda tidak dapat mendeklarasikan posisi {$jabatan} sebagai Nihil Risiko, karena terdapat laporan yang masuk dari posisi tersebut pada periode ini.");
-                    }
+                if ($hasReport) {
+                    throw new \DomainException("Validasi Gagal: Anda tidak dapat mendeklarasikan posisi {$jabatan} sebagai Nihil Risiko, karena terdapat laporan yang masuk dari posisi tersebut pada periode ini.");
                 }
             }
         }
@@ -267,5 +288,3 @@ class DeklarasiNihilService
     }
 
 }
-
-

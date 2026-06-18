@@ -43,7 +43,8 @@ class RiskReportControllerTest extends TestCase
             'kacab' => 'checker', 'korwil' => 'viewer', 'manrisk' => 'admin',
         ];
         foreach ($roleMapping as $name => $category) {
-            Role::firstOrCreate(['name' => $name], ['role_category' => $category]);
+            $kode = $name === 'teller' ? 'TL' : null;
+            Role::firstOrCreate(['name' => $name], ['role_category' => $category, 'kode_role' => $kode]);
         }
 
         // Buat branch

@@ -35,10 +35,11 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nama Role</th>
+                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Divisi</th>
+                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Kode Role</th>
                                 <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Role Category</th>
                                 <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Permissions</th>
                                 <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Jumlah User</th>
-                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Tipe</th>
                                 <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Aksi</th>
                             </tr>
                         </thead>
@@ -53,6 +54,16 @@
                                     <div class="flex items-center gap-2">
                                         <span class="text-sm font-bold text-gray-900 uppercase">{{ $role->name }}</span>
                                     </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <span class="text-sm text-gray-600 font-medium">
+                                        {{ $role->division->nama_divisi ?? '-' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-[10px] font-bold uppercase">
+                                        {{ $role->kode_role ?? '-' }}
+                                    </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                     <span class="px-2 py-1 {{ $catColor }} rounded text-[10px] font-bold uppercase">
@@ -71,11 +82,8 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600">
                                     {{ $role->users_count }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600">
-                                    {{ $role->guard_name ?? 'web' }}
-                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
-                                    <button onclick="openEditModal({{ $role->id }}, '{{ $role->name }}', '{{ $role->role_category }}', {{ json_encode($role->permissions->pluck('name')) }})" class="inline-flex items-center justify-center min-w-[84px] text-blue-600 hover:text-white hover:bg-blue-500 border border-blue-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">Edit</button>
+                                    <button onclick="openEditModal({{ $role->id }}, '{{ $role->name }}', '{{ $role->role_category }}', '{{ $role->division_id }}', '{{ $role->kode_role }}', {{ json_encode($role->permissions->pluck('name')) }})" class="inline-flex items-center justify-center min-w-[84px] text-blue-600 hover:text-white hover:bg-blue-500 border border-blue-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">Edit</button>
                                     <button onclick="openDeleteModal({{ $role->id }}, '{{ $role->name }}')" class="inline-flex items-center justify-center min-w-[84px] text-rose-600 hover:text-white hover:bg-rose-500 border border-rose-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">Hapus</button>
                                 </td>
                             </tr>
@@ -110,6 +118,21 @@
                         <option value="admin">Admin</option>
                     </select>
                     <p class="mt-1 text-xs text-gray-400">Kategori ini menentukan akses user yang memegang role ini.</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Divisi <span class="text-xs text-gray-400 font-normal">(Opsional)</span></label>
+                        <select name="division_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500">
+                            <option value="">-- Pilih Divisi --</option>
+                            @foreach($divisions as $div)
+                                <option value="{{ $div->id }}">{{ $div->nama_divisi }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Kode Role <span class="text-xs text-gray-400 font-normal">(Opsional)</span></label>
+                        <input type="text" name="kode_role" placeholder="contoh: TL" maxlength="5" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm uppercase focus:ring-indigo-500">
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Permissions</label>
@@ -151,6 +174,21 @@
                         <option value="viewer">Viewer</option>
                         <option value="admin">Admin</option>
                     </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Divisi <span class="text-xs text-gray-400 font-normal">(Opsional)</span></label>
+                        <select name="division_id" id="edit_division_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500">
+                            <option value="">-- Pilih Divisi --</option>
+                            @foreach($divisions as $div)
+                                <option value="{{ $div->id }}">{{ $div->nama_divisi }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Kode Role <span class="text-xs text-gray-400 font-normal">(Opsional)</span></label>
+                        <input type="text" name="kode_role" id="edit_kode_role" placeholder="contoh: TL" maxlength="5" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm uppercase focus:ring-indigo-500">
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Permissions</label>
@@ -359,10 +397,12 @@
         // ================================================================
         // EDIT ROLE — OPEN MODAL
         // ================================================================
-        function openEditModal(id, name, roleCategory, permissions) {
+        function openEditModal(id, name, roleCategory, divisionId, kodeRole, permissions) {
             document.getElementById('modalEdit').classList.remove('hidden');
             document.getElementById('edit_name').value = name;
             document.getElementById('edit_role_category').value = roleCategory;
+            document.getElementById('edit_division_id').value = divisionId || '';
+            document.getElementById('edit_kode_role').value = kodeRole || '';
             document.getElementById('editForm').action = `/admin/roles/${id}`;
 
             // Reset semua checkbox

@@ -322,7 +322,7 @@
         {{-- ============================================================
          DEKLARASI NIHIL RISIKO (Khusus Kacab)
          ============================================================ --}}
-    @if(Auth::user()->isKacab())
+    @if(Auth::user()->isChecker())
     @php
         $hariIni = now()->day;
         $periodeSekarang = $hariIni <= 14 ? '1' : '2';
