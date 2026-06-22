@@ -431,7 +431,7 @@
                     </div>
                 </div>
                 <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse gap-2">
-                    <button type="button" onclick="confirmSkipTour()" class="inline-flex justify-center w-full px-4 py-2 text-base font-medium text-white bg-amber-600 border border-transparent rounded-xl shadow-sm hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 sm:w-auto sm:text-sm transition-colors">
+                    <button type="button" onclick="confirmSkipTour()" class="inline-flex justify-center w-full px-4 py-2 text-base font-medium text-white bg-red-600 border border-transparent rounded-xl shadow-sm hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 sm:w-auto sm:text-sm transition-colors">
                         Ya, Lewati
                     </button>
                     <button type="button" onclick="cancelSkipTour()" class="inline-flex justify-center w-full px-4 py-2 mt-3 text-base font-medium text-slate-700 bg-white border border-slate-300 rounded-xl shadow-sm hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm transition-colors">
@@ -659,8 +659,9 @@
         }
 
         let driverObjInstance = null;
+        let pausedTourStepIndex = 0;
 
-        function startOnboardingTour() {
+        function startOnboardingTour(startIndex = 0) {
             driverObjInstance = window.driver.js.driver({
                 showProgress: true,
                 showButtons: ['next', 'previous', 'close'],
@@ -688,23 +689,26 @@
                         driverObjInstance.destroy();
                         markTourAsCompleted();
                     } else {
+                        // Simpan step aktif, matikan driver sementara supaya modal bebas dari overlay
+                        pausedTourStepIndex = driverObjInstance.getActiveIndex();
+                        driverObjInstance.destroy();
                         document.getElementById('tourConfirmModal').classList.remove('hidden');
                     }
                 }
             });
-            driverObjInstance.drive();
+            driverObjInstance.drive(startIndex);
         }
 
         function confirmSkipTour() {
             document.getElementById('tourConfirmModal').classList.add('hidden');
-            if (driverObjInstance) {
-                driverObjInstance.destroy();
-            }
+            // Tour sudah dimatikan di onDestroyStarted, cukup tandai selesai
             markTourAsCompleted();
         }
 
         function cancelSkipTour() {
             document.getElementById('tourConfirmModal').classList.add('hidden');
+            // Mulai lagi tour-nya dari step yang disimpan tadi
+            startOnboardingTour(pausedTourStepIndex);
         }
 
         function markTourAsCompleted() {
