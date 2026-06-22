@@ -18,8 +18,8 @@ class SecurityHeaders
 
         $csp = "default-src 'self'; " . 
                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net" . $viteHost . "; " . 
-               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net" . $viteHost . "; " . 
-               "font-src 'self' https://fonts.gstatic.com; " .
+               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net https://cdn.jsdelivr.net" . $viteHost . "; " . 
+               "font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net; " .
                "connect-src 'self' https://cdn.jsdelivr.net" . $viteHost . "; " .
                "img-src 'self' data:;";
         

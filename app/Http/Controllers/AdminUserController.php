@@ -28,7 +28,6 @@ class AdminUserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'branch_id' => ['required', 'uuid', 'exists:branches,id'],
             'role' => ['required', 'exists:roles,name'],
@@ -37,7 +36,6 @@ class AdminUserController extends Controller
         $user = User::create([
             'name' => $request->name,
             'username' => $request->username,
-            'email' => $request->email,
             'password' => Hash::make($request->password),
             'branch_id' => $request->branch_id,
             'is_active' => true, // Default aktif

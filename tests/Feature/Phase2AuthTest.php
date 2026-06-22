@@ -104,7 +104,7 @@ class Phase2AuthTest extends TestCase
                 'password' => 'wrongpassword',
             ]);
             // 10 percobaan pertama: validasi error (bukan rate limit)
-            $response->assertSessionHasErrors('email');
+            $response->assertSessionHasErrors('username');
         }
 
         // Percobaan ke-11: harus kena throttle (429 Too Many Requests)

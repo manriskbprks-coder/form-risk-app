@@ -17,25 +17,6 @@ use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
-    private function generateUsername(string $email): string
-    {
-        $base = Str::of($email)->before('@')->lower()->slug('_')->toString();
-        $base = $base !== '' ? $base : 'user';
-
-        $candidate = $base;
-        $i = 1;
-
-        while (User::where('username', $candidate)->exists()) {
-            $candidate = $base . '_' . $i;
-            $i++;
-        }
-
-        return $candidate;
-    }
-
-    /**
-     * Display the registration view.
-     */
     public function create(): View
     {
         return view('auth.register');
@@ -50,8 +31,7 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'username' => ['nullable', 'string', 'max:255', 'unique:'.User::class],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'username' => ['required', 'string', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'branch_id' => ['nullable', 'exists:branches,id'],
         ]);
@@ -62,8 +42,7 @@ class RegisteredUserController extends Controller
 
         $user = User::create([
             'name' => $request->name,
-            'username' => $request->username ?: $this->generateUsername((string) $request->email),
-            'email' => $request->email,
+            'username' => $request->username,
             'branch_id' => $branchId,
             'password' => Hash::make($request->password),
         ]);

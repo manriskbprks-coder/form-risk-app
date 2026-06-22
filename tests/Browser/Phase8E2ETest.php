@@ -592,7 +592,7 @@ class Phase8E2ETest extends DuskTestCase
         $this->browse(function (Browser $browser) {
             $csrUser = User::firstOrCreate(
                 ['username' => 'csr_e2e'],
-                ['name' => 'CSR E2E', 'email' => 'csr_e2e@test.com', 'password' => bcrypt('password'), 'branch_id' => static::$branchA->id, 'password_changed_at' => now()]
+                ['name' => 'CSR E2E', 'password' => bcrypt('password'), 'branch_id' => static::$branchA->id, 'password_changed_at' => now()]
             );
             if (!$csrUser->hasRole('csr')) $csrUser->assignRole('csr');
 
@@ -611,7 +611,7 @@ class Phase8E2ETest extends DuskTestCase
         $this->browse(function (Browser $browser) {
             $securityUser = User::firstOrCreate(
                 ['username' => 'security_e2e'],
-                ['name' => 'Security E2E', 'email' => 'security_e2e@test.com', 'password' => bcrypt('password'), 'branch_id' => static::$branchA->id, 'password_changed_at' => now()]
+                ['name' => 'Security E2E', 'password' => bcrypt('password'), 'branch_id' => static::$branchA->id, 'password_changed_at' => now()]
             );
             if (!$securityUser->hasRole('security')) $securityUser->assignRole('security');
 
@@ -630,7 +630,7 @@ class Phase8E2ETest extends DuskTestCase
         $this->browse(function (Browser $browser) {
             $caUser = User::firstOrCreate(
                 ['username' => 'ca_e2e'],
-                ['name' => 'CA E2E', 'email' => 'ca_e2e@test.com', 'password' => bcrypt('password'), 'branch_id' => static::$branchA->id, 'password_changed_at' => now()]
+                ['name' => 'CA E2E', 'password' => bcrypt('password'), 'branch_id' => static::$branchA->id, 'password_changed_at' => now()]
             );
             if (!$caUser->hasRole('ca')) $caUser->assignRole('ca');
 

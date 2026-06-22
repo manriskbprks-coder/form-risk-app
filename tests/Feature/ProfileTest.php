@@ -41,24 +41,6 @@ class ProfileTest extends TestCase
         $this->assertTrue(Hash::check('newpassword123', $user->refresh()->password));
     }
 
-    public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
-    {
-        $user = User::factory()->create();
-
-        $response = $this
-            ->actingAs($user)
-            ->post('/profile', [
-                'current_password' => 'password',
-                'password' => 'anothernewpassword',
-                'password_confirmation' => 'anothernewpassword',
-            ]);
-
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
-
-        $this->assertTrue(Hash::check('anothernewpassword', $user->refresh()->password));
-    }
 
     public function test_user_can_delete_their_account(): void
     {

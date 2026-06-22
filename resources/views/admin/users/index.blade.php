@@ -48,7 +48,6 @@
                                             'id' => $u->id,
                                             'name' => $u->name,
                                             'username' => $u->username,
-                                            'email' => $u->email,
                                             'branch_name' => $u->branch->nama_cabang ?? 'Pusat',
                                             'role_name' => $u->roles->first()->name ?? '-',
                                             'is_active' => $u->is_active,
@@ -60,8 +59,7 @@
                                         let q = this.search.toLowerCase().trim();
                                         items = items.filter(u =>
                                             u.name.toLowerCase().includes(q) ||
-                                            u.username.toLowerCase().includes(q) ||
-                                            u.email.toLowerCase().includes(q)
+                                            u.username.toLowerCase().includes(q)
                                         );
                                     }
 
@@ -106,7 +104,7 @@
                                     <div class="relative w-full sm:w-72">
                                         <input type="text"
                                                x-model="search"
-                                               placeholder="Cari nama, username, atau email..."
+                                               placeholder="Cari nama atau username..."
                                                class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500">
                                         <svg class="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -141,7 +139,7 @@
                                     <tr :class="!user.is_active ? 'bg-gray-50' : ''">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm font-bold text-gray-900" x-text="user.name"></div>
-                                            <div class="text-xs text-gray-500" x-text="user.username + ' | ' + user.email"></div>
+                                            <div class="text-xs text-gray-500" x-text="user.username"></div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 uppercase" x-text="user.branch_name"></td>
                                         <td class="px-6 py-4 whitespace-nowrap">
@@ -185,16 +183,10 @@
                         <label class="block text-sm font-medium text-gray-700">Nama Lengkap</label>
                         <input type="text" name="name" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500">
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
+                        <div class="sm:col-span-2">
                             <label class="block text-sm font-medium text-gray-700">Username</label>
                             <input type="text" name="username" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500">
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Email</label>
-                            <input type="email" name="email" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500">
-                        </div>
-                    </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Password</label>
@@ -467,13 +459,11 @@
             let resetUserId = null;
             let resetUserName = '';
             let resetUserUsername = '';
-            let resetUserEmail = '';
 
             function openResetModal(user) {
                 resetUserId = user.id;
                 resetUserName = user.name;
                 resetUserUsername = user.username;
-                resetUserEmail = user.email;
 
                 // Reset state
                 document.getElementById('resetStep1').classList.remove('hidden');
@@ -487,7 +477,7 @@
 
                 // Isi data user
                 document.getElementById('resetUserName').textContent = user.name;
-                document.getElementById('resetUserInfo').textContent = user.username + ' | ' + user.email;
+                document.getElementById('resetUserInfo').textContent = user.username;
                 document.getElementById('resetUserName2').textContent = user.name;
 
                 // Tampilkan modal
@@ -598,7 +588,7 @@
 
                 // Isi data user di modal
                 document.getElementById('toggleUserName').textContent = user.name;
-                document.getElementById('toggleUserInfo').textContent = user.username + ' | ' + user.email + ' | ' + user.role_name;
+                document.getElementById('toggleUserInfo').textContent = user.username + ' | ' + user.role_name;
 
                 // Set border color
                 const container = document.getElementById('toggleModalContainer');

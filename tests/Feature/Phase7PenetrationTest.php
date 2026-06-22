@@ -285,16 +285,24 @@ class Phase7PenetrationTest extends TestCase
     #[Test]
     public function brute_force_login_kena_throttle_setelah_5_percobaan()
     {
-        // 5 percobaan login gagal — harusnya error auth.failed
-        for ($i = 0; $i < 5; $i++) {
+        // 4 percobaan login gagal — harusnya error auth.failed
+        for ($i = 0; $i < 4; $i++) {
             $response = $this->post(route('login'), [
                 'username' => $this->tellerA->username,
                 'password' => 'wrong-password-' . $i,
             ]);
             // Harusnya redirect back dengan error (bukan throttle)
             $response->assertSessionHasErrors('username');
-            $this->assertStringContainsString('kredensial', strtolower(session('errors')->get('username')[0] ?? ''));
+            $this->assertStringContainsString('records', strtolower(session('errors')->get('username')[0] ?? ''));
         }
+
+        // Percobaan ke-5 — harus kena lockout (redirect dengan pesan dikunci)
+        $response = $this->post(route('login'), [
+            'username' => $this->tellerA->username,
+            'password' => 'wrong-password-4',
+        ]);
+        $response->assertSessionHasErrors('username');
+        $this->assertStringContainsString('dikunci', strtolower(session('errors')->get('username')[0] ?? ''));
 
         // Percobaan ke-6 — harus kena throttle (redirect dengan pesan throttle)
         $response = $this->post(route('login'), [
