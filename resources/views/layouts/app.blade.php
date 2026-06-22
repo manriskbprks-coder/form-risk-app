@@ -407,6 +407,41 @@
         </footer>
     </div>
 
+    {{-- MODAL KONFIRMASI LEWATI PANDUAN --}}
+    <div id="tourConfirmModal" class="fixed inset-0 z-[100] hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-slate-900/75 backdrop-blur-sm" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-2xl shadow-xl sm:my-8 sm:align-middle sm:max-w-md sm:w-full sm:p-6">
+                <div class="sm:flex sm:items-start">
+                    <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 mx-auto bg-amber-100 rounded-full sm:mx-0 sm:h-10 sm:w-10">
+                        <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg font-bold leading-6 text-slate-900" id="modal-title">
+                            Lewati Panduan?
+                        </h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-slate-500">
+                                Apakah Anda yakin ingin melewati panduan aplikasi ini? Anda bisa membukanya kembali kapan saja melalui tombol "Panduan Aplikasi" di menu samping.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse gap-2">
+                    <button type="button" onclick="confirmSkipTour()" class="inline-flex justify-center w-full px-4 py-2 text-base font-medium text-white bg-amber-600 border border-transparent rounded-xl shadow-sm hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 sm:w-auto sm:text-sm transition-colors">
+                        Ya, Lewati
+                    </button>
+                    <button type="button" onclick="cancelSkipTour()" class="inline-flex justify-center w-full px-4 py-2 mt-3 text-base font-medium text-slate-700 bg-white border border-slate-300 rounded-xl shadow-sm hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm transition-colors">
+                        Batal
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- =============================================================
          ALPINE.JS APP STATE
          ============================================================= --}}
@@ -623,8 +658,10 @@
             ];
         }
 
+        let driverObjInstance = null;
+
         function startOnboardingTour() {
-            const driverObj = window.driver.js.driver({
+            driverObjInstance = window.driver.js.driver({
                 showProgress: true,
                 showButtons: ['next', 'previous', 'close'],
                 nextBtnText: 'Selanjutnya →',
@@ -647,13 +684,27 @@
                         const htmlData = window.Alpine ? window.Alpine.$data(document.documentElement) : null;
                         if (htmlData) htmlData.sidebarOpen = false;
                     }
-                    if (!driverObj.hasNextStep() || confirm('Apakah Anda yakin ingin melewati panduan ini?')) {
-                        driverObj.destroy();
+                    if (!driverObjInstance.hasNextStep()) {
+                        driverObjInstance.destroy();
                         markTourAsCompleted();
+                    } else {
+                        document.getElementById('tourConfirmModal').classList.remove('hidden');
                     }
                 }
             });
-            driverObj.drive();
+            driverObjInstance.drive();
+        }
+
+        function confirmSkipTour() {
+            document.getElementById('tourConfirmModal').classList.add('hidden');
+            if (driverObjInstance) {
+                driverObjInstance.destroy();
+            }
+            markTourAsCompleted();
+        }
+
+        function cancelSkipTour() {
+            document.getElementById('tourConfirmModal').classList.add('hidden');
         }
 
         function markTourAsCompleted() {

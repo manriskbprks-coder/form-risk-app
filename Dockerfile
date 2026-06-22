@@ -47,7 +47,7 @@ RUN echo '#!/bin/bash\n\
     php artisan config:cache\n\
     php artisan route:cache\n\
     php artisan view:cache\n\
-    php artisan migrate:fresh --seed --force\n\
+    php artisan migrate --force\n\
     php artisan storage:link || true\n\
     apache2-foreground' > /usr/local/bin/entrypoint.sh \
     && chmod +x /usr/local/bin/entrypoint.sh
