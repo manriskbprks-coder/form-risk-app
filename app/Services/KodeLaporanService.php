@@ -29,28 +29,38 @@ class KodeLaporanService
     }
 
     /**
-     * Hitung nomor urut berikutnya di bulan ini secara atomik (thread-safe).
+     * Hitung nomor urut berikutnya di bulan ini.
+     * Menggunakan query database secara langsung untuk menghindari isu Cache increment yang mengembalikan 0 atau false.
      */
     private function getNextSequence(): string
     {
-        $cacheKey = 'laporan_seq_' . now()->format('Ym');
+        // Ambil laporan terakhir di bulan ini
+        $lastReport = RiskReport::whereYear('created_at', now()->year)
+            ->whereMonth('created_at', now()->month)
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if (!$lastReport) {
+            return '0001';
+        }
+
+        // Parse nomor urut dari kode_laporan terakhir (format: RISK-XXX-YYYYMM-0001)
+        $parts = explode('-', $lastReport->kode_laporan);
+        $lastSequenceStr = end($parts);
         
-        // Atomic increment, aman dari Race Condition
-        // Expire cache 35 hari untuk memastikan awal bulan aman kereset
-        $count = \Illuminate\Support\Facades\Cache::remember($cacheKey . '_init', 60 * 60 * 24 * 35, function() {
-            // Sinkronisasi dengan database HANYA JIKA cache kosong (misal server restart)
-            return RiskReport::whereYear('created_at', now()->year)
+        // Coba konversi ke integer
+        $lastSequence = (int) $lastSequenceStr;
+        
+        // Jika karena suatu alasan hasilnya 0 (misal format lama), kita fallback ke count
+        if ($lastSequence === 0) {
+            $count = RiskReport::whereYear('created_at', now()->year)
                 ->whereMonth('created_at', now()->month)
                 ->count();
-        });
-
-        $nextVal = \Illuminate\Support\Facades\Cache::increment($cacheKey);
-        
-        // Jika cache increment belum ada isinya, kita set dengan nilai DB + 1
-        if ($nextVal === 1 && $count > 0) {
-            \Illuminate\Support\Facades\Cache::put($cacheKey, $count + 1, 60 * 60 * 24 * 35);
-            $nextVal = $count + 1;
+            $lastSequence = $count;
         }
+
+        $nextVal = $lastSequence + 1;
 
         return str_pad($nextVal, 4, '0', STR_PAD_LEFT);
     }

@@ -283,9 +283,11 @@
                         );
 
                         $isManRisk = auth()->user()?->isAdmin() ?? false;
+                        
+                        $canReview = auth()->user()->roleCategory() === 'checker' && $report->status === 'pending_atasan' && (string) $report->branch_id === (string) auth()->user()->branch_id;
                     @endphp
 
-                    @if($canRevise || $showUpdateForm || ($isManRisk && in_array($report->status, ['approved_in_progress', 'closed', 'pending_revision'])))
+                    @if($canRevise || $showUpdateForm || $canReview || ($isManRisk && in_array($report->status, ['approved_in_progress', 'closed', 'pending_revision'])))
                     <div class="bg-slate-50 overflow-hidden shadow-inner sm:rounded-lg border-2 border-dashed border-slate-300">
                         <div class="p-5 sm:p-6">
                             <h3 class="text-lg font-extrabold text-slate-800 mb-4 uppercase tracking-wider flex items-center gap-2">
@@ -377,7 +379,50 @@
                             </div>
                             @endif
 
-                            {{-- FORM UPDATE STATUS (KHUSUS KACAB) --}}
+                            {{-- FORM APPROVE / REJECT (KHUSUS CHECKER) --}}
+                            @if(auth()->user()->roleCategory() === 'checker' && $report->status === 'pending_atasan')
+                            <div x-data="{ showRejectForm: false, alasanReject: '' }" class="bg-white p-5 rounded-lg border border-indigo-200 shadow-sm mt-4">
+                                <h4 class="text-sm font-bold text-indigo-800 uppercase mb-3">Tinjauan Laporan (Menunggu Review)</h4>
+                                
+                                <div x-show="!showRejectForm" class="grid grid-cols-2 gap-3">
+                                    <!-- Approve Button -->
+                                    <form action="{{ route('risk_reports.update_status', $report->id) }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="status" value="approved">
+                                        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-4 rounded-lg shadow transition">
+                                            ✅ Setujui (Approve)
+                                        </button>
+                                    </form>
+
+                                    <!-- Toggle Reject Form Button -->
+                                    <button type="button" @click="showRejectForm = true" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded-lg shadow transition">
+                                        ❌ Tolak (Reject)
+                                    </button>
+                                </div>
+
+                                <!-- Reject Form (Collapsible) -->
+                                <div x-show="showRejectForm" style="display: none;" class="mt-4 border-t pt-4 border-gray-200">
+                                    <form action="{{ route('risk_reports.update_status', $report->id) }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="status" value="need_revision">
+                                        <label class="block text-xs font-bold text-red-700 uppercase mb-1">Alasan Penolakan / Catatan Revisi <span class="text-red-500">*</span></label>
+                                        <textarea name="alasan_reject" rows="3" required x-model="alasanReject" class="w-full rounded-md border-red-300 text-sm focus:ring-red-500 focus:border-red-500 mb-1" placeholder="Sebutkan bagian mana yang perlu diperbaiki oleh staff..."></textarea>
+                                        <p class="text-xs text-gray-400 mt-1 mb-3" x-text="alasanReject.length + ' karakter (min. 10)'"></p>
+                                        
+                                        <div class="flex gap-2 justify-end">
+                                            <button type="button" @click="showRejectForm = false" class="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+                                                Batal
+                                            </button>
+                                            <button type="submit" :disabled="alasanReject.length < 10" :class="alasanReject.length < 10 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-700'" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow transition">
+                                                Kirim Penolakan
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            @endif
+
+                            {{-- FORM UPDATE STATUS (KHUSUS CHECKER) --}}
                             @if(auth()->user()->roleCategory() === 'checker' && in_array($report->status, ['in_progress', 'approved_in_progress']))
                             <div class="bg-white p-5 rounded-lg border border-green-200 shadow-sm mt-4">
                                 <h4 class="text-sm font-bold text-green-800 uppercase mb-3">🛠 Update Status Laporan</h4>
