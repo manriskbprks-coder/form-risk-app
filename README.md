@@ -1,59 +1,98 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🛡️ Form Risk App (Sistem Pelaporan Risiko Terintegrasi)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Form Risk App** adalah aplikasi berbasis web yang dirancang khusus untuk memfasilitasi pencatatan, pemantauan, dan penyelesaian insiden risiko (Risk Event) di lingkungan operasional perbankan / BPR. 
 
-## About Laravel
+Aplikasi ini mengusung sistem persetujuan berjenjang (**Maker-Checker-Signer**) untuk memastikan setiap kejadian risiko ditangani secara transparan dan akuntabel oleh pihak yang berwenang.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🌟 Fitur Utama
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **Role-Based Access Control (RBAC):** Membagi akses secara presisi menjadi 4 peran utama (Maker, Checker, Signer/ManRisk, dan Viewer).
+- **Alur Persetujuan Fleksibel:** Dukungan untuk persetujuan berjenjang (Approval), penolakan dengan catatan revisi (Reject), dan update progress penyelesaian insiden.
+- **Deklarasi Risiko Nihil (Zero Risk):** Cabang dapat melakukan deklarasi secara berkala jika tidak ada kejadian risiko (nihil).
+- **Analisa SKMR:** Modul khusus bagi Manajer Risiko (ManRisk) untuk menganalisis dan memberi rekomendasi terkait kelemahan sistem / SOP.
+- **Export & Pelaporan:** Ekspor data laporan risiko ke format PDF dan CSV untuk kebutuhan audit.
+- **Notifikasi Email:** Pemberitahuan otomatis (via Email) setiap kali ada perubahan status laporan atau permintaan revisi.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## 👥 Alur Bisnis (Workflow)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Aplikasi ini menggunakan alur *bottom-up*:
+1. **Maker (Staff Cabang)**: Mengidentifikasi dan melaporkan kejadian risiko (Finansial / Non-Finansial) melalui Form Pelaporan Risiko.
+2. **Checker (Kepala Cabang)**: Melakukan tinjauan (*review*). Kacab bisa menyetujui laporan atau menolaknya jika data tidak sesuai. Kacab juga bertanggung jawab meng-update status penyelesaian.
+3. **Signer / ManRisk (Pusat)**: Mengawasi seluruh risiko cabang, melakukan analisa SKMR, dan bisa mengembalikan laporan ke cabang (Minta Revisi) jika penyelesaian dianggap kurang memadai.
+4. **Viewer (Korwil / Direksi)**: Memantau dasbor secara makro tanpa hak untuk mengubah data.
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 📚 Buku Panduan Pengguna (User Manuals)
 
-### Premium Partners
+Untuk memahami cara menggunakan aplikasi sesuai dengan jabatan Anda, silakan baca buku panduan berikut:
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+- 📖 **[Manual Book: Admin / ManRisk](ManualBook/USER_MANUAL_ADMIN.md)**
+- 📖 **[Manual Book: Checker (Kacab)](ManualBook/USER_MANUAL_CHECKER.md)**
+- 📖 **[Manual Book: Maker (Staff)](ManualBook/USER_MANUAL_MAKER.md)**
+- 📖 **[Manual Book: Viewer (Korwil / Direksi)](ManualBook/USER_MANUAL_VIEWER.md)**
 
-## Contributing
+*(Catatan: Anda dapat membuka file Markdown di atas langsung di dalam repository GitHub).*
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+## 🛠️ Teknologi yang Digunakan
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Aplikasi ini dibangun menggunakan arsitektur modern untuk memastikan kecepatan, keamanan, dan skalabilitas:
+- **Backend**: Laravel 11.x (PHP 8.2+)
+- **Frontend**: Blade Templating, Tailwind CSS 3.x, Alpine.js
+- **Database**: MySQL 8.0
+- **Environment**: Docker & Docker Compose (untuk standarisasi pengembangan)
+- **Testing**: PHPUnit & Laravel Dusk
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## 🚀 Cara Instalasi & Menjalankan Aplikasi (Lokal)
 
-## License
+Aplikasi ini sangat mudah dijalankan menggunakan **Docker**. Pastikan Anda sudah menginstal [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+1. **Clone Repository**
+   ```bash
+   git clone https://github.com/manriskbprks-coder/form-risk-app.git
+   cd form-risk-app
+   ```
+
+2. **Setup File Environment**
+   ```bash
+   cp .env.example .env
+   ```
+   *(Sesuaikan kredensial database dan SMTP Email jika diperlukan).*
+
+3. **Jalankan Docker Sail**
+   ```bash
+   ./vendor/bin/sail up -d
+   ```
+
+4. **Install Dependensi & Generate Key**
+   ```bash
+   ./vendor/bin/sail composer install
+   ./vendor/bin/sail npm install
+   ./vendor/bin/sail artisan key:generate
+   ```
+
+5. **Migrasi Database & Seeding (Data Awal)**
+   ```bash
+   ./vendor/bin/sail artisan migrate:fresh --seed
+   ```
+   *(Perintah ini akan membuat akun-akun default berdasarkan data di UserSeeder).*
+
+6. **Kompilasi Frontend (Tailwind)**
+   ```bash
+   ./vendor/bin/sail npm run build
+   ```
+
+Aplikasi kini dapat diakses melalui browser di alamat: **`http://localhost`**
+
+---
+
+## 📝 Lisensi & Hak Cipta
+Aplikasi ini merupakan sistem tertutup (Proprietary) yang dikembangkan khusus untuk keperluan internal pelaporan risiko. Dilarang mendistribusikan kode sumber tanpa izin yang berwenang.

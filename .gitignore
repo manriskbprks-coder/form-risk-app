@@ -29,6 +29,13 @@ Thumbs.db
 _ide_helper.php
 _ide_helper_models.php
 
+# File testing & output lokal
+output.txt
+test.php
+*.sql
+coverage/
+.coverage/
+
 # Dokumentasi internal & catatan pribadi (jangan di-push publik)
 memory1.md
 memory2.md

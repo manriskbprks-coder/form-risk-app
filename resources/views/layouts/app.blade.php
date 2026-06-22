@@ -394,15 +394,16 @@
 
         {{-- FOOTER --}}
         <footer class="border-t border-slate-100 bg-white">
-            <div class="page-shell py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
-                <p>&copy; {{ date('Y') }} {{ config('app.name', 'BPR') }} — Risk Management System</p>
-            <!--
-                <p class="flex items-center gap-1">
-                    <span>Built with</span>
-                    <svg class="w-3.5 h-3.5 text-rose-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/></svg>
-                    <span>by Ray Amadisky</span>
+            <div class="page-shell py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+                <p class="font-medium">&copy; {{ date('Y') }} {{ config('app.name', 'Form Risk App') }}. All rights reserved.</p>
+                
+                {{-- Sengaja disembunyikan untuk pemakaian internal kantor, tapi secara source code tetap tercatat hak ciptanya --}}
+                <!--
+                <p class="flex items-center gap-1 font-semibold text-slate-400">
+                    <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                    <span>Licensed to Ray Amadisky</span>
                 </p>
-            -->
+                -->
             </div>
         </footer>
     </div>
