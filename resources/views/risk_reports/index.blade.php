@@ -19,8 +19,8 @@
  <p class="text-xs font-bold text-blue-600 uppercase tracking-wider">Total Kejadian</p>
  <p class="text-2xl font-extrabold text-slate-900 mt-1">{{ $totalKejadian }}</p>
  </div>
- <div class="surface-card p-4 sm:p-5 border-l-4 border-green-500">
- <p class="text-xs font-bold text-green-600 uppercase tracking-wider">Total Kerugian (Approved)</p>
+ <div class="surface-card p-4 sm:p-5 border-l-4 border-amber-500">
+ <p class="text-xs font-bold text-amber-600 uppercase tracking-wider">Total Kerugian</p>
  <p class="text-2xl font-extrabold text-slate-900 mt-1">Rp {{ number_format($totalLoss, 0, ',', '.') }}</p>
  </div>
  <div class="surface-card p-4 sm:p-5 border-l-4 border-red-500">
