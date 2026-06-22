@@ -14,8 +14,16 @@ class AddRiskProgressRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'note' => ['required_if:new_status,closed', 'nullable', 'string', 'min:5'],
+            'note' => ['required', 'string', 'min_words:10'],
             'new_status' => ['nullable', 'in:approved_in_progress,closed'],
+        ];
+    }
+    
+    public function messages(): array
+    {
+        return [
+            'note.required' => 'Catatan progress/penyelesaian wajib diisi.',
+            'note.min_words' => 'Catatan progress/penyelesaian minimal terdiri dari 10 kata.',
         ];
     }
 }

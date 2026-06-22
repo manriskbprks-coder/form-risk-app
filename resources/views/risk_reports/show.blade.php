@@ -364,16 +364,37 @@
                             </div>
                             @endif
 
-                            {{-- FORM UPDATE PROGRESS --}}
+                            {{-- FORM UPDATE STATUS & PROGRESS --}}
                             @if($showUpdateForm)
-                            <div class="bg-white p-5 rounded-lg border border-blue-200 shadow-sm">
+                            <div x-data="{ 
+                                actionStatus: 'approved_in_progress', 
+                                actionNote: '',
+                                get wordCount() {
+                                    return this.actionNote.trim() === '' ? 0 : this.actionNote.trim().split(/\s+/).length;
+                                }
+                            }" class="bg-white p-5 rounded-lg border border-blue-200 shadow-sm mt-4">
+                                <h4 class="text-sm font-bold text-blue-800 uppercase mb-3">Tindak Lanjut & Penyelesaian</h4>
                                 <form action="{{ route('risk_reports.add_progress', $report->id) }}" method="POST">
                                     @csrf
-                                    <label class="block text-xs font-bold text-blue-800 uppercase mb-2">Update Progress Baru</label>
-                                    <textarea name="note" rows="3" required class="w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500 mb-4" placeholder="Ketik tindakan penyelesaian di sini..."></textarea>
+                                    <div class="mb-3">
+                                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Status Laporan</label>
+                                        <select name="new_status" x-model="actionStatus" class="w-full text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" required>
+                                            <option value="approved_in_progress">In Progress (Sedang Dikerjakan)</option>
+                                            <option value="closed">Closed (Selesai Tuntas)</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1" x-text="actionStatus === 'closed' ? 'Tindakan Penyelesaian' : 'Catatan Progress'"></label>
+                                        <textarea name="note" x-model="actionNote" rows="3" required class="w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500" :placeholder="actionStatus === 'closed' ? 'Ketik tindakan penyelesaian akhir di sini...' : 'Ketik catatan progress di sini...'"></textarea>
+                                        
+                                        @error('note')
+                                            <p class="text-xs text-red-600 font-semibold mt-1">{{ $message }}</p>
+                                        @enderror
 
-                                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg shadow transition">
-                                        💾 Simpan Progress
+                                        <p class="text-xs text-gray-400 mt-1" x-text="wordCount + ' kata (min. 10)'"></p>
+                                    </div>
+                                    <button type="submit" :disabled="wordCount < 10" :class="wordCount < 10 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-800'" class="w-full bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg shadow transition mt-2">
+                                        💾 Simpan Status & Progress
                                     </button>
                                 </form>
                             </div>
@@ -422,26 +443,7 @@
                             </div>
                             @endif
 
-                            {{-- FORM UPDATE STATUS (KHUSUS CHECKER) --}}
-                            @if(auth()->user()->roleCategory() === 'checker' && in_array($report->status, ['in_progress', 'approved_in_progress']))
-                            <div class="bg-white p-5 rounded-lg border border-green-200 shadow-sm mt-4">
-                                <h4 class="text-sm font-bold text-green-800 uppercase mb-3">🛠 Update Status Laporan</h4>
-                                <form action="{{ route('risk_reports.add_progress', $report->id) }}" method="POST">
-                                    @csrf
-                                    <input type="hidden" name="note" value="Update status dari halaman Detail Laporan">
-                                    
-                                    <label class="block text-xs font-bold text-green-800 uppercase mb-2">Pilih Status Baru</label>
-                                    <select name="new_status" class="w-full rounded-md border-gray-300 text-sm focus:ring-green-500 focus:border-green-500 mb-4">
-                                        <option value="approved_in_progress" {{ $report->status == 'approved_in_progress' ? 'selected' : '' }}>In Progress (Sedang dikerjakan)</option>
-                                        <option value="closed">Closed (Selesai Tuntas)</option>
-                                    </select>
 
-                                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-4 rounded-lg shadow transition">
-                                        ✅ Simpan Status
-                                    </button>
-                                </form>
-                            </div>
-                            @endif
 
                             {{-- TOMBOL MANRISK --}}
                             @if($isManRisk && in_array($report->status, ['approved_in_progress', 'closed']))
