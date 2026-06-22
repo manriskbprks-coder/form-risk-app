@@ -13,11 +13,11 @@
             
             {{-- QUICK ACTION BUTTONS (MAKER & CHECKER) --}}
             @if(Auth::user()->isMaker() || Auth::user()->isChecker())
-            <div class="flex items-center gap-3">
-                <a href="{{ route('form.risiko', 'finansial') }}" class="btn-primary py-2 px-4 shadow-sm hover:shadow-md transition whitespace-nowrap">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-3 sm:mt-0">
+                <a href="{{ route('form.risiko', 'finansial') }}" class="btn-primary py-2 px-4 shadow-sm hover:shadow-md transition whitespace-nowrap text-center">
                     <span class="mr-2">💸</span>+ Lapor Finansial
                 </a>
-                <a href="{{ route('form.risiko', 'non-finansial') }}" class="btn-secondary bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 py-2 px-4 shadow-sm hover:shadow-md transition whitespace-nowrap">
+                <a href="{{ route('form.risiko', 'non-finansial') }}" class="btn-secondary bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 py-2 px-4 shadow-sm hover:shadow-md transition whitespace-nowrap text-center">
                     <span class="mr-2">⚠️</span>+ Lapor Non-Finansial
                 </a>
             </div>

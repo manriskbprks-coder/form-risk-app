@@ -357,7 +357,7 @@
 
         {{-- PAGE HEADER --}}
         @isset($header)
-        <div class="bg-white border-b border-slate-200 h-20 flex items-center">
+        <div class="bg-white border-b border-slate-200 min-h-[5rem] py-4 sm:py-0 flex items-center">
             <div class="page-shell w-full">
                 {{ $header }}
             </div>
@@ -396,11 +396,13 @@
         <footer class="border-t border-slate-100 bg-white">
             <div class="page-shell py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
                 <p>&copy; {{ date('Y') }} {{ config('app.name', 'BPR') }} — Risk Management System</p>
+            <!--
                 <p class="flex items-center gap-1">
                     <span>Built with</span>
                     <svg class="w-3.5 h-3.5 text-rose-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/></svg>
-                    <span>by BPR Dev Team</span>
+                    <span>by Ray Amadisky</span>
                 </p>
+            -->
             </div>
         </footer>
     </div>
@@ -631,7 +633,20 @@
                 progressText: 'Langkah @{{current}} dari @{{total}}',
                 popoverClass: 'driverjs-theme-custom',
                 steps: getTourSteps(),
+                onHighlightStarted: (element) => {
+                    if (window.innerWidth < 1024) {
+                        const isSidebarEl = element && element.closest && element.closest('#sidebar');
+                        const htmlData = window.Alpine ? window.Alpine.$data(document.documentElement) : null;
+                        if (htmlData) {
+                            htmlData.sidebarOpen = !!isSidebarEl;
+                        }
+                    }
+                },
                 onDestroyStarted: () => {
+                    if (window.innerWidth < 1024) {
+                        const htmlData = window.Alpine ? window.Alpine.$data(document.documentElement) : null;
+                        if (htmlData) htmlData.sidebarOpen = false;
+                    }
                     if (!driverObj.hasNextStep() || confirm('Apakah Anda yakin ingin melewati panduan ini?')) {
                         driverObj.destroy();
                         markTourAsCompleted();

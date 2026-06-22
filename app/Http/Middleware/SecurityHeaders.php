@@ -14,13 +14,13 @@ class SecurityHeaders
 
         // --- TAMBAHAN ATURAN CSP (DAFTAR TAMU VIP) ---
         $isLocal = app()->environment('local');
-        $viteHost = $isLocal ? " http://localhost:5173 http://127.0.0.1:5173 http://[::1]:5173 ws://localhost:5173 ws://127.0.0.1:5173 ws://[::1]:5173" : "";
+        $viteHost = $isLocal ? " http://localhost:5173 http://127.0.0.1:5173 ws://localhost:5173 ws://127.0.0.1:5173" : "";
 
         $csp = "default-src 'self'; " . 
                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net" . $viteHost . "; " . 
                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net" . $viteHost . "; " . 
                "font-src 'self' https://fonts.gstatic.com; " .
-               "connect-src 'self'" . $viteHost . "; " .
+               "connect-src 'self' https://cdn.jsdelivr.net" . $viteHost . "; " .
                "img-src 'self' data:;";
         
         $response->headers->set('Content-Security-Policy', $csp);
