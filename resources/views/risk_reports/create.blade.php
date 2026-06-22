@@ -124,7 +124,7 @@
                             📝 Kronologis Kejadian <span class="text-red-500">*</span>
                         </label>
                         <p class="text-xs text-gray-500 mb-2">Jelaskan secara detail bagaimana kejadian tersebut bisa terjadi (minimal 20 kata).</p>
-                        <textarea name="kronologis_kejadian" rows="4" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('kronologis_kejadian') border-red-500 bg-red-50 @enderror" placeholder="Contoh: Nasabah datang ke teller untuk melakukan setoran tunai sebesar Rp 5.000.000, namun teller salah input nominal sehingga terjadi selisih kas...">{{ old('kronologis_kejadian') }}</textarea>
+                        <textarea name="kronologis_kejadian" rows="4" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('kronologis_kejadian') border-red-500 bg-red-50 @enderror" placeholder="Contoh: Tanggal 13 Mei 2026 telah terjadi selisih perhitungan jumlah materai dengan nominal Rp. 20.000 kejadian ini diketahui saat perhitungan jumlah perhitungan jumlah materai disore hari. Selisih ini masih open dan masih dalam proses penyelesaian">{{ old('kronologis_kejadian') }}</textarea>
                         @error('kronologis_kejadian')
                         <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
                         @enderror
