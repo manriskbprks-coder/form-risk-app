@@ -44,12 +44,12 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 # 10. Bikin file entrypoint (script jalan sebelum Apache nyala)
 # Script ini buat otomatis ngerun config cache & migrate saat server nyala
 RUN echo '#!/bin/bash\n\
-php artisan config:cache\n\
-php artisan route:cache\n\
-php artisan view:cache\n\
-php artisan migrate --force\n\
-php artisan storage:link || true\n\
-apache2-foreground' > /usr/local/bin/entrypoint.sh \
+    php artisan config:cache\n\
+    php artisan route:cache\n\
+    php artisan view:cache\n\
+    php artisan migrate:fresh --seed --force\n\
+    php artisan storage:link || true\n\
+    apache2-foreground' > /usr/local/bin/entrypoint.sh \
     && chmod +x /usr/local/bin/entrypoint.sh
 
 # Port bawaan Apache
