@@ -8,18 +8,8 @@ services:
     image: app-risiko-lokal
     container_name: form_risk_app
     restart: unless-stopped
-    environment:
-      - PORT=80
-      - DB_CONNECTION=mysql
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_DATABASE=form_risk_db
-      - DB_USERNAME=root
-      - DB_PASSWORD=bpr_password_rahasia
-      - APP_ENV=production
-      - APP_DEBUG=false
-      - APP_URL=https://34.50.94.222.nip.io
-      - APP_KEY=base64:HNC5hVhAuN9zhi4x2SjiTgo1uIdGS905s5LvquZBeqg=
+    env_file:
+      - .env
     depends_on:
       db:
         condition: service_healthy
@@ -30,7 +20,7 @@ services:
     restart: unless-stopped
     environment:
       - MYSQL_DATABASE=form_risk_db
-      - MYSQL_ROOT_PASSWORD=bpr_password_rahasia
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:

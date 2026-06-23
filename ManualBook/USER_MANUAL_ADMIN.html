@@ -1,0 +1,86 @@
+<!DOCTYPE html><html><head><meta charset='utf-8'>
+    <style>
+        body { font-family: 'Calibri', 'Arial', sans-serif; line-height: 1.5; color: #000; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { font-size: 24px; color: #000; border-bottom: 2px solid #000; padding-bottom: 5px; }
+        h2, h3 { font-size: 18px; color: #000; margin-top: 20px; }
+        ul, ol { margin-left: 20px; }
+        blockquote { background: #f0f0f0; border-left: 4px solid #ccc; padding: 10px; margin: 10px 0; font-style: italic; color: #333; }
+        code { font-family: Consolas, monospace; background: #f0f0f0; padding: 2px 4px; border-radius: 3px; }
+    </style></head><body><h1>BUKU PANDUAN APLIKASI: ADMIN / MANRISK (PUSAT)</h1>
+<p><strong>Tugas Utama:</strong> Bertindak sebagai Administrator sistem, mengawasi kepatuhan Deklarasi Nihil, melakukan kalibrasi nilai, dan mengelola Master Data Risiko seluruh Indonesia.</p>
+<h3>Bab 1: Cara Akses Login &amp; Mengganti Password Default</h3>
+<ol>
+<li>Buka browser dan akses tautan aplikasi: <code>http://[ALAMAT-SERVER]</code></li>
+<li>Masukkan kredensial <strong>Username</strong> dan <strong>Password</strong>, lalu klik <strong>Masuk</strong>.</li>
+<li>Jika login perdana, sistem akan mewajibkan Anda mengganti password. Masukkan password baru, lalu klik <strong>Simpan</strong>.</li>
+</ol>
+<blockquote>
+<p><code>[MASUKKAN SCREENSHOT HALAMAN LOGIN DI SINI]</code></p>
+</blockquote>
+<h3>Bab 2: Manajemen Master Data (Bank Soal Risiko)</h3>
+<p>Fitur ini krusial untuk menentukan opsi-opsi yang akan muncul di <em>dropdown</em> saat Maker/Checker cabang mengisi form pelaporan.</p>
+<ol>
+<li>Di sidebar kiri, pada kategori Administrasi, klik <strong>Master Data Risiko</strong>.</li>
+<li>Anda akan melihat daftar Jenis Risiko, lengkap dengan <strong>Penyebab</strong> dan <strong>Mitigasi</strong> standarnya.</li>
+<li>Klik <strong>Tambah Item Risiko</strong> untuk mendaftarkan jenis insiden baru (misal: &quot;Kejahatan Siber&quot; atau &quot;Gempa Bumi&quot;).</li>
+<li>Setelah Item Risiko dibuat, klik tombol <strong>Kelola</strong> di sebelahnya untuk menambahkan variasi <em>Penyebab Umum</em> dan langkah-langkah <em>Mitigasi Standar</em> yang berkaitan dengan risiko tersebut. Semakin lengkap, semakin mudah cabang mengisinya.</li>
+</ol>
+<blockquote>
+<p><code>[MASUKKAN SCREENSHOT HALAMAN MASTER DATA RISIKO DI SINI]</code></p>
+</blockquote>
+<h3>Bab 3: Manajemen Cabang &amp; Manajemen Pengguna (User)</h3>
+<p>Sebagai Admin, Anda memegang kendali penuh atas akun pengguna dan struktur cabang.</p>
+<ol>
+<li><strong>Manajemen Cabang:</strong>
+<ul>
+<li>Klik menu <strong>Manajemen Cabang</strong>.</li>
+<li>Di sini Anda bisa menambah cabang/kantor baru, mengubah tipe kantor (Pusat/Cabang/Capem), dan mengatur status aktif/nonaktifnya.</li>
+</ul>
+</li>
+<li><strong>Manajemen Pengguna (User):</strong>
+<ul>
+<li>Klik menu <strong>Manajemen Pengguna</strong>.</li>
+<li>Anda bisa mendaftarkan akun baru (NIP, Nama, Jabatan, Cabang).</li>
+<li><strong>Lupa Password?</strong> Anda memiliki wewenang untuk menekan tombol <strong>Reset Password</strong> pada user tertentu. Password mereka akan dikembalikan ke nilai default.</li>
+<li><strong>Karyawan Resign?</strong> Cukup non-aktifkan statusnya menggunakan tombol <em>Toggle</em> (Active/Inactive) warna hijau/abu-abu. Karyawan yang non-aktif tidak bisa login lagi, namun riwayat laporannya di masa lalu tetap tersimpan aman di database.</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p><code>[MASUKKAN SCREENSHOT HALAMAN USER MANAGEMENT DI SINI]</code></p>
+</blockquote>
+<h3>Bab 4: Memantau Cabang yang Belum Mengisi &quot;Deklarasi Nihil Risiko&quot;</h3>
+<p>Sistem pelaporan ini memiliki fitur pemaksaan deklarasi 2x sebulan. Tugas Anda memantau siapa yang lalai.</p>
+<ol>
+<li>Di halaman Dashboard Admin Anda, gulir (<em>scroll</em>) layar ke bagian paling bawah untuk menemukan tabel <strong>Monitoring Deklarasi Nihil Risiko</strong>.</li>
+<li>Anda bisa memilih filter bulan.</li>
+<li>Sistem secara otomatis akan memisahkan daftar menjadi dua: &quot;Cabang yang Sudah Deklarasi&quot; dan <strong>&quot;Cabang yang Belum Deklarasi&quot;</strong>.</li>
+<li>Anda dapat menggunakan daftar <em>Belum Deklarasi</em> ini untuk segera menghubungi Kepala Cabang terkait agar segera mengisi form sebelum periode pelaporan ditutup.</li>
+</ol>
+<blockquote>
+<p><code>[MASUKKAN SCREENSHOT TABEL DEKLARASI NIHIL ADMIN DI SINI]</code></p>
+</blockquote>
+<h3>Bab 5: Analisis SKMR &amp; Kalibrasi Nilai Risiko Cabang</h3>
+<p>Seringkali penilaian cabang (Skala Dampak/Probabilitas) tidak sejalan dengan kacamata Pusat. Anda berhak dan bertugas melakukan kalibrasi nilai tersebut secara rahasia.</p>
+<ol>
+<li>Masuk ke halaman detail suatu laporan risiko yang telah di-approve cabang.</li>
+<li>Gulir layar ke bagian paling bawah halaman. Anda akan menemukan form khusus <strong>Analisis SKMR (Satuan Kerja Manajemen Risiko)</strong> yang hanya bisa dilihat oleh <em>Role</em> Pusat.</li>
+<li>Masukkan analisis profesional Anda, hitung <em>Risk Rating Inheren</em> dan <em>Residual</em> berdasarkan standar pusat, dan berikan status akhir menurut pandangan Anda.</li>
+<li>Klik <strong>Simpan Analisis SKMR</strong>.</li>
+<li>Penilaian Anda akan tersimpan berdampingan secara paralel dengan laporan original dari cabang, berfungsi sebagai opini ahli (<em>second opinion</em>) yang final.</li>
+</ol>
+<blockquote>
+<p><code>[MASUKKAN SCREENSHOT FORM SKMR DI SINI]</code></p>
+</blockquote>
+<h3>Bab 6: Ekspor Data Menyeluruh untuk Rapat Komite</h3>
+<ol>
+<li>Buka menu <strong>Monitoring</strong> di sidebar kiri.</li>
+<li>Anda akan dihadapkan pada tabel seluruh laporan dari ujung ke ujung cabang se-Indonesia.</li>
+<li>Gunakan filter pencarian lanjutan jika diperlukan (berdasarkan tanggal, rentang nominal kerugian, atau status).</li>
+<li>Klik tombol <strong>Export CSV</strong>.</li>
+<li>Jutaan baris data akan terekspor rapi, yang sangat mudah diolah lebih lanjut menggunakan <em>Pivot Table Excel</em> untuk bahan persiapan rapat Komite Manajemen Risiko Direksi bulanan.</li>
+</ol>
+<blockquote>
+<p><code>[MASUKKAN SCREENSHOT EXPORT &amp; TABEL MONITORING ADMIN DI SINI]</code></p>
+</blockquote>
+</body></html>
