@@ -8,8 +8,6 @@ services:
     image: app-risiko-lokal
     container_name: form_risk_app
     restart: unless-stopped
-    ports:
-      - "80:80"
     environment:
       - PORT=80
       - DB_CONNECTION=mysql
@@ -20,7 +18,8 @@ services:
       - DB_PASSWORD=bpr_password_rahasia
       - APP_ENV=production
       - APP_DEBUG=false
-      - APP_URL=http://localhost
+      - APP_URL=https://34.50.94.222.nip.io
+      - APP_KEY=base64:HNC5hVhAuN9zhi4x2SjiTgo1uIdGS905s5LvquZBeqg=
     depends_on:
       db:
         condition: service_healthy
@@ -35,10 +34,21 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  caddy:
+    image: caddy:2
+    container_name: caddy_proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    command: caddy reverse-proxy --from 34.50.94.222.nip.io --to app:80
+    depends_on:
+      - app
 
 volumes:
   db_data:
