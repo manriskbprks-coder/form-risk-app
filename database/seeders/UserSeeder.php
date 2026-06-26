@@ -73,9 +73,9 @@ class UserSeeder extends Seeder
         $security->assignRole('SECURITY');
 
         // --- ASSIGNMENT REGIONAL HEAD KE CABANG ---
-        $cabangSudirman = Branch::find($branch2);
-        if ($cabangSudirman) {
-            $cabangSudirman->update(['korwil_id' => $regionalHead->id]);
+        $cabangDaerah = Branch::find($branchDaerah);
+        if ($cabangDaerah) {
+            $cabangDaerah->update(['korwil_id' => $regionalHead->id]);
         }
 
         $this->command->info('Data Karyawan dan Assignment Korwil berhasil disuntik!');
