@@ -12,6 +12,7 @@ class RiskFreeDeclaration extends Model
 
     protected $fillable = [
         'branch_id',
+        'division_id',
         'user_id',
         'periode',
         'bulan',

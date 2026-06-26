@@ -27,6 +27,7 @@ class User extends Authenticatable
         'username',
         'password',
         'branch_id',
+        'division_id',
         'is_active',
         'password_changed_at',
         'has_seen_tour',
@@ -57,10 +58,20 @@ class User extends Authenticatable
         ];
     }
 
-    // Kasih tau Laravel kalau User ini kerja di sebuah Cabang
+    /**
+     * Get the branch associated with the user.
+     */
     public function branch()
     {
-        return $this->belongsTo(Branch::class);
+        return $this->belongsTo(Branch::class, 'branch_id');
+    }
+
+    /**
+     * Get the division associated with the user.
+     */
+    public function division()
+    {
+        return $this->belongsTo(Division::class, 'division_id');
     }
 
     // Kalau User ini adalah Korwil, dia megang cabang mana aja?

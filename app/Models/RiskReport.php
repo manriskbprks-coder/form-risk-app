@@ -61,6 +61,33 @@ class RiskReport extends Model
         return $query->where('status', $status);
     }
 
+    /**
+     * Scope: Laporan yang menunggu persetujuan Kacab.
+     */
+    public function scopePending($query)
+    {
+        return $query->whereIn('status', [
+            RiskReportStatus::PendingAtasan->value,
+            RiskReportStatus::NeedRevision->value
+        ]);
+    }
+
+    /**
+     * Scope: Laporan yang masih aktif (belum closed).
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', '!=', RiskReportStatus::Closed->value);
+    }
+
+    /**
+     * Scope: Laporan yang sudah ditutup.
+     */
+    public function scopeClosed($query)
+    {
+        return $query->where('status', RiskReportStatus::Closed->value);
+    }
+
     public function isPendingAtasan(): bool
     {
         return $this->status === RiskReportStatus::PendingAtasan->value;

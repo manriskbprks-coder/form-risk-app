@@ -11,12 +11,7 @@
     <div class="pt-4 pb-8 sm:pb-12">
         <div class="max-w-full w-full px-4 sm:px-6 lg:px-8 mx-auto page-stack">
 
-            @if(session('success'))
-            <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                {{ session('success') }}
-            </div>
-            @endif
-            @if(session('error'))
+            <!-- HEADER & ACTIONS -->@if(session('error'))
             <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
                 {{ session('error') }}
             </div>
@@ -116,56 +111,46 @@
                                 </div>
                             </div>
                             <div class="overflow-x-auto -mx-4 sm:mx-0">
-                            <table class="min-w-[850px] w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th @click="sortBy('name')" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase cursor-pointer select-none hover:text-gray-700">
-                                            <span class="inline-flex items-center gap-1">Nama & Username <span x-text="sortIcon('name')" class="text-[10px]"></span></span>
-                                        </th>
-                                        <th @click="sortBy('branch')" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase cursor-pointer select-none hover:text-gray-700">
-                                            <span class="inline-flex items-center gap-1">Cabang <span x-text="sortIcon('branch')" class="text-[10px]"></span></span>
-                                        </th>
-                                        <th @click="sortBy('role')" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase cursor-pointer select-none hover:text-gray-700">
-                                            <span class="inline-flex items-center gap-1">Jabatan <span x-text="sortIcon('role')" class="text-[10px]"></span></span>
-                                        </th>
-                                        <th @click="sortBy('status')" class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase cursor-pointer select-none hover:text-gray-700">
-                                            <span class="inline-flex items-center gap-1">Status <span x-text="sortIcon('status')" class="text-[10px]"></span></span>
-                                        </th>
-                                        <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <template x-for="user in sortedUsers" :key="user.id">
-                                    <tr :class="!user.is_active ? 'bg-gray-50' : ''">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-bold text-gray-900" x-text="user.name"></div>
-                                            <div class="text-xs text-gray-500" x-text="user.username"></div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 uppercase" x-text="user.branch_name"></td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-[10px] font-bold uppercase" x-text="user.role_name"></span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <span class="px-2 py-1 rounded text-[10px] font-bold uppercase"
-                                                  :class="user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
-                                                  x-text="user.is_active ? 'Aktif' : 'Non-Aktif'"></span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                            <button @click="openEditModalFromAlpine(user)" class="inline-flex items-center justify-center min-w-[84px] text-blue-600 hover:text-white hover:bg-blue-500 border border-blue-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">Edit</button>
-                                            <button @click="openResetModal(user)" class="inline-flex items-center justify-center min-w-[84px] text-amber-600 hover:text-white hover:bg-amber-500 border border-amber-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">Reset</button>
-                                            <button @click="openToggleConfirm(user, `/admin/users/${user.id}/toggle-status`)"
-                                                    class="inline-flex items-center justify-center min-w-[84px] px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white"
-                                                    :class="user.is_active ? 'text-rose-600 hover:text-white hover:bg-rose-500 border border-rose-300' : 'text-emerald-600 hover:text-white hover:bg-emerald-500 border border-emerald-300'"
-                                                    x-text="user.is_active ? 'Non-Aktifkan' : 'Aktifkan'"></button>
-                                        </td>
-                                    </tr>
-                                    </template>
-                                </tbody>
-                            </table>
+                            <x-admin-table :headers="['Nama & Username', 'Cabang', 'Jabatan', 'Status', 'Aksi']">
+                                @forelse($users as $user)
+                                <tr x-show="search === '' || '{{ strtolower($user->name) }}'.includes(search.toLowerCase()) || '{{ strtolower($user->username) }}'.includes(search.toLowerCase())"
+                                    class="{{ !$user->is_active ? 'bg-slate-50' : 'hover:bg-slate-50' }} transition duration-150 group/row">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-bold text-slate-900">{{ $user->name }}</div>
+                                        <div class="text-xs text-slate-500">{{ $user->username }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800 uppercase">{{ $user->branch->nama_cabang ?? 'Pusat' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <x-badge :type="$user->roles->first()->role_category ?? 'default'" class="uppercase">
+                                            {{ $user->roles->first()->name ?? '-' }}
+                                        </x-badge>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <x-badge :type="$user->is_active ? 'success' : 'danger'" class="uppercase">
+                                            {{ $user->is_active ? 'Aktif' : 'Non-Aktif' }}
+                                        </x-badge>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right space-x-2 transition duration-200">
+                                        <button @click='openEditModalFromAlpine(@json($user))' class="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 text-xs font-bold uppercase tracking-widest transition">
+                                            Edit
+                                        </button>
+                                        <button @click='openResetModal(@json($user))' class="inline-flex items-center gap-1.5 text-amber-600 hover:text-amber-800 text-xs font-bold uppercase tracking-widest transition">
+                                            Reset
+                                        </button>
+                                        <button @click='openToggleConfirm(@json($user), `/admin/users/{{ $user->id }}/toggle-status`)'
+                                                class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest transition {{ $user->is_active ? 'text-rose-500 hover:text-rose-700' : 'text-emerald-500 hover:text-emerald-700' }}">
+                                            {{ $user->is_active ? 'Non-Aktifkan' : 'Aktifkan' }}
+                                        </button>
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="5" class="px-6 py-8 text-center text-slate-500 text-sm">Belum ada data.</td>
+                                </tr>
+                                @endforelse
+                            </x-admin-table>
                             </div>
-                            <div x-show="sortedUsers.length === 0" class="p-8 text-center text-gray-500 text-sm">
-                                Tidak ada karyawan yang cocok dengan pencarian "<span x-text="search" class="font-semibold"></span>".
-                            </div>
+
                         </div>
                     </div>
                 </div>

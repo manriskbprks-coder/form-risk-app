@@ -35,24 +35,13 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
     // Cabang multi-select — array of IDs, default [] = semua cabang
     $cabangFilter = request('cabang_ids', []);
 
-    // Tentukan branch IDs yang bisa dilihat user
-    if (in_array($roleCategory, ['viewer', 'admin'])) {
-        if ($roleCategory === 'viewer') {
-            $branchIds = Branch::where('korwil_id', $user->id)
-                ->whereRaw('is_active = true')
-                ->pluck('id');
-        } else { // admin
-            if (empty($cabangFilter)) {
-                $branchIds = Branch::whereRaw('is_active = true')->pluck('id');
-            } else {
-                $branchIds = collect($cabangFilter)->map(fn($id) => (string) $id);
-            }
-        }
-    } elseif ($roleCategory === 'checker') {
-        $branchIds = collect([$userBranchId]);
+    $riskReportQueryService = app(\App\Services\RiskReportQueryService::class);
+    
+    // Tentukan branch IDs yang bisa dilihat user (DRY Implementation)
+    if ($roleCategory === 'admin' && !empty($cabangFilter)) {
+        $branchIds = collect($cabangFilter)->map(fn($id) => (string) $id);
     } else {
-        // Maker — lihat laporan sendiri
-        $branchIds = collect();
+        $branchIds = $riskReportQueryService->getAccessibleBranchIds($user);
     }
 
     // Semua cabang aktif (buat dropdown filter ManRisk)
@@ -124,43 +113,43 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
     if ($roleCategory !== 'maker') {
         $branchIdsArray = $branchIds->toArray();
 
-        // 1. Tren laporan per bulan (pake bulan filter — 1 bulan doang)
-        $trenData = $chartService->getTrenLaporan($branchIdsArray, $bulanTren);
+        // 1. Tren Laporan (filter per bulan)
+        $trenData = $chartService->getTrenLaporan($branchIdsArray, $bulanTren, $user);
         $chartMonths = $trenData['chartMonths'];
         $chartCounts = $trenData['chartCounts'];
 
         // 2. Distribusi kategori (all time — ga kena filter bulan)
-        $distribusi = $chartService->getDistribusiKategori($branchIdsArray);
+        $distribusi = $chartService->getDistribusiKategori($branchIdsArray, $user);
         $chartFinansial = $distribusi['chartFinansial'];
         $chartNonFinansial = $distribusi['chartNonFinansial'];
 
         // 3. Status tindak lanjut (all time — ga kena filter bulan)
-        $statusTindakLanjut = $chartService->getStatusTindakLanjut($branchIdsArray);
+        $statusTindakLanjut = $chartService->getStatusTindakLanjut($branchIdsArray, $user);
         $chartOpen = $statusTindakLanjut['chartOpen'];
         $chartInProgress = $statusTindakLanjut['chartInProgress'];
         $chartClosed = $statusTindakLanjut['chartClosed'];
 
         // 4. Ranking Risiko (filter per bulan)
-        $ranking = $chartService->getRankingRisiko($branchIdsArray, $dateFilter);
+        $ranking = $chartService->getRankingRisiko($branchIdsArray, $dateFilter, $user);
         $rankingRisikoLabels = $ranking['rankingRisikoLabels'];
         $rankingRisikoFullLabels = $ranking['rankingRisikoFullLabels'];
         $rankingRisikoData = $ranking['rankingRisikoData'];
         $rankingRisikoColors = $ranking['rankingRisikoColors'];
 
         // 5. Sumber Risiko (filter per bulan)
-        $sumber = $chartService->getSumberRisiko($branchIdsArray, $dateFilter);
+        $sumber = $chartService->getSumberRisiko($branchIdsArray, $dateFilter, $user);
         $sumberRisikoLabels = $sumber['sumberRisikoLabels'];
         $sumberRisikoData = $sumber['sumberRisikoData'];
         $sumberRisikoColors = $sumber['sumberRisikoColors'];
 
         // 6. Tren Top-5 Risiko (filter per bulan)
-        $trenTop5 = $chartService->getTrenTop5($branchIdsArray, $dateFilter, $bulanTren);
+        $trenTop5 = $chartService->getTrenTop5($branchIdsArray, $dateFilter, $bulanTren, $user);
         $trenTop5Labels = $trenTop5['trenTop5Labels'];
         $trenTop5Datasets = $trenTop5['trenTop5Datasets'];
 
         // 7. Top Cabang Paling Berisiko (Hanya untuk Viewer/Korwil)
         if ($roleCategory === 'viewer') {
-            $topCabang = $chartService->getTopBerisikoBranches($branchIdsArray, $dateFilter);
+            $topCabang = $chartService->getTopBerisikoBranches($branchIdsArray, $dateFilter, $user);
             $topCabangLabels = $topCabang['topCabangLabels'];
             $topCabangData = $topCabang['topCabangData'];
             $topCabangColors = $topCabang['topCabangColors'];
@@ -190,38 +179,29 @@ Route::get('/dashboard', function (ChartService $chartService, SummaryService $s
     // === DATA INSIDEN KRITIS (Khusus Korwil/ManRisk) ===
     $kritisReports = collect();
     if (in_array($roleCategory, ['viewer', 'admin'])) {
-        $kritisReports = RiskReport::with(['user', 'branch'])
-            ->whereIn('branch_id', $branchIds->toArray())
+        $kritisQuery = RiskReport::with(['user', 'branch'])
             ->where(function ($query) {
                 $query->where('dampak_finansial', '>=', 100000000) // >= 100 Juta
                       ->orWhereIn('skala_dampak', ['Sangat Tinggi', 'Tinggi']);
             })
             ->whereIn('status', ['pending_atasan', 'pending_korwil', 'pending_revision', 'approved_in_progress'])
             ->orderBy('dampak_finansial', 'desc')
-            ->take(5)
-            ->get();
+            ->take(5);
+        $kritisReports = $riskReportQueryService->applyRoleScope($kritisQuery, $user)->get();
     }
 
     // === TUGAS SAYA (Khusus Kacab) & REVISI (Khusus Maker) ===
     $myTasks = collect();
     $makerRevisions = collect();
     if ($roleCategory === 'checker') {
-        $myTasks = RiskReport::with(['user', 'item'])
-            ->where('branch_id', $userBranchId)
-            ->where('status', 'pending_atasan')
-            ->orderBy('updated_at', 'desc')
-            ->take(10)
-            ->get();
+        $pendingQuery = RiskReport::with(['user', 'item'])->pending()->orderBy('updated_at', 'desc')->take(10);
+        $myTasks = $riskReportQueryService->applyRoleScope($pendingQuery, $user)->get();
             
-        $inProgressReports = RiskReport::with(['user', 'item'])
-            ->where('branch_id', $userBranchId)
-            ->where('status', 'approved_in_progress')
-            ->orderBy('updated_at', 'desc')
-            ->take(10)
-            ->get();
+        $inProgressQuery = RiskReport::with(['user', 'item'])->where('status', \App\Domain\Enums\RiskReportStatus::ApprovedInProgress->value)->orderBy('updated_at', 'desc')->take(10);
+        $inProgressReports = $riskReportQueryService->applyRoleScope($inProgressQuery, $user)->get();
     } elseif ($roleCategory === 'maker') {
         $makerRevisions = RiskReport::where('user_id', $user->id)
-            ->where('status', 'need_revision')
+            ->where('status', \App\Domain\Enums\RiskReportStatus::NeedRevision->value)
             ->orderBy('updated_at', 'desc')
             ->get();
     }
@@ -311,13 +291,13 @@ Route::middleware('auth')->group(function () {
         ->name('profile.update');
 
     // --- MENU 1: INPUT LAPORAN (MAKER) — throttle 10 per menit ---
-    Route::get('/form-risiko/{kategori}', [RiskReportController::class, 'create'])->name('form.risiko');
-    Route::post('/form-risiko', [RiskReportController::class, 'store'])
+    Route::get('/risk-reports/create/{kategori}', [RiskReportController::class, 'create'])->name('form.risiko');
+    Route::post('/risk-reports/store', [RiskReportController::class, 'store'])
         ->middleware('throttle:store_report')
         ->name('form.risiko.store');
 
     // --- MENU 2: REVIEW & TINDAK LANJUT (CHECKER: KACAB) ---
-    Route::get('/review-laporan', [RiskReportController::class, 'review'])->name('review.laporan');
+    Route::get('/risk-reports/review', [RiskReportController::class, 'review'])->name('review.laporan');
 
     // Approve/Reject — throttle 10 per menit
     Route::post('/risk-reports/{id}/status', [RiskReportController::class, 'updateStatus'])
@@ -334,7 +314,7 @@ Route::middleware('auth')->group(function () {
         ->name('risk_reports.save_skmr_analysis');
 
     // --- MENU 3: RIWAYAT KESELURUHAN ---
-    Route::get('/riwayat-risiko', [RiskReportController::class, 'index'])->name('risk.history');
+    Route::get('/risk-reports/history', [RiskReportController::class, 'index'])->name('risk.history');
 
     // Rute Detail & Progress Laporan
     Route::get('/risk-report/{id}', [RiskReportController::class, 'show'])->name('risk_reports.show');
@@ -385,6 +365,7 @@ Route::middleware(['auth', 'admin', 'throttle:admin'])->group(function () {
     // CRUD Bank Soal
     Route::get('/admin/risk-master', [RiskMasterController::class, 'index'])->name('admin.risk_master.index');
     Route::post('/admin/risk-master/item', [RiskMasterController::class, 'storeItem'])->name('admin.risk_master.store_item');
+    Route::patch('/admin/risk-master/item/{id}', [RiskMasterController::class, 'updateItem'])->name('admin.risk_master.update_item');
     Route::post('/admin/risk-master/item/{id}/cause', [RiskMasterController::class, 'storeCause'])->name('admin.risk_master.store_cause');
     Route::delete('/admin/risk-master/item/{id}', [RiskMasterController::class, 'destroyItem'])->name('admin.risk_master.destroy_item');
 
@@ -393,6 +374,12 @@ Route::middleware(['auth', 'admin', 'throttle:admin'])->group(function () {
     // CRUD User Management
     Route::post('/admin/users', [AdminUserController::class, 'store'])->name('admin.users.store');
     Route::patch('/admin/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
+
+    // Import User (CSV)
+    Route::get('/admin/users/import', [\App\Http\Controllers\Admin\UserImportController::class, 'index'])->name('admin.users.import');
+    Route::post('/admin/users/import', [\App\Http\Controllers\Admin\UserImportController::class, 'import'])->name('admin.users.import.process');
+    Route::get('/admin/users/import/success', [\App\Http\Controllers\Admin\UserImportController::class, 'success'])->name('admin.users.import.success');
+    Route::get('/admin/users/import/download/{filename}', [\App\Http\Controllers\Admin\UserImportController::class, 'download'])->name('admin.users.import.download');
 
     // CRUD Role Management
     Route::get('/admin/roles', [RoleController::class, 'index'])->name('admin.roles.index');

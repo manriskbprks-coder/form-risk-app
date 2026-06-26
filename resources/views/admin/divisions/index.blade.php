@@ -11,12 +11,7 @@
     <div class="pt-4 pb-8 sm:pb-12">
         <div class="max-w-full w-full px-4 sm:px-6 lg:px-8 mx-auto page-stack">
 
-            @if(session('success'))
-            <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                {{ session('success') }}
-            </div>
-            @endif
-            @if(session('error'))
+            <!-- HEADER & ACTIONS -->@if(session('error'))
             <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
                 {{ session('error') }}
             </div>
@@ -30,41 +25,33 @@
                     </button>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nama Divisi</th>
-                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Kode Divisi</th>
-                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Jumlah Jabatan (Role)</th>
-                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($divisions as $divisi)
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-sm font-bold text-gray-900 uppercase">{{ $divisi->nama_divisi }}</span>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-[10px] font-bold uppercase">
-                                        {{ $divisi->kode_divisi }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600">
-                                    <span class="font-bold">{{ $divisi->roles_count }}</span> jabatan
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
-                                    <button onclick="openEditModal('{{ $divisi->id }}', '{{ addslashes($divisi->nama_divisi) }}', '{{ $divisi->kode_divisi }}')" class="inline-flex items-center justify-center min-w-[84px] text-blue-600 hover:text-white hover:bg-blue-500 border border-blue-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">Edit</button>
-                                    <button onclick="openDeleteModal('{{ $divisi->id }}', '{{ addslashes($divisi->nama_divisi) }}', {{ $divisi->roles_count }})" class="inline-flex items-center justify-center min-w-[84px] text-rose-600 hover:text-white hover:bg-rose-500 border border-rose-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">Hapus</button>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                <x-admin-table :headers="['Nama Divisi', 'Kode Divisi', 'Jumlah Jabatan (Role)', 'Aksi']">
+                    @foreach($divisions as $divisi)
+                    <tr class="hover:bg-slate-50 transition duration-150 group/row">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-bold text-slate-900 uppercase">{{ $divisi->nama_divisi }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-[10px] font-bold uppercase">
+                                {{ $divisi->kode_divisi }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-slate-600">
+                            <span class="font-bold">{{ $divisi->roles_count }}</span> jabatan
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right space-x-3 transition duration-200">
+                            <button onclick="openEditModal('{{ $divisi->id }}', '{{ addslashes($divisi->nama_divisi) }}', '{{ $divisi->kode_divisi }}')" class="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 text-xs font-bold uppercase tracking-widest transition">
+                                Edit
+                            </button>
+                            <button onclick="openDeleteModal('{{ $divisi->id }}', '{{ addslashes($divisi->nama_divisi) }}', {{ $divisi->roles_count }})" class="inline-flex items-center gap-1.5 text-rose-500 hover:text-rose-700 text-xs font-bold uppercase tracking-widest transition">
+                                Hapus
+                            </button>
+                        </td>
+                    </tr>
+                    @endforeach
+                </x-admin-table>
             </div>
         </div>
     </div>
