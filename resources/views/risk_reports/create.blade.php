@@ -70,8 +70,12 @@
                         <label class="block text-sm font-medium text-gray-700">Pilih Potensi Risiko <span class="text-red-500">*</span></label>
                         <select id="riskItemSelect" name="risk_item_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm @error('risk_item_id') border-red-500 bg-red-50 @enderror" required>
                             <option value="">-- Pilih Potensi Risiko --</option>
-                            @foreach($riskItems as $item)
-                            <option value="{{ $item->id }}" data-sumber-risiko="{{ $item->sumber_risiko }}" {{ old('risk_item_id') == $item->id ? 'selected' : '' }}>{{ $item->nama_risiko }}</option>
+                            @foreach($groupedRiskItems as $categoryName => $items)
+                                <optgroup label="{{ $categoryName }}">
+                                    @foreach($items as $item)
+                                    <option value="{{ $item->id }}" data-sumber-risiko="{{ $item->sumber_risiko }}" {{ old('risk_item_id') == $item->id ? 'selected' : '' }}>{{ $item->nama_risiko }}</option>
+                                    @endforeach
+                                </optgroup>
                             @endforeach
                         </select>
                         @error('risk_item_id')
@@ -257,6 +261,8 @@
         }
     </style>
 
+    @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <script>
         // 1. Ambil data master dari backend, ubah jadi format JSON biar bisa dibaca Javascript
         const riskData = @json($riskItems); 
@@ -295,7 +301,10 @@
         // Logika saat Potensi Risiko dipilih
         itemSelect.addEventListener('change', function() {
             const selectedItemId = this.value;
-            const selectedText = this.options[this.selectedIndex].text.toLowerCase();
+            let selectedText = '';
+            if (this.selectedIndex >= 0 && this.options[this.selectedIndex]) {
+                selectedText = this.options[this.selectedIndex].text.toLowerCase();
+            }
 
             // Ambil elemen
             const otherItemContainer = document.getElementById('otherItemContainer');
@@ -484,7 +493,66 @@
 
             // Trigger validasi tanggal saat load (untuk old values)
             updateMinTanggalDiketahui();
+
+            // Inisialisasi TomSelect pada Potensi Risiko
+            if (typeof TomSelect !== 'undefined') {
+                new TomSelect("#riskItemSelect", {
+                    create: false,
+                    placeholder: "-- Cari atau Pilih Potensi Risiko --",
+                    plugins: ['dropdown_input']
+                });
+            } else {
+                console.error('TomSelect is not loaded!');
+            }
         });
 
     </script>
+    @endpush
+
+    @push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+    <style>
+        .ts-wrapper {
+            margin-top: 0.25rem;
+            width: 100% !important;
+        }
+        .ts-control {
+            border-color: #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            padding-right: 2.5rem !important;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            min-height: 38px !important;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.25rem;
+        }
+        .ts-control.focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 1px #3b82f6;
+        }
+        .ts-control > * {
+            vertical-align: middle;
+        }
+        /* Style search input di dalam dropdown */
+        .ts-dropdown .dropdown-input {
+            border: 1px solid #d1d5db;
+            border-radius: 0.25rem;
+            padding: 0.5rem;
+            margin: 0.5rem;
+            width: calc(100% - 1rem);
+            font-size: 0.875rem;
+        }
+        .ts-dropdown .option {
+            font-size: 0.875rem;
+            padding: 0.5rem 0.75rem;
+        }
+    </style>
+    @endpush
+
 </x-app-layout>

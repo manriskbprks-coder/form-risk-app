@@ -15,11 +15,18 @@ class RiskItem extends Model
         'kategori',
         'sumber_risiko',
         'role_target',
+        'risk_category_id',
     ];
     
     // Relasi: 1 Item Punya Banyak Penyebab
     public function causes()
     {
         return $this->hasMany(RiskCause::class);
+    }
+
+    // Relasi: 1 Item Milik 1 Kategori
+    public function category()
+    {
+        return $this->belongsTo(RiskCategory::class, 'risk_category_id');
     }
 }
