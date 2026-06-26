@@ -180,11 +180,19 @@
             </a>
 
             <a href="{{ route('admin.users.index') }}"
-               class="{{ request()->routeIs('admin.users.*') ? 'sidebar-link-active' : 'sidebar-link' }}">
+               class="{{ request()->routeIs('admin.users.index') ? 'sidebar-link-active' : 'sidebar-link' }}">
                 <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
                 <span>Manajemen Pengguna</span>
+            </a>
+
+            <a href="{{ route('admin.users.import') }}"
+               class="{{ request()->routeIs('admin.users.import*') ? 'sidebar-link-active' : 'sidebar-link' }}">
+                <svg class="sidebar-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span>Import User (CSV)</span>
             </a>
 
             <a href="{{ route('admin.roles.index') }}"

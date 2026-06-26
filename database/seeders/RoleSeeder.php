@@ -10,21 +10,21 @@ class RoleSeeder extends Seeder
 {
     public function run(): void
     {
-        // Buat Divisi Operasional (default untuk semua role saat ini)
-        $divisiOp = Division::firstOrCreate(
-            ['kode_divisi' => 'OP'],
-            ['nama_divisi' => 'Operasional']
-        );
+        $divisiRegional = Division::firstOrCreate(['kode_divisi' => 'REG', 'nama_divisi' => 'REGIONAL']);
+        $divisiCompliance = Division::firstOrCreate(['kode_divisi' => 'COMP', 'nama_divisi' => 'COMPLIANCE']);
 
-        // Mapping role name → [role_category, kode_role, division_id]
+        // Mapping role name -> [category, kode, division_id]
         $roles = [
-            'manrisk'  => ['category' => 'admin',   'kode' => 'MR'],
-            'korwil'   => ['category' => 'viewer',  'kode' => 'KW'],
-            'kacab'    => ['category' => 'checker', 'kode' => 'KC'],
-            'ca'       => ['category' => 'maker',   'kode' => 'CA'],
-            'teller'   => ['category' => 'maker',   'kode' => 'TL'],
-            'csr'      => ['category' => 'maker',   'kode' => 'CSR'],
-            'security' => ['category' => 'maker',   'kode' => 'SC'],
+            'TELLER'                          => ['category' => 'maker',   'kode' => 'TL',  'divisi' => $divisiRegional->id],
+            'CUSTOMER SERVICE REPRESENTATIVE' => ['category' => 'maker',   'kode' => 'CSR', 'divisi' => $divisiRegional->id],
+            'CUSTOMER ASSISTANT'              => ['category' => 'maker',   'kode' => 'CA',  'divisi' => $divisiRegional->id],
+            'BRANCH MANAGER'                  => ['category' => 'checker', 'kode' => 'BM',  'divisi' => $divisiRegional->id],
+            'BRANCH SERVICE MANAGER'          => ['category' => 'checker', 'kode' => 'BSM', 'divisi' => $divisiRegional->id],
+            'SECURITY'                        => ['category' => 'maker',   'kode' => 'SC',  'divisi' => $divisiRegional->id],
+            
+            // Peran Pusat & Pengawas
+            'RISK MANAGEMENT'                 => ['category' => 'admin',   'kode' => 'RM',  'divisi' => $divisiCompliance->id],
+            'REGIONAL HEAD'                   => ['category' => 'viewer',  'kode' => 'RH',  'divisi' => $divisiRegional->id],
         ];
 
         foreach ($roles as $name => $data) {
@@ -33,7 +33,7 @@ class RoleSeeder extends Seeder
                 [
                     'role_category' => $data['category'],
                     'kode_role'     => $data['kode'],
-                    'division_id'   => $divisiOp->id,
+                    'division_id'   => $data['divisi'],
                 ]
             );
         }

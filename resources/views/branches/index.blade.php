@@ -11,12 +11,6 @@
     <div class="pt-4 pb-8 sm:pb-12">
         <div class="max-w-full w-full px-4 sm:px-6 lg:px-8 mx-auto page-stack">
 
-            @if(session('success'))
-            <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                {{ session('success') }}
-            </div>
-            @endif
-
             <div class="surface-card overflow-hidden">
                 <div class="p-4 sm:p-6 bg-white border-b border-slate-200">
                     <h3 class="text-sm font-bold text-blue-800 uppercase mb-4">Pendaftaran Cabang Baru</h3>
@@ -49,72 +43,72 @@
                             </button>
                         </div>
                     </form>
-                    <div class="overflow-x-auto -mx-4 sm:mx-0 mt-6">
-                    <table class="min-w-[920px] w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
-                            <tr>
-                                <th class="px-6 py-3 text-left">Kode Cabang</th>
-                                <th class="px-6 py-3 text-left">Nama Cabang</th>
-                                <th class="px-6 py-3 text-center">Status</th>
-                                <th class="px-6 py-3 text-left">Korwil Penanggung Jawab</th>
-                                <th class="px-6 py-3 text-right">Aksi Update</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($branches as $branch)
-                            <tr class="{{ !$branch->is_active ? 'bg-gray-50 opacity-60' : '' }} hover:bg-gray-50">
-                                <td class="px-6 py-4 font-bold text-sm text-gray-900">{{ $branch->kode_cabang }}</td>
-                                <td class="px-6 py-4 font-bold text-sm text-gray-900">{{ $branch->nama_cabang }}</td>
-
-                                <td class="px-6 py-4 text-center">
-                                    @if($branch->is_active)
-                                    <span class="px-2 py-1 bg-green-100 text-green-800 text-[10px] font-bold uppercase rounded border border-green-200">Aktif</span>
-                                    @else
-                                    <span class="px-2 py-1 bg-red-100 text-red-800 text-[10px] font-bold uppercase rounded border border-red-200">Non-Aktif</span>
-                                    @endif
-                                </td>
-
-                                 <td class="px-6 py-4" colspan="2">
-                                     <form id="branchForm_{{ $branch->id }}" action="{{ route('branches.update', $branch->id) }}" method="POST" class="flex items-center justify-between gap-4 w-full">
-                                         @csrf
-                                         @method('PUT')
-
-                                         <input type="hidden" name="kode_cabang" value="{{ $branch->kode_cabang }}">
-                                         <input type="hidden" name="nickname_cabang" value="{{ $branch->nickname_cabang }}">
-
-                                         <select name="korwil_id" class="flex-1 text-sm rounded border-gray-300 focus:ring-blue-500 focus:border-blue-500">
-                                            <option value="">-- Tanpa Korwil --</option>
-                                            @foreach($listKorwil as $k)
-                                            <option value="{{ $k->id }}" {{ $branch->korwil_id == $k->id ? 'selected' : '' }}>
-                                                {{ $k->name }}
-                                            </option>
-                                            @endforeach
-                                        </select>
-
-                                        <div class="flex gap-2">
-                                            <input type="hidden" name="is_active" id="status_{{ $branch->id }}" value="{{ $branch->is_active }}">
-
-                                            @if($branch->is_active)
-                                            <button type="button" onclick="openBranchToggle({{ $branch->id }}, '{{ $branch->nama_cabang }}', '{{ $branch->kode_cabang }}', true)" class="inline-flex items-center justify-center min-w-[84px] text-rose-600 hover:text-white hover:bg-rose-500 border border-rose-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">
-                                                Non-Aktifkan
-                                            </button>
-                                            @else
-                                            <button type="button" onclick="openBranchToggle({{ $branch->id }}, '{{ $branch->nama_cabang }}', '{{ $branch->kode_cabang }}', false)" class="inline-flex items-center justify-center min-w-[84px] text-emerald-600 hover:text-white hover:bg-emerald-500 border border-emerald-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">
-                                                Aktifkan
-                                            </button>
-                                            @endif
-
-                                            <button type="submit" class="inline-flex items-center justify-center min-w-[84px] text-blue-600 hover:text-white hover:bg-blue-500 border border-blue-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">
-                                                Simpan
-                                            </button>
-                                        </div>
-                                    </form>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                    <hr class="my-6 border-slate-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold text-gray-700 uppercase">Daftar Cabang</h3>
+                        <form action="{{ route('branches.index') }}" method="GET" class="flex gap-2">
+                            <select name="korwil_id" class="text-sm rounded border-gray-300 focus:ring-blue-500 py-1.5" onchange="this.form.submit()">
+                                <option value="">Semua Korwil</option>
+                                <option value="none" {{ request('korwil_id') == 'none' ? 'selected' : '' }}>Tanpa Korwil</option>
+                                @foreach($listKorwil as $k)
+                                    <option value="{{ $k->id }}" {{ request('korwil_id') == $k->id ? 'selected' : '' }}>{{ $k->name }}</option>
+                                @endforeach
+                            </select>
+                            <input type="hidden" name="sort" value="{{ request('sort', 'kode_cabang') }}">
+                            <input type="hidden" name="dir" value="{{ request('dir', 'asc') }}">
+                        </form>
                     </div>
+
+                    <x-admin-table :headers="['Kode Cabang', 'Nama Cabang', 'Status', 'Korwil Penanggung Jawab', 'Aksi Update']">
+                        @foreach($branches as $branch)
+                        <tr class="{{ !$branch->is_active ? 'bg-slate-50 opacity-75' : '' }} hover:bg-slate-50 transition duration-150 group/row">
+                            <td class="px-6 py-4 font-bold text-sm text-slate-900 whitespace-nowrap">{{ $branch->kode_cabang }}</td>
+                            <td class="px-6 py-4 font-bold text-sm text-slate-900 whitespace-nowrap">{{ $branch->nama_cabang }}</td>
+                            
+                            <td class="px-6 py-4 text-center whitespace-nowrap">
+                                <x-badge :type="$branch->is_active ? 'success' : 'danger'" class="uppercase tracking-widest">
+                                    {{ $branch->is_active ? 'Aktif' : 'Non-Aktif' }}
+                                </x-badge>
+                            </td>
+
+                             <td class="px-6 py-4 whitespace-nowrap">
+                                 <select name="korwil_id" form="branchForm_{{ $branch->id }}" class="min-w-[200px] text-xs font-semibold uppercase rounded border-slate-300 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">-- Tanpa Korwil --</option>
+                                    @foreach($listKorwil as $k)
+                                    <option value="{{ $k->id }}" {{ $branch->korwil_id == $k->id ? 'selected' : '' }}>
+                                        {{ $k->name }}
+                                    </option>
+                                    @endforeach
+                                </select>
+                             </td>
+                             
+                             <td class="px-6 py-4 whitespace-nowrap text-right">
+                                 <form id="branchForm_{{ $branch->id }}" action="{{ route('branches.update', $branch->id) }}" method="POST" class="inline-flex items-center gap-3 transition duration-200">
+                                     @csrf
+                                     @method('PUT')
+
+                                     <input type="hidden" name="kode_cabang" value="{{ $branch->kode_cabang }}">
+                                     <input type="hidden" name="nickname_cabang" value="{{ $branch->nickname_cabang }}">
+                                     <input type="hidden" name="is_active" id="status_{{ $branch->id }}" value="{{ $branch->is_active }}">
+
+                                    @if($branch->is_active)
+                                    <button type="button" onclick="openBranchToggle({{ $branch->id }}, '{{ $branch->nama_cabang }}', '{{ $branch->kode_cabang }}', true)" class="inline-flex items-center gap-1.5 text-rose-500 hover:text-rose-700 text-xs font-bold uppercase tracking-widest transition">
+                                        Non-Aktifkan
+                                    </button>
+                                    @else
+                                    <button type="button" onclick="openBranchToggle({{ $branch->id }}, '{{ $branch->nama_cabang }}', '{{ $branch->kode_cabang }}', false)" class="inline-flex items-center gap-1.5 text-emerald-500 hover:text-emerald-700 text-xs font-bold uppercase tracking-widest transition">
+                                        Aktifkan
+                                    </button>
+                                    @endif
+
+                                    <button type="submit" class="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 text-xs font-bold uppercase tracking-widest transition">
+                                        Simpan
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </x-admin-table>
 
                 </div>
             </div>

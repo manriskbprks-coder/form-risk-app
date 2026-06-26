@@ -11,12 +11,7 @@
     <div class="pt-4 pb-8 sm:pb-12">
         <div class="max-w-full w-full px-4 sm:px-6 lg:px-8 mx-auto page-stack">
 
-            @if(session('success'))
-            <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                {{ session('success') }}
-            </div>
-            @endif
-            @if(session('error'))
+            <!-- HEADER & ACTIONS -->@if(session('error'))
             <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
                 {{ session('error') }}
             </div>
@@ -30,67 +25,52 @@
                     </button>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nama Role</th>
-                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Divisi</th>
-                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Kode Role</th>
-                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Role Category</th>
-                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Permissions</th>
-                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Jumlah User</th>
-                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($roles as $role)
-                            @php
-                                $catColors = ['maker' => 'bg-blue-100 text-blue-800', 'checker' => 'bg-purple-100 text-purple-800', 'viewer' => 'bg-gray-100 text-gray-800', 'admin' => 'bg-amber-100 text-amber-800'];
-                                $catColor = $catColors[$role->role_category] ?? 'bg-gray-100 text-gray-800';
-                            @endphp
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-sm font-bold text-gray-900 uppercase">{{ $role->name }}</span>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <span class="text-sm text-gray-600 font-medium">
-                                        {{ $role->division->nama_divisi ?? '-' }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-[10px] font-bold uppercase">
-                                        {{ $role->kode_role ?? '-' }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <span class="px-2 py-1 {{ $catColor }} rounded text-[10px] font-bold uppercase">
-                                        {{ $role->role_category ?? '-' }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex flex-wrap gap-1 max-w-xs">
-                                        @forelse($role->permissions as $perm)
-                                        <span class="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[10px] font-medium">{{ $perm->name }}</span>
-                                        @empty
-                                        <span class="text-xs text-gray-400 italic">Tidak ada permission</span>
-                                        @endforelse
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600">
-                                    {{ $role->users_count }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
-                                    <button onclick="openEditModal({{ $role->id }}, '{{ $role->name }}', '{{ $role->role_category }}', '{{ $role->division_id }}', '{{ $role->kode_role }}', {{ json_encode($role->permissions->pluck('name')) }})" class="inline-flex items-center justify-center min-w-[84px] text-blue-600 hover:text-white hover:bg-blue-500 border border-blue-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">Edit</button>
-                                    <button onclick="openDeleteModal({{ $role->id }}, '{{ $role->name }}')" class="inline-flex items-center justify-center min-w-[84px] text-rose-600 hover:text-white hover:bg-rose-500 border border-rose-300 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.14em] transition bg-white">Hapus</button>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                <x-admin-table :headers="['Nama Role', 'Divisi', 'Kode Role', 'Role Category', 'Permissions', 'Jumlah User', 'Aksi']">
+                    @foreach($roles as $role)
+                    <tr class="hover:bg-slate-50 transition duration-150 group/row">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-bold text-slate-900 uppercase">{{ str_replace('_', ' ', $role->name) }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <span class="text-sm text-slate-600 font-medium">
+                                {{ $role->division->nama_divisi ?? '-' }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded text-[10px] font-bold uppercase">
+                                {{ $role->kode_role ?? '-' }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <x-badge :type="strtolower($role->role_category ?? 'default')" class="uppercase tracking-widest">
+                                {{ $role->role_category ?? '-' }}
+                            </x-badge>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-wrap gap-1 max-w-xs">
+                                @forelse($role->permissions as $perm)
+                                <span class="px-1.5 py-0.5 bg-blue-50 border border-blue-200 text-blue-700 rounded text-[10px] font-medium">{{ $perm->name }}</span>
+                                @empty
+                                <span class="text-xs text-slate-400 italic">Tidak ada permission</span>
+                                @endforelse
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-slate-600">
+                            {{ $role->users_count }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right space-x-3 transition duration-200">
+                            <button onclick="openEditModal({{ $role->id }}, '{{ $role->name }}', '{{ $role->role_category }}', '{{ $role->division_id }}', '{{ $role->kode_role }}', {{ json_encode($role->permissions->pluck('name')) }})" class="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 text-xs font-bold uppercase tracking-widest transition">
+                                Edit
+                            </button>
+                            <button onclick="openDeleteModal({{ $role->id }}, '{{ $role->name }}')" class="inline-flex items-center gap-1.5 text-rose-500 hover:text-rose-700 text-xs font-bold uppercase tracking-widest transition">
+                                Hapus
+                            </button>
+                        </td>
+                    </tr>
+                    @endforeach
+                </x-admin-table>
             </div>
         </div>
     </div>

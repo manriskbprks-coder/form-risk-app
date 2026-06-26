@@ -14,59 +14,68 @@ class UserSeeder extends Seeder
         $password = Hash::make('password');
 
         // Ambil UUID Cabang secara dinamis
-        $branch1 = Branch::first()->id;
-        $branch2 = Branch::skip(1)->first()->id ?? $branch1;
+        $branchPusat = Branch::where('kode_cabang', '000')->first()->id ?? Branch::first()->id;
+        $branchDaerah = Branch::where('kode_cabang', '!=', '000')->first()->id ?? Branch::skip(1)->first()->id ?? $branchPusat;
 
-        // 1. THE GOD TIER (System Admin / Manajemen Risiko)
+        // Ambil UUID Divisi
+        $divisiCompliance = \App\Models\Division::where('nama_divisi', 'COMPLIANCE')->first()->id ?? null;
+        $divisiRegional = \App\Models\Division::where('nama_divisi', 'REGIONAL')->first()->id ?? null;
+
+        // 1. DIVISI COMPLIANCE (Admin) - Biasanya di Pusat
         $manrisk = User::firstOrCreate(
-            ['username' => 'manrisk_hq'],
-            ['name' => 'HQ Manrisk', 'password' => $password, 'branch_id' => $branch1]
+            ['username' => 'ManRisk'],
+            ['name' => 'HQ Risk Management', 'password' => $password, 'branch_id' => $branchPusat, 'division_id' => $divisiCompliance]
         );
-        $manrisk->assignRole('manrisk');
+        $manrisk->assignRole('RISK MANAGEMENT');
 
-        // 2. CHECKER TIER 2 (Korwil)
-        $korwil = User::firstOrCreate(
-            ['username' => 'korwil_jabar'],
-            ['name' => 'Bapak Korwil', 'password' => $password, 'branch_id' => $branch1]
+        // 2. DIVISI REGIONAL (Viewer & Checker)
+        $regionalHead = User::firstOrCreate(
+            ['username' => 'RH_dummy'],
+            ['name' => 'Regional Head', 'password' => $password, 'branch_id' => $branchPusat, 'division_id' => $divisiRegional]
         );
-        $korwil->assignRole('korwil');
+        $regionalHead->assignRole('REGIONAL HEAD');
 
-        // 3. CHECKER TIER 1 (Kepala Cabang)
         $kacab = User::firstOrCreate(
-            ['username' => 'kacab_sudirman'],
-            ['name' => 'Kacab Sudirman', 'password' => $password, 'branch_id' => $branch2]
+            ['username' => 'BM_dummy'],
+            ['name' => 'Branch Manager', 'password' => $password, 'branch_id' => $branchDaerah, 'division_id' => $divisiRegional]
         );
-        $kacab->assignRole('kacab');
+        $kacab->assignRole('BRANCH MANAGER');
 
-        // 4. THE MAKERS (Customer Assistant, Teller, CSR, Security)
-        $ca = User::firstOrCreate(
-            ['username' => 'ca_sudirman'],
-            ['name' => 'Customer Assistant', 'password' => $password, 'branch_id' => $branch2]
+        $kaop = User::firstOrCreate(
+            ['username' => 'BSM_dummy'],
+            ['name' => 'Branch Service Manager', 'password' => $password, 'branch_id' => $branchDaerah, 'division_id' => $divisiRegional]
         );
-        $ca->assignRole('ca');
+        $kaop->assignRole('BRANCH SERVICE MANAGER');
+
+        // 3. STAFF / MAKERS
+        $ca = User::firstOrCreate(
+            ['username' => 'CA_dummy'],
+            ['name' => 'Customer Assistant', 'password' => $password, 'branch_id' => $branchDaerah, 'division_id' => $divisiRegional]
+        );
+        $ca->assignRole('CUSTOMER ASSISTANT');
 
         $teller = User::firstOrCreate(
-            ['username' => 'teller_sudirman'],
-            ['name' => 'Akun Teller', 'password' => $password, 'branch_id' => $branch2]
+            ['username' => 'Teller_dummy'],
+            ['name' => 'Akun Teller', 'password' => $password, 'branch_id' => $branchDaerah, 'division_id' => $divisiRegional]
         );
-        $teller->assignRole('teller');
+        $teller->assignRole('TELLER');
 
         $csr = User::firstOrCreate(
-            ['username' => 'csr_sudirman'],
-            ['name' => 'Akun CSR', 'password' => $password, 'branch_id' => $branch2]
+            ['username' => 'CSR_dummy'],
+            ['name' => 'Akun CSR', 'password' => $password, 'branch_id' => $branchDaerah, 'division_id' => $divisiRegional]
         );
-        $csr->assignRole('csr');
+        $csr->assignRole('CUSTOMER SERVICE REPRESENTATIVE');
 
         $security = User::firstOrCreate(
-            ['username' => 'sec_sudirman'],
-            ['name' => 'Akun Security', 'password' => $password, 'branch_id' => $branch2]
+            ['username' => 'Security_dummy'],
+            ['name' => 'Akun Security', 'password' => $password, 'branch_id' => $branchDaerah, 'division_id' => $divisiRegional]
         );
-        $security->assignRole('security');
+        $security->assignRole('SECURITY');
 
-        // --- ASSIGNMENT KORWIL KE CABANG ---
+        // --- ASSIGNMENT REGIONAL HEAD KE CABANG ---
         $cabangSudirman = Branch::find($branch2);
         if ($cabangSudirman) {
-            $cabangSudirman->update(['korwil_id' => $korwil->id]);
+            $cabangSudirman->update(['korwil_id' => $regionalHead->id]);
         }
 
         $this->command->info('Data Karyawan dan Assignment Korwil berhasil disuntik!');
