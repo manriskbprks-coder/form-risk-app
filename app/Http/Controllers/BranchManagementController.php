@@ -29,17 +29,40 @@ class BranchManagementController extends Controller
 
         return back()->with('success', 'Struktur Cabang ' . $branch->nama_cabang . ' berhasil diperbarui!');
     }
-    public function index()
+    public function index(Request $request)
     {
-        // 1. Tarik semua cabang
-        $branches = \App\Models\Branch::orderBy('nama_cabang', 'asc')->get();
+        // 1. Ambil input sort dan filter
+        $sortColumn = $request->get('sort', 'kode_cabang'); // Default sort
+        $sortDir = $request->get('dir', 'asc');
+        $filterKorwil = $request->get('korwil_id');
 
-        // 2. Tarik semua user yang jabatannya viewer (Korwil)
+        // 2. Tarik semua cabang dengan query
+        $query = \App\Models\Branch::query();
+
+        if ($filterKorwil) {
+            if ($filterKorwil === 'none') {
+                $query->whereNull('korwil_id');
+            } else {
+                $query->where('korwil_id', $filterKorwil);
+            }
+        }
+
+        $allowedSorts = ['kode_cabang', 'nama_cabang', 'is_active'];
+        if (in_array($sortColumn, $allowedSorts)) {
+            // Sort by integer value of kode_cabang if needed, but it's string so standard order is fine (001, 002)
+            $query->orderBy($sortColumn, $sortDir);
+        } else {
+            $query->orderBy('kode_cabang', 'asc');
+        }
+
+        $branches = $query->get();
+
+        // 3. Tarik semua user yang jabatannya viewer (Korwil)
         $listKorwil = \App\Models\User::whereHas('roles', function ($q) {
             $q->where('role_category', 'viewer');
         })->orderBy('name', 'asc')->get();
 
-        return view('branches.index', compact('branches', 'listKorwil'));
+        return view('branches.index', compact('branches', 'listKorwil', 'sortColumn', 'sortDir', 'filterKorwil'));
     }
 
     public function store(Request $request)

@@ -23,6 +23,13 @@ class RiskReportQueryService
 
         if ($roleCategory === 'checker') {
             $query->where('branch_id', $user->branch_id);
+
+            // Filter Ekstra Opsi 2: Khusus Kantor Pusat (kode 000), checker hanya melihat divisinya sendiri
+            if ($user->branch && $user->branch->kode_cabang === '000') {
+                $query->whereHas('user', function ($q) use ($user) {
+                    $q->where('division_id', $user->division_id);
+                });
+            }
         } elseif ($roleCategory === 'viewer') {
             $branchIds = Branch::where('korwil_id', $user->id)
                 ->whereRaw('is_active = true')

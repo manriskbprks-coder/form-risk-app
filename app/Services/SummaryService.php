@@ -28,10 +28,9 @@ class SummaryService
         if (in_array($roleCategory, [RoleCategory::Viewer->value, RoleCategory::Admin->value])) {
             // Viewer & Admin: apply branch filter
             $reportQuery->whereIn('branch_id', $branchIds);
-        } elseif ($roleCategory === RoleCategory::Checker->value) {
-            $reportQuery->where('branch_id', $user->branch_id);
-        } elseif ($roleCategory === RoleCategory::Maker->value) {
-            $reportQuery->where('user_id', $user->id);
+        } else {
+            // Checker & Maker: apply Role Scope (yang sudah mengandung filter Cabang & Divisi)
+            $reportQuery = app(\App\Services\RiskReportQueryService::class)->applyRoleScope($reportQuery, $user);
         }
 
         // Apply date filter jika ada
@@ -90,13 +89,12 @@ class SummaryService
     public function getPendingCount(User $user, string $roleCategory, array $branchIds): int
     {
         if ($roleCategory === RoleCategory::Checker->value) {
-            return RiskReport::where('branch_id', $user->branch_id)
-                ->whereIn('status', [
-                    RiskReportStatus::PendingAtasan->value,
-                    RiskReportStatus::PendingRevision->value,
-                    RiskReportStatus::ApprovedInProgress->value
-                ])
-                ->count();
+            $query = RiskReport::whereIn('status', [
+                RiskReportStatus::PendingAtasan->value,
+                RiskReportStatus::PendingRevision->value,
+                RiskReportStatus::ApprovedInProgress->value
+            ]);
+            return app(\App\Services\RiskReportQueryService::class)->applyRoleScope($query, $user)->count();
         } elseif ($roleCategory === RoleCategory::Viewer->value) {
             return RiskReport::whereIn('branch_id', $branchIds)
                 ->where('status', 'pending_korwil')
@@ -116,20 +114,14 @@ class SummaryService
      */
     public function getRecentReports(User $user, string $roleCategory, array $branchIds)
     {
-        if (in_array($roleCategory, [RoleCategory::Viewer->value, RoleCategory::Checker->value, RoleCategory::Admin->value])) {
-            return RiskReport::with(['user', 'branch', 'item'])
-                ->whereIn('branch_id', $branchIds)
-                ->latest()
-                ->take(5)
-                ->get();
+        $query = RiskReport::with(['user', 'branch', 'item'])->latest()->take(5);
+
+        if (in_array($roleCategory, [RoleCategory::Viewer->value, RoleCategory::Admin->value])) {
+            return $query->whereIn('branch_id', $branchIds)->get();
         }
 
-        // Maker — lihat laporan sendiri
-        return RiskReport::with(['user', 'branch', 'item'])
-            ->where('user_id', $user->id)
-            ->latest()
-            ->take(5)
-            ->get();
+        // Checker & Maker: apply Role Scope (yang sudah mengandung filter Cabang & Divisi)
+        return app(\App\Services\RiskReportQueryService::class)->applyRoleScope($query, $user)->get();
     }
 
     /**

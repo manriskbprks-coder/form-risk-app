@@ -335,7 +335,8 @@ class RiskReportService
             $report->branch_id,
             $type,
             $message,
-            $report->id
+            $report->id,
+            $user->division_id
         );
     }
 

@@ -64,13 +64,19 @@ class DeklarasiNihilService
     /**
      * Cek apakah Kacab sudah pernah deklarasi untuk periode ini.
      */
-    public function sudahDeklarasi(string $branchId, string $periode, int $bulan, int $tahun): bool
+    public function sudahDeklarasi(string $branchId, string $periode, int $bulan, int $tahun, ?string $divisionId = null): bool
     {
-        return RiskFreeDeclaration::where('branch_id', $branchId)
+        $query = RiskFreeDeclaration::where('branch_id', $branchId)
             ->where('periode', $periode)
             ->where('bulan', $bulan)
             ->where('tahun', $tahun)
-            ->exists();
+            ->whereIn('status', ['active', 'rejected']);
+            
+        if ($branchId === '000' && $divisionId) {
+            $query->where('division_id', $divisionId);
+        }
+        
+        return $query->exists();
     }
 
     /**
@@ -92,7 +98,7 @@ class DeklarasiNihilService
      * NOTE: Sekarang DINAMIS — tidak lagi pakai hardcode roleMapping.
      * Sistem langsung mencocokkan nama jabatan dari form (ucfirst) ke nama role (lowercase) di database.
      */
-    public function validateJabatanHonesty(string $branchId, string $periode, int $bulan, int $tahun, array $jabatanData)
+    public function validateJabatanHonesty(string $branchId, string $periode, int $bulan, int $tahun, array $jabatanData, ?string $divisionId = null)
     {
         $dateRange = $this->declarationRule->getPeriodeDateRange($periode, $bulan, $tahun);
 
@@ -102,11 +108,19 @@ class DeklarasiNihilService
                 // Konversi nama jabatan ke lowercase (sesuai format di tabel roles)
                 $roleName = strtolower($jabatan);
                 
-                $hasReport = RiskReport::where('branch_id', $branchId)
+                $query = RiskReport::where('branch_id', $branchId)
                     ->whereBetween('tanggal_kejadian', [$dateRange['start'], $dateRange['end']])
                     ->whereHas('user.roles', function ($query) use ($roleName) {
                         $query->where('name', $roleName);
-                    })->exists();
+                    });
+
+                if ($branchId === '000' && $divisionId) {
+                    $query->whereHas('user', function($q) use ($divisionId) {
+                        $q->where('division_id', $divisionId);
+                    });
+                }
+
+                $hasReport = $query->exists();
 
                 if ($hasReport) {
                     throw new \DomainException("Validasi Gagal: Anda tidak dapat mendeklarasikan posisi {$jabatan} sebagai Nihil Risiko, karena terdapat laporan yang masuk dari posisi tersebut pada periode ini.");
@@ -130,15 +144,16 @@ class DeklarasiNihilService
 
         // Validasi duplikat deklarasi via domain rule
         $this->declarationRule->validateNoDuplicateDeclaration(
-            $this->sudahDeklarasi($user->branch_id, $periode, $bulan, $tahun)
+            $this->sudahDeklarasi($user->branch_id, $periode, $bulan, $tahun, $user->division_id)
         );
 
         // Validasi Kejujuran per Jabatan
-        $this->validateJabatanHonesty($user->branch_id, $periode, $bulan, $tahun, $data['jabatan']);
+        $this->validateJabatanHonesty($user->branch_id, $periode, $bulan, $tahun, $data['jabatan'], $user->division_id);
 
         // Buat deklarasi header
         $declaration = RiskFreeDeclaration::create([
             'branch_id' => $user->branch_id,
+            'division_id' => $user->division_id,
             'user_id' => $user->id,
             'periode' => $periode,
             'bulan' => $bulan,

@@ -28,11 +28,17 @@ class NotificationService
      * @param string|null $riskReportId
      * @return Collection
      */
-    public function notifyKacabBranch(string $branchId, string $type, string $message, ?string $riskReportId = null): Collection
+    public function notifyKacabBranch(string $branchId, string $type, string $message, ?string $riskReportId = null, ?string $divisionId = null): Collection
     {
-        $kacabUsers = User::whereHas('roles', function ($q) {
+        $query = User::whereHas('roles', function ($q) {
             $q->where('role_category', 'checker');
-        })->where('branch_id', $branchId)->get();
+        })->where('branch_id', $branchId);
+
+        if ($branchId === '000' && $divisionId) {
+            $query->where('division_id', $divisionId);
+        }
+
+        $kacabUsers = $query->get();
 
         return $this->createForUsers($kacabUsers, $type, $message, $riskReportId);
     }

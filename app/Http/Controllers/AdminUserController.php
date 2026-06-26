@@ -33,11 +33,15 @@ class AdminUserController extends Controller
             'role' => ['required', 'exists:roles,name'],
         ]);
 
+        $roleObj = Role::findByName($request->role);
+        $division_id = $roleObj->division_id ?? null;
+
         $user = User::create([
             'name' => $request->name,
             'username' => $request->username,
             'password' => Hash::make($request->password),
             'branch_id' => $request->branch_id,
+            'division_id' => $division_id,
             'is_active' => true, // Default aktif
         ]);
 
@@ -55,10 +59,14 @@ class AdminUserController extends Controller
             'role' => ['required', 'exists:roles,name'],
         ]);
 
+        $roleObj = Role::findByName($request->role);
+        $division_id = $roleObj->division_id ?? null;
+
         // Logika Update Data Dasar & Mutasi Cabang
         $user->update([
             'name' => $request->name,
             'branch_id' => $request->branch_id,
+            'division_id' => $division_id,
         ]);
 
         // Logika Ganti Jabatan (Promosi/Demosi)

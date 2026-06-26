@@ -35,9 +35,15 @@ class RiskReportPolicy
             return $branch && (string) $branch->korwil_id === (string) $user->id;
         }
 
-        // Checker — lihat laporan cabang sendiri
+        // Checker — lihat laporan cabang sendiri (+ cek divisi untuk Pusat)
         if ($category === RoleCategory::Checker) {
-            return (string) $report->branch_id === (string) $user->branch_id;
+            if ((string) $report->branch_id !== (string) $user->branch_id) {
+                return false;
+            }
+            if ($user->branch_id === '000') {
+                return $report->user && $report->user->division_id === $user->division_id;
+            }
+            return true;
         }
 
         // Maker — lihat laporan sendiri
@@ -54,9 +60,14 @@ class RiskReportPolicy
             return false;
         }
 
-        // Checker cuma bisa approve laporan cabang sendiri
+        // Checker cuma bisa approve laporan cabang sendiri (+ cek divisi untuk Pusat)
         if ((string) $report->branch_id !== (string) $user->branch_id) {
             return false;
+        }
+        if ($user->branch_id === '000') {
+            if (!$report->user || $report->user->division_id !== $user->division_id) {
+                return false;
+            }
         }
 
         // Cuma laporan yang pending_atasan atau need_revision yang bisa diapprove
@@ -89,7 +100,15 @@ class RiskReportPolicy
             return false;
         }
 
-        return (string) $report->branch_id === (string) $user->branch_id;
+        if ((string) $report->branch_id !== (string) $user->branch_id) {
+            return false;
+        }
+        
+        if ($user->branch_id === '000') {
+            return $report->user && $report->user->division_id === $user->division_id;
+        }
+
+        return true;
     }
 
     /**

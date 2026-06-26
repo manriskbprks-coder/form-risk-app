@@ -46,12 +46,16 @@ class RiskReportController extends Controller
             abort(Response::HTTP_FORBIDDEN, 'Akses Ditolak! Role Anda tidak berwenang membuat laporan risiko.');
         }
 
-        $riskItems = RiskItem::with('causes.mitigations')
+        $riskItems = RiskItem::with(['causes.mitigations', 'category'])
             ->where('role_target', Auth::user()->primaryRoleName())
             ->where('kategori', $kategori)
             ->get();
 
-        return view('risk_reports.create', compact('riskItems', 'kategori'));
+        $groupedRiskItems = $riskItems->groupBy(function($item) {
+            return $item->category ? $item->category->nama_kategori : 'Umum';
+        });
+
+        return view('risk_reports.create', compact('riskItems', 'groupedRiskItems', 'kategori'));
     }
 
     public function store(StoreRiskReportRequest $request)
@@ -84,21 +88,20 @@ class RiskReportController extends Controller
         $closedReports = collect();
 
         if ($user->roleCategoryEnum()?->isChecker()) {
-            $reports = RiskReport::with(['user.roles', 'item', 'cause.mitigations', 'branch'])
-                ->where('branch_id', $user->branch_id)
-                ->whereIn('status', [RiskReportStatus::PendingAtasan->value, RiskReportStatus::NeedRevision->value])
+            $baseQuery = app(\App\Services\RiskReportQueryService::class)->applyRoleScope(RiskReport::query(), $user);
+
+            $reports = (clone $baseQuery)->with(['user.roles', 'item', 'cause.mitigations', 'branch'])
+                ->pending()
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            $tindakLanjut = RiskReport::with(['user.roles', 'item', 'cause.mitigations', 'branch'])
-                ->where('branch_id', $user->branch_id)
+            $tindakLanjut = (clone $baseQuery)->with(['user.roles', 'item', 'cause.mitigations', 'branch'])
                 ->where('status', RiskReportStatus::ApprovedInProgress->value)
                 ->orderBy('updated_at', 'desc')
                 ->get();
 
-            $closedReports = RiskReport::with(['user.roles', 'item', 'branch'])
-                ->where('branch_id', $user->branch_id)
-                ->where('status', RiskReportStatus::Closed->value)
+            $closedReports = (clone $baseQuery)->with(['user.roles', 'item', 'branch'])
+                ->closed()
                 ->orderBy('updated_at', 'desc')
                 ->get();
         }

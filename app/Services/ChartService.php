@@ -16,7 +16,7 @@ class ChartService
      * @param int $bulanTren
      * @return array ['chartMonths' => [], 'chartCounts' => []]
      */
-    public function getTrenLaporan(array $branchIds, int $bulanTren): array
+    public function getTrenLaporan(array $branchIds, int $bulanTren, \App\Models\User $user): array
     {
         $chartMonths = [];
         $chartCounts = [];
@@ -29,12 +29,18 @@ class ChartService
             default  => "strftime('%Y-%m', created_at)", // SQLite
         };
 
-        $monthlyData = RiskReport::selectRaw("{$dateFormat} as bulan, COUNT(*) as total")
-            ->whereIn('branch_id', $branchIds)
+        $baseQuery = RiskReport::selectRaw("{$dateFormat} as bulan, COUNT(*) as total")
             ->where('created_at', '>=', now()->subMonths($bulanTren)->startOfMonth())
             ->groupBy('bulan')
-            ->orderBy('bulan')
-            ->pluck('total', 'bulan');
+            ->orderBy('bulan');
+
+        if (in_array($user->roleCategory(), ['admin', 'viewer'])) {
+            $baseQuery->whereIn('branch_id', $branchIds);
+        } else {
+            $baseQuery = app(\App\Services\RiskReportQueryService::class)->applyRoleScope($baseQuery, $user);
+        }
+
+        $monthlyData = $baseQuery->pluck('total', 'bulan');
 
         for ($i = $bulanTren - 1; $i >= 0; $i--) {
             $month = now()->subMonths($i);
@@ -51,17 +57,18 @@ class ChartService
      * @param array $branchIds
      * @return array ['chartFinansial' => int, 'chartNonFinansial' => int]
      */
-    public function getDistribusiKategori(array $branchIds): array
+    public function getDistribusiKategori(array $branchIds, \App\Models\User $user): array
     {
+        $baseQuery = RiskReport::query();
+        if (in_array($user->roleCategory(), ['admin', 'viewer'])) {
+            $baseQuery->whereIn('branch_id', $branchIds);
+        } else {
+            $baseQuery = app(\App\Services\RiskReportQueryService::class)->applyRoleScope($baseQuery, $user);
+        }
+
         return [
-            'chartFinansial' => RiskReport::query()
-                ->whereIn('branch_id', $branchIds)
-                ->where('kategori', 'finansial')
-                ->count(),
-            'chartNonFinansial' => RiskReport::query()
-                ->whereIn('branch_id', $branchIds)
-                ->where('kategori', 'non-finansial')
-                ->count(),
+            'chartFinansial' => (clone $baseQuery)->where('kategori', 'finansial')->count(),
+            'chartNonFinansial' => (clone $baseQuery)->where('kategori', 'non-finansial')->count(),
         ];
     }
 
@@ -73,21 +80,19 @@ class ChartService
      * @param array $branchIds
      * @return array ['chartOpen' => int, 'chartInProgress' => int, 'chartClosed' => int]
      */
-    public function getStatusTindakLanjut(array $branchIds): array
+    public function getStatusTindakLanjut(array $branchIds, \App\Models\User $user): array
     {
+        $baseQuery = RiskReport::query();
+        if (in_array($user->roleCategory(), ['admin', 'viewer'])) {
+            $baseQuery->whereIn('branch_id', $branchIds);
+        } else {
+            $baseQuery = app(\App\Services\RiskReportQueryService::class)->applyRoleScope($baseQuery, $user);
+        }
+
         return [
-            'chartOpen' => RiskReport::query()
-                ->whereIn('branch_id', $branchIds)
-                ->where('status', 'pending_atasan')
-                ->count(),
-            'chartInProgress' => RiskReport::query()
-                ->whereIn('branch_id', $branchIds)
-                ->where('status', 'approved_in_progress')
-                ->count(),
-            'chartClosed' => RiskReport::query()
-                ->whereIn('branch_id', $branchIds)
-                ->where('status', 'closed')
-                ->count(),
+            'chartOpen' => (clone $baseQuery)->where('status', 'pending_atasan')->count(),
+            'chartInProgress' => (clone $baseQuery)->where('status', 'approved_in_progress')->count(),
+            'chartClosed' => (clone $baseQuery)->where('status', 'closed')->count(),
         ];
     }
 
@@ -98,18 +103,24 @@ class ChartService
      * @param \Carbon\Carbon $dateFilter
      * @return array ['rankingRisikoLabels' => [], 'rankingRisikoFullLabels' => [], 'rankingRisikoData' => [], 'rankingRisikoColors' => []]
      */
-    public function getRankingRisiko(array $branchIds, $dateFilter): array
+    public function getRankingRisiko(array $branchIds, $dateFilter, \App\Models\User $user): array
     {
         // OPTIMASI: JOIN risk_items langsung — ga perlu RiskItem::find() di loop
-        $rankingRisiko = RiskReport::selectRaw('risk_reports.risk_item_id, COUNT(*) as total, risk_items.nama_risiko')
+        $baseQuery = RiskReport::selectRaw('risk_reports.risk_item_id, COUNT(*) as total, risk_items.nama_risiko')
             ->join('risk_items', 'risk_reports.risk_item_id', '=', 'risk_items.id')
-            ->whereIn('risk_reports.branch_id', $branchIds)
             ->whereNotNull('risk_reports.risk_item_id')
             ->where('risk_reports.created_at', '>=', $dateFilter)
             ->groupBy('risk_reports.risk_item_id', 'risk_items.nama_risiko')
             ->orderByDesc('total')
-            ->take(10)
-            ->get();
+            ->take(10);
+
+        if (in_array($user->roleCategory(), ['admin', 'viewer'])) {
+            $baseQuery->whereIn('risk_reports.branch_id', $branchIds);
+        } else {
+            $baseQuery = app(\App\Services\RiskReportQueryService::class)->applyRoleScope($baseQuery, $user);
+        }
+
+        $rankingRisiko = $baseQuery->get();
 
         $rankingRisikoLabels = [];
         $rankingRisikoFullLabels = [];
@@ -151,7 +162,7 @@ class ChartService
      * @param \Carbon\Carbon $dateFilter
      * @return array ['sumberRisikoLabels' => [], 'sumberRisikoData' => [], 'sumberRisikoColors' => []]
      */
-    public function getSumberRisiko(array $branchIds, $dateFilter): array
+    public function getSumberRisiko(array $branchIds, $dateFilter, \App\Models\User $user): array
     {
         $sumberMapping = [
             'manusia'       => ['label' => 'Manusia',       'color' => '#ef4444'],
@@ -163,11 +174,17 @@ class ChartService
         $sumberQuery = RiskReport::selectRaw('COALESCE(risk_reports.sumber_risiko, risk_causes.sumber_risiko, risk_items.sumber_risiko, \'manusia\') as sumber_risiko_alias, COUNT(*) as total')
             ->join('risk_items', 'risk_reports.risk_item_id', '=', 'risk_items.id')
             ->leftJoin('risk_causes', 'risk_reports.risk_cause_id', '=', 'risk_causes.id')
-            ->whereIn('risk_reports.branch_id', $branchIds)
             ->where('risk_reports.created_at', '>=', $dateFilter)
             ->groupBy('sumber_risiko_alias')
-            ->orderByDesc('total')
-            ->get();
+            ->orderByDesc('total');
+
+        if (in_array($user->roleCategory(), ['admin', 'viewer'])) {
+            $sumberQuery->whereIn('risk_reports.branch_id', $branchIds);
+        } else {
+            $sumberQuery = app(\App\Services\RiskReportQueryService::class)->applyRoleScope($sumberQuery, $user);
+        }
+
+        $sumberQuery = $sumberQuery->get();
 
         $sumberRisikoLabels = [];
         $sumberRisikoData = [];
@@ -193,18 +210,24 @@ class ChartService
      * @param int $bulanTren
      * @return array ['trenTop5Labels' => [], 'trenTop5Datasets' => []]
      */
-    public function getTrenTop5(array $branchIds, $dateFilter, int $bulanTren): array
+    public function getTrenTop5(array $branchIds, $dateFilter, int $bulanTren, \App\Models\User $user): array
     {
         // OPTIMASI: Query 1 — ambil top 5 risk items + nama_risiko langsung via JOIN
-        $top5 = RiskReport::selectRaw('risk_reports.risk_item_id, risk_items.nama_risiko, COUNT(*) as total')
+        $top5Query = RiskReport::selectRaw('risk_reports.risk_item_id, risk_items.nama_risiko, COUNT(*) as total')
             ->join('risk_items', 'risk_reports.risk_item_id', '=', 'risk_items.id')
-            ->whereIn('risk_reports.branch_id', $branchIds)
             ->whereNotNull('risk_reports.risk_item_id')
             ->where('risk_reports.created_at', '>=', $dateFilter)
             ->groupBy('risk_reports.risk_item_id', 'risk_items.nama_risiko')
             ->orderByDesc('total')
-            ->take(5)
-            ->get();
+            ->take(5);
+
+        if (in_array($user->roleCategory(), ['admin', 'viewer'])) {
+            $top5Query->whereIn('risk_reports.branch_id', $branchIds);
+        } else {
+            $top5Query = app(\App\Services\RiskReportQueryService::class)->applyRoleScope($top5Query, $user);
+        }
+
+        $top5 = $top5Query->get();
 
         $top5Ids = $top5->pluck('risk_item_id')->toArray();
         $riskNames = $top5->pluck('nama_risiko', 'risk_item_id');
@@ -223,11 +246,17 @@ class ChartService
             default  => "strftime('%Y-%m', created_at)", // SQLite
         };
 
-        $bulkData = RiskReport::selectRaw("risk_item_id, {$dateFormat} as bulan, COUNT(*) as total")
+        $baseQueryBulk = RiskReport::selectRaw("risk_item_id, {$dateFormat} as bulan, COUNT(*) as total")
             ->whereIn('risk_item_id', $top5Ids)
-            ->whereIn('branch_id', $branchIds)
-            ->where('created_at', '>=', now()->subMonths($bulanTren)->startOfMonth())
-            ->groupBy('risk_item_id', 'bulan')
+            ->where('created_at', '>=', now()->subMonths($bulanTren)->startOfMonth());
+            
+        if (in_array($user->roleCategory(), ['admin', 'viewer'])) {
+            $baseQueryBulk->whereIn('branch_id', $branchIds);
+        } else {
+            $baseQueryBulk = app(\App\Services\RiskReportQueryService::class)->applyRoleScope($baseQueryBulk, $user);
+        }
+
+        $bulkData = $baseQueryBulk->groupBy('risk_item_id', 'bulan')
             ->orderBy('risk_item_id')
             ->orderBy('bulan')
             ->get()
@@ -272,13 +301,19 @@ class ChartService
      * @param \Carbon\Carbon $dateFilter
      * @return array ['topCabangLabels' => [], 'topCabangData' => [], 'topCabangColors' => []]
      */
-    public function getTopBerisikoBranches(array $branchIds, $dateFilter): array
+    public function getTopBerisikoBranches(array $branchIds, $dateFilter, \App\Models\User $user): array
     {
-        $topCabang = RiskReport::selectRaw('branches.nama_cabang, COUNT(*) as total')
+        $baseQuery = RiskReport::selectRaw('branches.nama_cabang, COUNT(*) as total')
             ->join('branches', 'risk_reports.branch_id', '=', 'branches.id')
-            ->whereIn('risk_reports.branch_id', $branchIds)
-            ->where('risk_reports.created_at', '>=', $dateFilter)
-            ->groupBy('branches.nama_cabang')
+            ->where('risk_reports.created_at', '>=', $dateFilter);
+
+        if (in_array($user->roleCategory(), ['admin', 'viewer'])) {
+            $baseQuery->whereIn('risk_reports.branch_id', $branchIds);
+        } else {
+            $baseQuery = app(\App\Services\RiskReportQueryService::class)->applyRoleScope($baseQuery, $user);
+        }
+
+        $topCabang = $baseQuery->groupBy('branches.nama_cabang')
             ->orderByDesc('total')
             ->take(10)
             ->get();
